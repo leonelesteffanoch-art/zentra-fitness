@@ -1,26 +1,161 @@
 @import "tailwindcss";
 
+/* ---------- Tokens de marca: Zentra Fitness ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0b0b0c;
+  --surface: #141417;
+  --surface-2: #1c1c21;
+  --line: #27272c;
+  --bone: #f2efe9;
+  /* Contraste > 6.5:1 sobre #0b0b0c y #141417 (supera AA 4.5:1 en textos pequeños) */
+  --muted: #a6a39d;
+  --brand: #ffc21a;
+  --brand-ink: #141000;
+  /* Estados: solo ingreso/egreso y semáforo activo/atención/vencido */
+  --ok: #22c55e;
+  --warn: #ff8a1f;
+  --bad: #ef4444;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-bone: var(--bone);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-archivo);
   --font-mono: var(--font-geist-mono);
+  --radius-sm: 2px;
+  --radius-md: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/*Reservado EXCLUSIVAMENTE para el h1 de cada página y el titular del Hero */
+.font-display {
+  font-family: var(--font-archivo), var(--font-inter), sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+/* Títulos de sección (h2): rectos, sentence case y contenidos */
+.section-title {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--bone);
+}
+
+/* Importes en dinero: sans con números tabulares (cero limpio sin raya/punto) */
+.tabular-nums {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Componentes base (sentence case, sin tracking exagerado) ---------- */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.625rem;
+    padding: 0 1.125rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: -0.005em;
+    transition: background-color 150ms, color 150ms, border-color 150ms;
+    cursor: pointer;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--brand);
+    color: var(--brand-ink);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--bone);
+  }
+  .btn-secondary {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--bone);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--muted);
+  }
+  .btn-ghost {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--bone);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface);
+    border-color: var(--muted);
+  }
+  .field {
+    width: 100%;
+    min-height: 2.625rem;
+    padding: 0 0.875rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--bone);
+    font-size: 0.875rem;
+  }
+  .field::placeholder {
+    color: var(--muted);
+  }
+  .label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--muted);
+  }
+}
+
+/* Foco visible con estilo propio */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
