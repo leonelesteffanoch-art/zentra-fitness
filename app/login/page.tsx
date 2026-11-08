@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { LoginForm } from '@/components/LoginForm';
 
 export const metadata: Metadata = {
-  title: 'Ingresar',
+  title: 'Ingresar al panel',
   robots: { index: false },
 };
 
@@ -31,10 +33,21 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <section className="flex flex-col justify-center px-6 py-12 sm:px-16">
+      <section className="flex flex-col justify-center px-6 py-10 sm:px-16">
         <div className="mx-auto w-full max-w-sm">
-          <Logo className="mb-10 w-44" />
-          <h1 className="font-display mb-8 text-4xl">Ingresar</h1>
+          <Link
+            href="/"
+            className="mb-8 inline-flex items-center gap-1.5 text-xs font-medium text-muted transition-colors hover:text-bone"
+          >
+            <ArrowLeft size={14} strokeWidth={1.5} />
+            Volver a la página principal
+          </Link>
+
+          <Logo className="mb-8 w-40 sm:w-44" />
+          <h1 className="font-display mb-2 text-4xl">Panel de personal</h1>
+          <p className="mb-7 text-sm text-muted">
+            Acceso exclusivo para recepción y administración.
+          </p>
           <LoginForm />
         </div>
       </section>

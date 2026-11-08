@@ -2,7 +2,17 @@
 
 import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, CheckCircle2, ChevronDown, Loader2, Menu, UserCheck, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  Lock,
+  Menu,
+  UserCheck,
+  X,
+} from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
 /** Desplazamiento suave garantizado hacia cualquier sección #id de la landing. */
@@ -16,13 +26,13 @@ export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after
   window.history.pushState(null, '', href);
 }
 
-// ---------- 1. Header: máximo 4 links + link de texto "Consultar mi DNI" + 1 único botón ----------
+// ---------- 1. Header con acceso claro para Socios (/consulta) y Trabajadores/Admin (/login) ----------
 
 const LINKS_NAV = [
-  { href: '#disciplinas', label: 'Disciplinas' },
-  { href: '#metodo', label: 'Método' },
+  { href: '#disciplinas', label: 'Zonas' },
   { href: '#planes', label: 'Planes' },
-  { href: '#contacto', label: 'Contacto' },
+  { href: '#metodo', label: 'El club' },
+  { href: '#contacto', label: 'Ubicación' },
 ];
 
 export function LandingHeader() {
@@ -41,13 +51,13 @@ export function LandingHeader() {
       <header
         className={`sticky top-0 z-40 transition-colors duration-200 ${
           scrolled
-            ? 'border-b border-line/80 bg-ink/95 backdrop-blur-sm'
+            ? 'border-b border-line/80 bg-ink/95 backdrop-blur-md'
             : 'border-b border-line/40 bg-ink'
         }`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link href="/" aria-label="Zentra Fitness - Inicio">
-            <Logo className="w-36" />
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-8 sm:py-4">
+          <Link href="/" aria-label="Zentra Fitness - Inicio" className="shrink-0">
+            <Logo className="w-32 sm:w-36" />
           </Link>
 
           <nav aria-label="Navegación principal" className="hidden items-center gap-8 lg:flex">
@@ -63,13 +73,23 @@ export function LandingHeader() {
             ))}
           </nav>
 
-          <div className="hidden items-center gap-6 lg:flex">
+          {/* Acciones en desktop: Consultar DNI + Panel staff + único botón primario */}
+          <div className="hidden items-center gap-5 lg:flex">
             <Link
               href="/consulta"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-bone"
             >
-              <UserCheck size={16} strokeWidth={1.5} />
+              <UserCheck size={15} strokeWidth={1.5} />
               Consultar mi DNI
+            </Link>
+            <span className="h-4 w-px bg-line" aria-hidden />
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-bone"
+              title="Acceso para recepción y administración"
+            >
+              <Lock size={14} strokeWidth={1.5} />
+              Panel staff
             </Link>
             <a
               href="#contacto"
@@ -80,14 +100,32 @@ export function LandingHeader() {
             </a>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setMenuAbierto(true)}
-            className="btn btn-ghost !min-h-10 !px-3 lg:hidden"
-            aria-label="Abrir menú"
-          >
-            <Menu size={20} strokeWidth={1.5} />
-          </button>
+          {/* Acciones rápidas en móvil: link directo a Staff + botón de menú */}
+          <div className="flex items-center gap-1.5 lg:hidden">
+            <Link
+              href="/consulta"
+              className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:text-bone"
+            >
+              <UserCheck size={14} strokeWidth={1.5} />
+              <span>Mi DNI</span>
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:text-bone"
+              aria-label="Panel para trabajadores y administradores"
+            >
+              <Lock size={13} strokeWidth={1.5} />
+              <span>Staff</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMenuAbierto(true)}
+              className="btn btn-ghost !min-h-10 !px-2.5"
+              aria-label="Abrir menú"
+            >
+              <Menu size={20} strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -97,10 +135,10 @@ export function LandingHeader() {
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
-          className="fixed inset-0 z-50 flex flex-col justify-between bg-ink px-6 py-6 lg:hidden"
+          className="fixed inset-0 z-50 flex flex-col justify-between bg-ink px-5 py-5 lg:hidden"
         >
           <div className="flex items-center justify-between border-b border-line/80 pb-4">
-            <Logo className="w-36" />
+            <Logo className="w-32" />
             <button
               type="button"
               onClick={() => setMenuAbierto(false)}
@@ -125,15 +163,25 @@ export function LandingHeader() {
             ))}
           </nav>
 
-          <div className="space-y-4 border-t border-line/70 pt-5">
-            <Link
-              href="/consulta"
-              onClick={() => setMenuAbierto(false)}
-              className="flex items-center justify-center gap-2 py-2 text-sm font-medium text-muted hover:text-bone"
-            >
-              <UserCheck size={16} strokeWidth={1.5} />
-              Consultar mi DNI
-            </Link>
+          <div className="space-y-3 border-t border-line/70 pt-5">
+            <div className="grid grid-cols-2 gap-2.5">
+              <Link
+                href="/consulta"
+                onClick={() => setMenuAbierto(false)}
+                className="flex items-center justify-center gap-2 bg-surface px-3 py-3 text-xs font-medium text-bone transition-colors hover:bg-surface-2"
+              >
+                <UserCheck size={15} strokeWidth={1.5} className="text-muted" />
+                Consultar mi DNI
+              </Link>
+              <Link
+                href="/login"
+                onClick={() => setMenuAbierto(false)}
+                className="flex items-center justify-center gap-2 bg-surface px-3 py-3 text-xs font-medium text-bone transition-colors hover:bg-surface-2"
+              >
+                <Lock size={14} strokeWidth={1.5} className="text-muted" />
+                Panel staff / Admin
+              </Link>
+            </div>
             <a
               href="#contacto"
               onClick={(e) => irASeccion(e, '#contacto', () => setMenuAbierto(false))}
@@ -148,7 +196,7 @@ export function LandingHeader() {
   );
 }
 
-// ---------- 2. Disciplinas: izquierda solo número + nombre; derecha detalle único (acordeón en móvil) ----------
+// ---------- 2. Zonas de entrenamiento: sin duración ni horarios; ficha técnica editorial ----------
 
 export interface DisciplinaItem {
   num: string;
@@ -156,7 +204,8 @@ export interface DisciplinaItem {
   enfoque: string;
   detalle: string;
   intensidad: string;
-  duracion: string;
+  modalidad: string;
+  equipamiento: string[];
 }
 
 export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
@@ -164,9 +213,9 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
   const actual = items[activa] ?? items[0];
 
   return (
-    <div className="grid items-start gap-10 lg:grid-cols-12">
+    <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
       {/* Columna izquierda: filas limpias SOLO con número + nombre (en móvil expande acordeón) */}
-      <ul className="divide-y divide-line/80 border-y border-line/80 lg:col-span-6">
+      <ul className="divide-y divide-line/80 border-y border-line/80 lg:col-span-5">
         {items.map((d, idx) => {
           const abierta = activa === idx;
           return (
@@ -177,9 +226,9 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                 onFocus={() => setActiva(idx)}
                 onClick={() => setActiva(idx)}
                 aria-expanded={abierta}
-                className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors"
+                className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors sm:py-4.5"
               >
-                <div className="flex items-baseline gap-4">
+                <div className="flex items-baseline gap-3.5 sm:gap-4">
                   <span
                     className={`font-mono text-xs transition-colors ${
                       abierta ? 'text-brand' : 'text-muted'
@@ -188,7 +237,7 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                     {d.num}
                   </span>
                   <span
-                    className={`text-lg font-semibold tracking-tight transition-colors sm:text-xl ${
+                    className={`text-base font-semibold tracking-tight transition-colors sm:text-lg ${
                       abierta ? 'text-bone' : 'text-muted hover:text-bone'
                     }`}
                   >
@@ -198,22 +247,39 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                 <ChevronDown
                   size={16}
                   strokeWidth={1.5}
-                  className={`text-muted transition-transform lg:hidden ${
+                  className={`shrink-0 text-muted transition-transform lg:hidden ${
                     abierta ? 'rotate-180 text-bone' : ''
                   }`}
                 />
               </button>
 
-              {/* Acordeón exclusivo para móvil (en desktop se oculta para no duplicar con el panel derecho) */}
+              {/* Acordeón exclusivo para móvil */}
               {abierta && (
-                <div className=" space-y-3 pb-5 pl-8 pr-2 text-sm lg:hidden">
+                <div className="space-y-4 pb-5 pl-7 pr-1 text-sm lg:hidden">
                   <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-muted">
                     {d.enfoque}
                   </span>
                   <p className="leading-relaxed text-bone/90">{d.detalle}</p>
-                  <div className="flex gap-6 text-xs text-muted">
-                    <span>Intensidad: <strong className="font-medium text-bone">{d.intensidad}</strong></span>
-                    <span>Duración: <strong className="font-medium text-bone">{d.duracion}</strong></span>
+
+                  <div className="space-y-1.5 pt-1">
+                    <p className="text-xs font-medium text-muted">Equipamiento en zona</p>
+                    <ul className="grid grid-cols-1 gap-1.5 text-xs text-bone sm:grid-cols-2">
+                      {d.equipamiento.map((eq) => (
+                        <li key={eq} className="flex items-center gap-2">
+                          <Check size={13} strokeWidth={1.75} className="shrink-0 text-muted" />
+                          <span>{eq}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line/60 pt-3 text-xs text-muted">
+                    <span>
+                      Intensidad: <strong className="font-medium text-bone">{d.intensidad}</strong>
+                    </span>
+                    <span>
+                      Acceso: <strong className="font-medium text-bone">{d.modalidad}</strong>
+                    </span>
                   </div>
                 </div>
               )}
@@ -222,48 +288,60 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
         })}
       </ul>
 
-      {/* Panel derecho exclusivo en desktop: descripción, intensidad, duración y tags viven ÚNICAMENTE aquí */}
+      {/* Panel derecho exclusivo en desktop: Ficha técnica editorial (sin repetir la imagen con el logo) */}
       {actual && (
-        <aside className="hidden flex-col justify-between bg-surface p-7 lg:col-span-6 lg:flex">
-          <div className="relative aspect-[16/9] overflow-hidden bg-ink">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/zentra-cover.jpg"
-              alt={actual.nombre}
-              className="h-full w-full object-cover opacity-60 saturate-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent" />
-            <span className="font-mono absolute bottom-3 left-4 text-sm font-semibold text-bone">
+        <aside className="relative hidden flex-col justify-between overflow-hidden bg-surface p-8 lg:col-span-7 lg:flex">
+          {/* Cabecera técnica de la zona */}
+          <div className="flex items-start justify-between border-b border-line/70 pb-6">
+            <div>
+              <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
+                {actual.enfoque}
+              </span>
+              <h3 className="section-title mt-3 text-2xl sm:text-3xl">{actual.nombre}</h3>
+            </div>
+            <span className="font-mono text-4xl font-bold leading-none text-bone/20 select-none">
               {actual.num}
             </span>
           </div>
 
-          <div className="mt-6 space-y-3">
-            <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
-              {actual.enfoque}
-            </span>
-            <h3 className="section-title text-2xl">{actual.nombre}</h3>
-            <p className="text-sm leading-relaxed text-muted">{actual.detalle}</p>
+          {/* Descripción principal */}
+          <p className="mt-6 text-base leading-relaxed text-muted">{actual.detalle}</p>
+
+          {/* Estaciones y máquinas de la zona */}
+          <div className="mt-7 bg-ink/60 p-5">
+            <p className="text-xs font-medium text-muted">Estaciones y equipamiento disponible</p>
+            <ul className="mt-3 grid grid-cols-2 gap-3 text-sm text-bone">
+              {actual.equipamiento.map((eq) => (
+                <li key={eq} className="flex items-center gap-2.5">
+                  <Check size={15} strokeWidth={1.75} className="shrink-0 text-muted" />
+                  <span>{eq}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-line/70 pt-4 text-xs">
+          {/* Metadatos reales: Intensidad + Tiempo libre (sin límite de duración ni horarios fijos) */}
+          <dl className="mt-7 grid grid-cols-2 gap-6 border-t border-line/70 pt-5 text-xs">
             <div>
-              <dt className="text-muted">Intensidad</dt>
-              <dd className="mt-0.5 font-semibold text-bone">{actual.intensidad}</dd>
+              <dt className="text-muted">Intensidad de trabajo</dt>
+              <dd className="mt-1 text-sm font-semibold text-bone">{actual.intensidad}</dd>
             </div>
             <div>
-              <dt className="text-muted">Duración de sesión</dt>
-              <dd className="mt-0.5 font-semibold text-bone">{actual.duracion}</dd>
+              <dt className="text-muted">Modalidad y permanencia</dt>
+              <dd className="mt-1 text-sm font-semibold text-bone">{actual.modalidad}</dd>
             </div>
           </dl>
 
-          <a
-            href="#horarios"
-            onClick={(e) => irASeccion(e, '#horarios')}
-            className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-bone hover:underline"
-          >
-            Ver horarios de sala <ArrowUpRight size={15} strokeWidth={1.5} />
-          </a>
+          <div className="mt-6 flex items-center justify-between border-t border-line/50 pt-4 text-xs text-muted">
+            <span>Incluida en todos los planes y pases diarios</span>
+            <a
+              href="#planes"
+              onClick={(e) => irASeccion(e, '#planes')}
+              className="inline-flex items-center gap-1 font-medium text-bone hover:underline"
+            >
+              Ver planes compatibles <ArrowUpRight size={14} strokeWidth={1.5} />
+            </a>
+          </div>
         </aside>
       )}
     </div>
@@ -330,7 +408,7 @@ export function LeadContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 bg-surface p-6 sm:p-8">
+    <form onSubmit={onSubmit} className="space-y-4 bg-surface p-5 sm:p-8">
       <input
         type="text"
         name="empresa"
@@ -391,7 +469,7 @@ export function LeadContactForm() {
 
         <div>
           <label htmlFor="lead-horario" className="label">
-            Turno de interés
+            Turno en el que sueles entrenar
           </label>
           <select
             id="lead-horario"
