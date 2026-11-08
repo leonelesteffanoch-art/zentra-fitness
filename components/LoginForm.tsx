@@ -8,14 +8,16 @@ import { useAuth } from '@/components/AuthProvider';
 
 export function LoginForm() {
   const router = useRouter();
-  const { perfil, loading } = useAuth();
+  const { perfil, loading, setPerfilDirecto } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
-    if (!loading && perfil) router.replace('/recepcion');
+    if (!loading && perfil) {
+      router.replace('/recepcion');
+    }
   }, [loading, perfil, router]);
 
   async function onSubmit(e: FormEvent) {
@@ -23,10 +25,14 @@ export function LoginForm() {
     setError(null);
     setEnviando(true);
     try {
-      await iniciarSesion(email.trim(), password);
-      // La redirección la hace el efecto de arriba cuando AuthProvider carga el perfil.
+      const perfilActivo = await iniciarSesion(email.trim(), password);
+      setPerfilDirecto(perfilActivo);
+      setEmail('');
+      setPassword('');
+      router.replace('/recepcion');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');
+    } finally {
       setEnviando(false);
     }
   }
@@ -34,7 +40,9 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div>
-        <label htmlFor="email" className="label">Correo</label>
+        <label htmlFor="email" className="label">
+          Correo
+        </label>
         <input
           id="email"
           type="email"
@@ -47,7 +55,9 @@ export function LoginForm() {
         />
       </div>
       <div>
-        <label htmlFor="password" className="label">Contraseña</label>
+        <label htmlFor="password" className="label">
+          Contraseña
+        </label>
         <input
           id="password"
           type="password"
@@ -65,7 +75,11 @@ export function LoginForm() {
         </p>
       )}
 
-      <button type="submit" disabled={enviando || !email || !password} className="btn btn-primary w-full">
+      <button
+        type="submit"
+        disabled={enviando || !email || !password}
+        className="btn btn-primary w-full"
+      >
         {enviando && <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />}
         Ingresar
       </button>

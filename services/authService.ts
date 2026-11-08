@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import type { Perfil } from '@/types';
 
 /** Inicia sesión y verifica que el usuario tenga un perfil de staff activo. */
-export async function iniciarSesion(email: string, password: string) {
+export async function iniciarSesion(email: string, password: string): Promise<Perfil> {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     throw new Error(
@@ -13,13 +13,18 @@ export async function iniciarSesion(email: string, password: string) {
   }
   const perfil = await obtenerPerfil(data.user.id);
   if (!perfil) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     throw new Error('Tu usuario no tiene un perfil activo. Contacta al administrador.');
   }
+  return perfil;
 }
 
 export async function cerrarSesion() {
-  await supabase.auth.signOut();
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    await supabase.auth.signOut({ scope: 'local' });
+  }
 }
 
 /** Perfil del staff (rol y gimnasio) del usuario autenticado. */

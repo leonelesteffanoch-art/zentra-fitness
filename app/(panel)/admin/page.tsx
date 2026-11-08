@@ -6,6 +6,7 @@ import { CheckCircle2, Download, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { CatalogManager } from '@/components/CatalogManager';
+import { StaffManager } from '@/components/StaffManager';
 import {
   listarProductos,
   listarTurnosHistorial,
@@ -404,6 +405,19 @@ export default function AdminPage() {
           </table>
         </div>
       </section>
+
+      {/* 4. Personal y permisos + Limpieza de datos de prueba */}
+      {perfil && (
+        <StaffManager
+          adminId={perfil.id}
+          onSuccess={(texto) => setAviso({ tipo: 'ok', texto })}
+          onError={(texto) => setAviso({ tipo: 'error', texto })}
+          onResetComplete={async () => {
+            await consultarPeriodo(desde, hasta);
+            await recargarCatalogos();
+          }}
+        />
+      )}
     </div>
   );
 }
