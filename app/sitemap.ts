@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zentrafitness.pe';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://zentrafitness.vercel.app';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
