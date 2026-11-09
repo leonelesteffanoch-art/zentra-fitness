@@ -1,20 +1,23 @@
 'use client';
 
-import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
-  ArrowUpRight,
   Check,
   CheckCircle2,
   ChevronDown,
   Loader2,
-  Lock,
   Menu,
   UserCheck,
   X,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
-import { soles } from '@/lib/formato';
+
+/** Formatea montos para la landing en soles sin decimales innecesarios y con fuente sans tabular. */
+export function formatoPrecioLanding(n: number): string {
+  const redondeado = Math.round(n * 100) / 100;
+  return Number.isInteger(redondeado) ? `S/ ${redondeado}` : `S/ ${redondeado.toFixed(2)}`;
+}
 
 /** Desplazamiento suave garantizado hacia cualquier sección #id de la landing. */
 export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after?: () => void) {
@@ -27,7 +30,58 @@ export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after
   window.history.pushState(null, '', href);
 }
 
-// ---------- 1. Header con acceso claro para Socios (/consulta) y Trabajadores/Admin (/login) ----------
+/** Selecciona un plan en el formulario de inscripción y desplaza suavemente hacia #contacto. */
+function elegirPlanEIrAContacto(planLabel: string) {
+  window.dispatchEvent(new CustomEvent('zentra:select-plan', { detail: planLabel }));
+  const destino = document.getElementById('contacto');
+  if (destino) {
+    destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.pushState(null, '', '#contacto');
+    window.setTimeout(() => {
+      const inputNombre = document.getElementById('lead-nombre') as HTMLInputElement | null;
+      inputNombre?.focus({ preventScroll: true });
+    }, 450);
+  }
+}
+
+// ---------- 0. Micro-interacción: Reveal suave al hacer scroll (1 sola vez) ----------
+
+export function RevealOnScroll({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={`${visible ? 'reveal-visible' : 'reveal-hidden'} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// ---------- 1. Header: Zonas, Planes, Horarios, Ubicación + Mi DNI + Inscríbete hoy ----------
 
 const LINKS_NAV = [
   { href: '#disciplinas', label: 'Zonas' },
@@ -67,61 +121,44 @@ export function LandingHeader() {
                 key={item.href}
                 href={item.href}
                 onClick={(e) => irASeccion(e, item.href)}
-                className="text-sm font-medium text-muted transition-colors hover:text-bone"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-muted transition-colors hover:text-bone"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          {/* Acciones en desktop: Consultar DNI + Panel staff + único botón primario */}
-          <div className="hidden items-center gap-5 lg:flex">
+          {/* Acciones en desktop: Mi DNI + único botón primario */}
+          <div className="hidden items-center gap-6 lg:flex">
             <Link
               href="/consulta"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-bone"
+              className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-bone"
             >
               <UserCheck size={15} strokeWidth={1.5} />
-              Consultar mi DNI
-            </Link>
-            <span className="h-4 w-px bg-line" aria-hidden />
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-bone"
-              title="Acceso para recepción y administración"
-            >
-              <Lock size={14} strokeWidth={1.5} />
-              Panel staff
+              Mi DNI
             </Link>
             <a
               href="#contacto"
               onClick={(e) => irASeccion(e, '#contacto')}
-              className="btn btn-primary !min-h-10 !px-5"
+              className="btn btn-primary !px-5"
             >
               Inscríbete hoy
             </a>
           </div>
 
-          {/* Acciones rápidas en móvil: link directo a Staff + botón de menú */}
+          {/* Acciones en móvil: Mi DNI + botón de menú */}
           <div className="flex items-center gap-1.5 lg:hidden">
             <Link
               href="/consulta"
-              className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:text-bone"
+              className="inline-flex min-h-11 items-center gap-1.5 px-3 text-xs font-medium text-muted transition-colors hover:text-bone"
             >
-              <UserCheck size={14} strokeWidth={1.5} />
+              <UserCheck size={15} strokeWidth={1.5} />
               <span>Mi DNI</span>
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:text-bone"
-              aria-label="Panel para trabajadores y administradores"
-            >
-              <Lock size={13} strokeWidth={1.5} />
-              <span>Staff</span>
             </Link>
             <button
               type="button"
               onClick={() => setMenuAbierto(true)}
-              className="btn btn-ghost !min-h-10 !px-2.5"
+              className="btn btn-ghost !min-h-11 !min-w-11 !px-2.5"
               aria-label="Abrir menú"
             >
               <Menu size={20} strokeWidth={1.5} />
@@ -143,7 +180,7 @@ export function LandingHeader() {
             <button
               type="button"
               onClick={() => setMenuAbierto(false)}
-              className="btn btn-ghost !min-h-10 !px-3"
+              className="btn btn-ghost !min-h-11 !min-w-11 !px-3"
               aria-label="Cerrar menú"
             >
               <X size={20} strokeWidth={1.5} />
@@ -156,7 +193,7 @@ export function LandingHeader() {
                 key={item.href}
                 href={item.href}
                 onClick={(e) => irASeccion(e, item.href, () => setMenuAbierto(false))}
-                className="flex items-baseline justify-between py-4 text-xl font-semibold text-bone"
+                className="flex min-h-14 items-baseline justify-between py-4 text-xl font-semibold text-bone"
               >
                 <span>{item.label}</span>
                 <span className="font-mono text-xs text-muted">0{idx + 1}</span>
@@ -165,24 +202,14 @@ export function LandingHeader() {
           </nav>
 
           <div className="space-y-3 border-t border-line/70 pt-5">
-            <div className="grid grid-cols-2 gap-2.5">
-              <Link
-                href="/consulta"
-                onClick={() => setMenuAbierto(false)}
-                className="flex items-center justify-center gap-2 bg-surface px-3 py-3 text-xs font-medium text-bone transition-colors hover:bg-surface-2"
-              >
-                <UserCheck size={15} strokeWidth={1.5} className="text-muted" />
-                Consultar mi DNI
-              </Link>
-              <Link
-                href="/login"
-                onClick={() => setMenuAbierto(false)}
-                className="flex items-center justify-center gap-2 bg-surface px-3 py-3 text-xs font-medium text-bone transition-colors hover:bg-surface-2"
-              >
-                <Lock size={14} strokeWidth={1.5} className="text-muted" />
-                Panel staff / Admin
-              </Link>
-            </div>
+            <Link
+              href="/consulta"
+              onClick={() => setMenuAbierto(false)}
+              className="flex min-h-11 items-center justify-center gap-2 bg-surface px-4 py-3 text-sm font-medium text-bone transition-colors hover:bg-surface-2"
+            >
+              <UserCheck size={16} strokeWidth={1.5} className="text-muted" />
+              Mi DNI
+            </Link>
             <a
               href="#contacto"
               onClick={(e) => irASeccion(e, '#contacto', () => setMenuAbierto(false))}
@@ -197,7 +224,69 @@ export function LandingHeader() {
   );
 }
 
-// ---------- 2. Zonas de entrenamiento: ficha técnica editorial ----------
+// ---------- 2. Pieza visual del Hero con fallback editorial elegante ----------
+
+export function HeroVisualCard() {
+  const [srcActual, setSrcActual] = useState<string>('/brand/hero.jpg');
+  const [mostrarImg, setMostrarImg] = useState(false);
+
+  return (
+    <div className="relative overflow-hidden border border-line/80 bg-surface">
+      <div className="bg-grain relative aspect-[16/10] sm:aspect-[4/3] lg:aspect-[4/4.5]">
+        {/* Composición atmosférica base: luce completa aunque no exista fotografía */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,_rgba(255,194,26,0.12),_transparent_60%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 flex items-center justify-center p-8 select-none"
+        >
+          <Logo className="w-3/4 max-w-xs opacity-20" />
+        </div>
+
+        {/* Fotografía con ruta lista (/brand/hero.jpg -> fallback /brand/zentra-cover.jpg) */}
+        {srcActual && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={srcActual}
+            alt="Sala de entrenamiento de Zentra Fitness en Villa Estela, Ancón"
+            onLoad={() => setMostrarImg(true)}
+            onError={() => {
+              if (srcActual === '/brand/hero.jpg') {
+                setSrcActual('/brand/zentra-cover.jpg');
+              } else {
+                setSrcActual('');
+                setMostrarImg(false);
+              }
+            }}
+            className={`h-full w-full object-cover saturate-50 transition-opacity duration-500 ${
+              mostrarImg ? 'opacity-80' : 'opacity-0'
+            }`}
+          />
+        )}
+
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
+
+        {/* Diferencial único del DNI en tarjeta inferior */}
+        <div className="absolute bottom-4 left-4 right-4 border border-line/80 bg-ink/90 p-4 backdrop-blur-xs sm:bottom-5 sm:left-5 sm:right-5">
+          <div className="flex items-center justify-between text-xs text-muted">
+            <span className="inline-flex items-center gap-1.5 font-medium text-bone">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+              Portal de socio
+            </span>
+            <span className="font-mono text-[11px] text-muted">DNI ACTIVO</span>
+          </div>
+          <p className="mt-1.5 text-sm font-medium text-bone">
+            Consulta tus días y tu vencimiento con tu DNI.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- 3. Zonas de entrenamiento: lista limpia a la izquierda + detalle a la derecha ----------
 
 export interface DisciplinaItem {
   num: string;
@@ -205,8 +294,32 @@ export interface DisciplinaItem {
   enfoque: string;
   detalle: string;
   intensidad: string;
-  modalidad: string;
   equipamiento: string[];
+  imagen?: string;
+}
+
+function ZonaImageSlot({ src, alt }: { src?: string; alt: string }) {
+  const [cargada, setCargada] = useState(false);
+  const [fallo, setFallo] = useState(false);
+
+  if (!src || fallo) return null;
+
+  return (
+    <div
+      className={`overflow-hidden transition-all duration-300 ${
+        cargada ? 'mb-6 aspect-[21/9] border border-line/70 bg-ink' : 'h-0'
+      }`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setCargada(true)}
+        onError={() => setFallo(true)}
+        className="h-full w-full object-cover opacity-85 saturate-75"
+      />
+    </div>
+  );
 }
 
 export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
@@ -226,7 +339,9 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                 onFocus={() => setActiva(idx)}
                 onClick={() => setActiva(idx)}
                 aria-expanded={abierta}
-                className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors sm:py-4.5"
+                className={`flex min-h-14 w-full items-center justify-between gap-4 px-2 py-4 text-left transition-colors sm:px-3 ${
+                  abierta ? 'bg-surface/60' : 'hover:bg-surface/30'
+                }`}
               >
                 <div className="flex items-baseline gap-3.5 sm:gap-4">
                   <span
@@ -253,15 +368,16 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                 />
               </button>
 
+              {/* En móvil: acordeón bajo la fila */}
               {abierta && (
-                <div className="space-y-4 pb-5 pl-7 pr-1 text-sm lg:hidden">
+                <div className="space-y-4 px-3 pb-5 pt-2 text-sm lg:hidden">
                   <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-muted">
                     {d.enfoque}
                   </span>
                   <p className="leading-relaxed text-bone/90">{d.detalle}</p>
 
                   <div className="space-y-1.5 pt-1">
-                    <p className="text-xs font-medium text-muted">Equipamiento en zona</p>
+                    <p className="text-xs font-medium text-muted">Equipamiento</p>
                     <ul className="grid grid-cols-1 gap-1.5 text-xs text-bone sm:grid-cols-2">
                       {d.equipamiento.map((eq) => (
                         <li key={eq} className="flex items-center gap-2">
@@ -272,13 +388,8 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                     </ul>
                   </div>
 
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line/60 pt-3 text-xs text-muted">
-                    <span>
-                      Intensidad: <strong className="font-medium text-bone">{d.intensidad}</strong>
-                    </span>
-                    <span>
-                      Acceso: <strong className="font-medium text-bone">{d.modalidad}</strong>
-                    </span>
+                  <div className="border-t border-line/60 pt-3 text-xs text-muted">
+                    Intensidad: <strong className="font-medium text-bone">{d.intensidad}</strong>
                   </div>
                 </div>
               )}
@@ -287,8 +398,11 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
         })}
       </ul>
 
+      {/* En desktop: detalle solo en el panel derecho */}
       {actual && (
-        <aside className="relative hidden flex-col justify-between overflow-hidden bg-surface p-8 lg:col-span-7 lg:flex">
+        <aside className="bg-grain relative hidden flex-col justify-between overflow-hidden border border-line/80 bg-surface p-8 lg:col-span-7 lg:flex">
+          <ZonaImageSlot key={actual.num} src={actual.imagen} alt={actual.nombre} />
+
           <div className="flex items-start justify-between border-b border-line/70 pb-6">
             <div>
               <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
@@ -296,15 +410,15 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
               </span>
               <h3 className="section-title mt-3 text-2xl sm:text-3xl">{actual.nombre}</h3>
             </div>
-            <span className="font-mono text-4xl font-bold leading-none text-bone/20 select-none">
+            <span className="font-mono text-4xl font-bold leading-none text-bone/15 select-none">
               {actual.num}
             </span>
           </div>
 
           <p className="mt-6 text-base leading-relaxed text-muted">{actual.detalle}</p>
 
-          <div className="mt-7 bg-ink/60 p-5">
-            <p className="text-xs font-medium text-muted">Estaciones y equipamiento disponible</p>
+          <div className="mt-7 border border-line/60 bg-ink/60 p-5">
+            <p className="text-xs font-medium text-muted">Equipamiento</p>
             <ul className="mt-3 grid grid-cols-2 gap-3 text-sm text-bone">
               {actual.equipamiento.map((eq) => (
                 <li key={eq} className="flex items-center gap-2.5">
@@ -315,26 +429,9 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
             </ul>
           </div>
 
-          <dl className="mt-7 grid grid-cols-2 gap-6 border-t border-line/70 pt-5 text-xs">
-            <div>
-              <dt className="text-muted">Intensidad de trabajo</dt>
-              <dd className="mt-1 text-sm font-semibold text-bone">{actual.intensidad}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Modalidad y permanencia</dt>
-              <dd className="mt-1 text-sm font-semibold text-bone">{actual.modalidad}</dd>
-            </div>
-          </dl>
-
-          <div className="mt-6 flex items-center justify-between border-t border-line/50 pt-4 text-xs text-muted">
-            <span>1 ingreso por día incluido en todos los planes y pases</span>
-            <a
-              href="#planes"
-              onClick={(e) => irASeccion(e, '#planes')}
-              className="inline-flex items-center gap-1 font-medium text-bone hover:underline"
-            >
-              Ver planes de membresía <ArrowUpRight size={14} strokeWidth={1.5} />
-            </a>
+          <div className="mt-7 flex items-center justify-between border-t border-line/70 pt-5 text-xs">
+            <span className="text-muted">Intensidad</span>
+            <span className="text-sm font-semibold text-bone">{actual.intensidad}</span>
           </div>
         </aside>
       )}
@@ -342,7 +439,7 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
   );
 }
 
-// ---------- 3. Sección de Planes Simplificada (Toggle Diario / Interdiario + 3 Tarjetas + Pases) ----------
+// ---------- 4. Planes: Toggle Diario / Interdiario + 3 tarjetas de datos + Pases ----------
 
 export interface PlanLandingItem {
   id: string;
@@ -352,13 +449,28 @@ export interface PlanLandingItem {
   precio: number;
 }
 
+/**
+ * Busca el plan correspondiente en Supabase evitando que 'interdiario' coincida con 'diario'.
+ */
+export function buscarPlanPorModalidad(
+  planes: PlanLandingItem[],
+  duracionDias: number,
+  modalidad: 'diario' | 'interdiario'
+): PlanLandingItem | undefined {
+  return planes.find((p) => {
+    if (p.duracion_dias !== duracionDias) return false;
+    const nombre = p.nombre.toLowerCase();
+    if (modalidad === 'interdiario') {
+      return nombre.includes('interdiario');
+    }
+    return nombre.includes('diario') && !nombre.includes('interdiario');
+  });
+}
+
 export function PlanesPricingSection({ planes }: { planes: PlanLandingItem[] }) {
   const [modalidad, setModalidad] = useState<'diario' | 'interdiario'>('diario');
 
-  // Buscar el plan para cada duración y modalidad
-  const plan1Mes = planes.find(
-    (p) => p.duracion_dias === 30 && p.nombre.toLowerCase().includes(modalidad)
-  ) ?? {
+  const plan1Mes = buscarPlanPorModalidad(planes, 30, modalidad) ?? {
     id: `m-30-${modalidad}`,
     nombre: modalidad === 'diario' ? 'Mensual (Diario)' : 'Mensual (Interdiario)',
     precio: modalidad === 'diario' ? 80 : 60,
@@ -366,9 +478,7 @@ export function PlanesPricingSection({ planes }: { planes: PlanLandingItem[] }) 
     descripcion: null,
   };
 
-  const plan2Meses = planes.find(
-    (p) => p.duracion_dias === 60 && p.nombre.toLowerCase().includes(modalidad)
-  ) ?? {
+  const plan2Meses = buscarPlanPorModalidad(planes, 60, modalidad) ?? {
     id: `m-60-${modalidad}`,
     nombre: modalidad === 'diario' ? '2 meses (Diario)' : '2 meses (Interdiario)',
     precio: modalidad === 'diario' ? 140 : 100,
@@ -376,9 +486,7 @@ export function PlanesPricingSection({ planes }: { planes: PlanLandingItem[] }) 
     descripcion: null,
   };
 
-  const plan3Meses = planes.find(
-    (p) => p.duracion_dias === 90 && p.nombre.toLowerCase().includes(modalidad)
-  ) ?? {
+  const plan3Meses = buscarPlanPorModalidad(planes, 90, modalidad) ?? {
     id: `m-90-${modalidad}`,
     nombre: modalidad === 'diario' ? '3 meses (Diario)' : '3 meses (Interdiario)',
     precio: modalidad === 'diario' ? 200 : 150,
@@ -386,230 +494,331 @@ export function PlanesPricingSection({ planes }: { planes: PlanLandingItem[] }) 
     descripcion: null,
   };
 
-  const planDia = planes.find((p) => p.duracion_dias === 1) ?? { precio: 10 };
-  const planSemana = planes.find((p) => p.duracion_dias === 7) ?? { precio: 25 };
+  const planDia = planes.find((p) => p.duracion_dias === 1) ?? {
+    id: 'por-dia',
+    nombre: 'Por día',
+    precio: 10,
+    duracion_dias: 1,
+    descripcion: null,
+  };
+
+  const planSemana = planes.find((p) => p.duracion_dias === 7) ?? {
+    id: 'semanal',
+    nombre: 'Semanal',
+    precio: 25,
+    duracion_dias: 7,
+    descripcion: null,
+  };
+
+  // Cálculo real de costo mensual y ahorro respecto al plan de 1 mes
+  const precioBaseMensual = plan1Mes.precio;
+  const alMes2 = Math.round(plan2Meses.precio / 2);
+  const ahorro2 = Math.max(0, precioBaseMensual * 2 - plan2Meses.precio);
+  const alMes3 = Math.round(plan3Meses.precio / 3);
+  const ahorro3 = Math.max(0, precioBaseMensual * 3 - plan3Meses.precio);
+
+  const etiquetaModalidad = modalidad === 'diario' ? 'Diario' : 'Interdiario';
 
   const tarjetas = [
     {
-      meses: '1 Mes',
-      nombre: plan1Mes.nombre,
+      id: '1-mes',
+      encabezado: '1 mes · 30 días',
       precio: plan1Mes.precio,
-      duracion: 30,
-      subtitulo: 'Plan base mensual',
-      tag: modalidad === 'diario' ? 'Más elegido' : 'Plan inicial',
-      destacado: modalidad === 'diario',
-      beneficios: [
-        '30 días calendario de vigencia',
-        modalidad === 'diario'
-          ? 'Entrenamiento de lunes a sábado (1 ingreso/día)'
-          : 'Asistencia interdiaria (3 días por semana, 1 ingreso/día)',
-        'Acceso total a musculación, peso libre y cardio',
-        'Asesoría de entrenador en turnos mañana y noche',
-        'Sin costo de matrícula',
-      ],
+      detalleAhorro: null as string | null,
+      destacado: true,
+      tag: 'Más elegido' as string | null,
+      valorFormulario: `1 mes (${etiquetaModalidad}) - ${formatoPrecioLanding(plan1Mes.precio)}`,
     },
     {
-      meses: '2 Meses',
-      nombre: plan2Meses.nombre,
+      id: '2-meses',
+      encabezado: '2 meses · 60 días',
       precio: plan2Meses.precio,
-      duracion: 60,
-      subtitulo:
-        modalidad === 'diario'
-          ? `${soles(70)} / mes · Ahorras ${soles(20)}`
-          : `${soles(50)} / mes · Ahorras ${soles(20)}`,
-      tag: 'Ahorro promocional',
+      detalleAhorro: `${formatoPrecioLanding(alMes2)} al mes · ahorras ${formatoPrecioLanding(ahorro2)}`,
       destacado: false,
-      beneficios: [
-        '60 días calendario de vigencia',
-        modalidad === 'diario'
-          ? 'Entrenamiento continuo lunes a sábado (1 ingreso/día)'
-          : 'Asistencia interdiaria (3 días por semana, 1 ingreso/día)',
-        'Tarifa reducida con ahorro directo por mes',
-        'Acceso total a todas las zonas y máquinas',
-        'Sin costo de matrícula',
-      ],
+      tag: null as string | null,
+      valorFormulario: `2 meses (${etiquetaModalidad}) - ${formatoPrecioLanding(plan2Meses.precio)}`,
     },
     {
-      meses: '3 Meses',
-      nombre: plan3Meses.nombre,
+      id: '3-meses',
+      encabezado: '3 meses · 90 días',
       precio: plan3Meses.precio,
-      duracion: 90,
-      subtitulo:
-        modalidad === 'diario'
-          ? `${soles(66.7)} / mes · Mayor ahorro`
-          : `${soles(50)} / mes · 90 días continuos`,
-      tag: 'Mejor tarifa',
-      destacado: modalidad === 'interdiario',
-      beneficios: [
-        '90 días calendario de vigencia',
-        modalidad === 'diario'
-          ? 'Entrenamiento diario con el costo mensual más bajo'
-          : 'Asistencia interdiaria (3 días por semana, 1 ingreso/día)',
-        'Mayor compromiso y progresión técnica en sala',
-        'Acceso total a todas las zonas del club',
-        'Sin costo de matrícula',
-      ],
+      detalleAhorro: `${formatoPrecioLanding(alMes3)} al mes · ahorras ${formatoPrecioLanding(ahorro3)}`,
+      destacado: false,
+      tag: null as string | null,
+      valorFormulario: `3 meses (${etiquetaModalidad}) - ${formatoPrecioLanding(plan3Meses.precio)}`,
     },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Selector / Toggle segmentado entre Diario e Interdiario */}
-      <div className="flex flex-col items-center">
-        <div className="inline-flex rounded-xs border border-line bg-surface p-1">
+      {/* Toggle Diario | Interdiario */}
+      <div className="flex flex-col items-start sm:items-center">
+        <div
+          role="group"
+          aria-label="Modalidad de entrenamiento"
+          className="inline-grid w-full grid-cols-2 rounded-xs border border-line bg-ink p-1 sm:w-auto"
+        >
           <button
             type="button"
+            aria-pressed={modalidad === 'diario'}
             onClick={() => setModalidad('diario')}
-            className={`rounded-xs px-5 py-2 text-xs font-semibold transition-all sm:text-sm ${
+            className={`min-h-11 rounded-xs px-6 text-sm font-semibold transition-all duration-200 ${
               modalidad === 'diario'
-                ? 'bg-brand text-brand-ink shadow-xs'
+                ? 'bg-brand text-brand-ink'
                 : 'text-muted hover:text-bone'
             }`}
           >
-            Entrenamiento Diario (Lunes a Sábado)
+            Diario
           </button>
           <button
             type="button"
+            aria-pressed={modalidad === 'interdiario'}
             onClick={() => setModalidad('interdiario')}
-            className={`rounded-xs px-5 py-2 text-xs font-semibold transition-all sm:text-sm ${
+            className={`min-h-11 rounded-xs px-6 text-sm font-semibold transition-all duration-200 ${
               modalidad === 'interdiario'
-                ? 'bg-brand text-brand-ink shadow-xs'
+                ? 'bg-brand text-brand-ink'
                 : 'text-muted hover:text-bone'
             }`}
           >
-            Entrenamiento Interdiario (3 días/sem)
+            Interdiario
           </button>
         </div>
 
-        <p className="mt-3 text-center text-xs text-muted">
+        <p className="mt-3 text-sm text-muted">
           {modalidad === 'diario'
-            ? 'Para quienes asisten de lunes a sábado · 1 ingreso por día a todas las salas y máquinas.'
-            : 'Asistencia dejando un día (3 veces por semana) · 1 ingreso por día asistido.'}
+            ? 'Lunes a sábado, un ingreso por día.'
+            : '3 veces por semana, día por medio.'}
         </p>
       </div>
 
-      {/* Exactamente 3 tarjetas limpias y legibles */}
-      <div className="grid gap-6 md:grid-cols-3">
+      {/* 3 tarjetas limpias, solo datos */}
+      <div className="grid gap-5 md:grid-cols-3">
         {tarjetas.map((t) => (
           <article
-            key={t.meses}
-            className={`flex flex-col justify-between p-6 sm:p-7 ${
-              t.destacado ? 'bg-ink ring-1 ring-brand' : 'bg-ink/70'
+            key={`${modalidad}-${t.id}`}
+            className={`flex flex-col justify-between border p-6 transition-colors duration-200 sm:p-7 ${
+              t.destacado
+                ? 'border-brand/70 bg-ink'
+                : 'border-line/80 bg-ink/70 hover:border-muted/60'
             }`}
           >
             <div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs text-muted">{t.duracion} días</span>
-                <span
-                  className={`rounded-xs px-2 py-0.5 text-xs font-semibold ${
-                    t.destacado ? 'bg-brand text-brand-ink' : 'bg-surface-2 text-bone'
-                  }`}
-                >
-                  {t.tag}
-                </span>
+              <div className="flex min-h-6 items-center justify-between gap-2">
+                <h3 className="text-sm font-medium text-muted">{t.encabezado}</h3>
+                {t.tag && (
+                  <span className="rounded-xs bg-brand px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
+                    {t.tag}
+                  </span>
+                )}
               </div>
 
-              <h3 className="section-title mt-3 text-xl">{t.meses}</h3>
-
-              <div className="mt-4 border-y border-line/70 py-4 tabular-nums">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-bone">{soles(t.precio)}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted">{t.subtitulo}</p>
+              <div className="mt-5 tabular-nums">
+                <p className="text-4xl font-bold tracking-tight text-bone sm:text-5xl">
+                  {formatoPrecioLanding(t.precio)}
+                </p>
+                <p className="mt-2 min-h-5 text-sm text-muted">
+                  {t.detalleAhorro ?? '\u00A0'}
+                </p>
               </div>
-
-              <ul className="mt-5 space-y-2.5 text-xs text-bone">
-                {t.beneficios.map((b) => (
-                  <li key={b} className="flex items-start gap-2">
-                    <Check size={14} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted" />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
-            <a
-              href="#contacto"
-              onClick={(e) => irASeccion(e, '#contacto')}
+            <button
+              type="button"
+              onClick={() => elegirPlanEIrAContacto(t.valorFormulario)}
               className={`btn mt-8 w-full ${t.destacado ? 'btn-primary' : 'btn-secondary'}`}
             >
-              Elegir {t.meses} ({modalidad === 'diario' ? 'Diario' : 'Interdiario'})
-            </a>
+              Elegir plan
+            </button>
           </article>
         ))}
       </div>
 
-      {/* Franja compacta para Pases Cortos (Por día y Semanal) */}
-      <div className="flex flex-col items-start justify-between gap-4 border border-line/70 bg-surface p-5 sm:flex-row sm:items-center sm:p-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-brand">PASES FLEXIBLES</span>
-            <span className="text-xs text-muted">· Para visitas sueltas o una semana de paso</span>
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
-            <p className="text-bone">
-              <strong className="font-medium text-bone">Pase por día:</strong>{' '}
-              <span className="font-bold text-bone tabular-nums">{soles(planDia.precio)}</span>{' '}
-              <span className="text-xs text-muted">(1 ingreso libre por el día)</span>
-            </p>
-            <p className="text-bone">
-              <strong className="font-medium text-bone">Pase semanal:</strong>{' '}
-              <span className="font-bold text-bone tabular-nums">{soles(planSemana.precio)}</span>{' '}
-              <span className="text-xs text-muted">(7 días continuos)</span>
-            </p>
-          </div>
+      {/* Única línea bajo las tarjetas */}
+      <p className="text-center text-sm text-muted">
+        30 · 60 · 90 días de corrido. Incluye las 6 zonas, asesoría en turno y control de
+        asistencia con tu DNI.
+      </p>
+
+      {/* Pases cortos */}
+      <div className="flex flex-col items-start justify-between gap-4 border border-line/80 bg-ink/70 p-5 sm:flex-row sm:items-center sm:p-6">
+        <div className="flex flex-col gap-1.5 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2">
+          <p className="text-bone tabular-nums">
+            <strong className="font-semibold">
+              Por día {formatoPrecioLanding(planDia.precio)}
+            </strong>{' '}
+            <span className="text-muted">· entra las veces que quieras ese día</span>
+          </p>
+          <p className="text-bone tabular-nums">
+            <strong className="font-semibold">
+              Semanal {formatoPrecioLanding(planSemana.precio)}
+            </strong>{' '}
+            <span className="text-muted">· 7 días seguidos</span>
+          </p>
         </div>
-        <a
-          href="#contacto"
-          onClick={(e) => irASeccion(e, '#contacto')}
-          className="btn btn-secondary shrink-0 !min-h-9 !px-4 text-xs"
+
+        <button
+          type="button"
+          onClick={() =>
+            elegirPlanEIrAContacto(`Por día - ${formatoPrecioLanding(planDia.precio)}`)
+          }
+          className="btn btn-secondary w-full shrink-0 sm:w-auto"
         >
           Pedir pase en recepción
-        </a>
+        </button>
       </div>
 
-      {/* Nota legal y operativa transparente */}
+      {/* Línea de métodos de pago */}
       <p className="text-center text-xs text-muted">
-        * Todos los planes incluyen 1 ingreso por día. Ningún plan incluye doble ingreso en el mismo
-        día (para volver a ingresar en la misma jornada aplica pase por día en recepción). Los
-        planes no cuentan con congelamiento.
+        Paga con efectivo, Yape, Plin o tarjeta.
       </p>
     </div>
   );
 }
 
-// ---------- 4. Formulario de Inscripción / Interesados ----------
+// ---------- 5. FAQ Corto (5 preguntas en acordeón) ----------
 
-export function LeadContactForm() {
+export interface FaqItem {
+  pregunta: string;
+  respuesta: ReactNode;
+}
+
+const PREGUNTAS_FAQ: FaqItem[] = [
+  {
+    pregunta: '¿Hay matrícula?',
+    respuesta: 'No, sin cobro de matrícula.',
+  },
+  {
+    pregunta: '¿Puedo entrar más de una vez al día?',
+    respuesta: 'Solo con el pase por día (S/ 10). Los planes permiten 1 ingreso por día.',
+  },
+  {
+    pregunta: '¿Cómo cuentan los días de mi plan?',
+    respuesta: 'De corrido, desde el día de inicio.',
+  },
+  {
+    pregunta: '¿Cómo sé cuándo vence mi plan?',
+    respuesta: (
+      <>
+        Ingresa tu DNI en{' '}
+        <Link href="/consulta" className="font-medium text-bone underline underline-offset-2">
+          Consultar mi DNI
+        </Link>{' '}
+        y verás tus días y tu vencimiento.
+      </>
+    ),
+  },
+  {
+    pregunta: '¿Cómo puedo pagar?',
+    respuesta: 'Efectivo, Yape, Plin o tarjeta en recepción.',
+  },
+];
+
+export function FaqAccordion() {
+  const [abierta, setAbierta] = useState<number | null>(0);
+
+  return (
+    <div className="divide-y divide-line/80 border-y border-line/80">
+      {PREGUNTAS_FAQ.map((item, idx) => {
+        const activa = abierta === idx;
+        return (
+          <div key={item.pregunta}>
+            <button
+              type="button"
+              onClick={() => setAbierta(activa ? null : idx)}
+              aria-expanded={activa}
+              className="flex min-h-14 w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:text-bone"
+            >
+              <span className="text-base font-semibold text-bone">{item.pregunta}</span>
+              <ChevronDown
+                size={18}
+                strokeWidth={1.5}
+                className={`shrink-0 text-muted transition-transform duration-200 ${
+                  activa ? 'rotate-180 text-bone' : ''
+                }`}
+              />
+            </button>
+            {activa && (
+              <div className="pb-5 pr-8 text-sm leading-relaxed text-muted">{item.respuesta}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------- 6. Formulario de Contacto / Inscripción ----------
+
+export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
+  const p1Diario = buscarPlanPorModalidad(planes, 30, 'diario')?.precio ?? 80;
+  const p1Inter = buscarPlanPorModalidad(planes, 30, 'interdiario')?.precio ?? 60;
+  const p2Diario = buscarPlanPorModalidad(planes, 60, 'diario')?.precio ?? 140;
+  const p2Inter = buscarPlanPorModalidad(planes, 60, 'interdiario')?.precio ?? 100;
+  const p3Diario = buscarPlanPorModalidad(planes, 90, 'diario')?.precio ?? 200;
+  const p3Inter = buscarPlanPorModalidad(planes, 90, 'interdiario')?.precio ?? 150;
+  const pSemana = planes.find((p) => p.duracion_dias === 7)?.precio ?? 25;
+  const pDia = planes.find((p) => p.duracion_dias === 1)?.precio ?? 10;
+
+  const opcionesPlanes = [
+    `1 mes (Diario) - ${formatoPrecioLanding(p1Diario)}`,
+    `1 mes (Interdiario) - ${formatoPrecioLanding(p1Inter)}`,
+    `2 meses (Diario) - ${formatoPrecioLanding(p2Diario)}`,
+    `2 meses (Interdiario) - ${formatoPrecioLanding(p2Inter)}`,
+    `3 meses (Diario) - ${formatoPrecioLanding(p3Diario)}`,
+    `3 meses (Interdiario) - ${formatoPrecioLanding(p3Inter)}`,
+    `Semanal - ${formatoPrecioLanding(pSemana)}`,
+    `Por día - ${formatoPrecioLanding(pDia)}`,
+  ];
+
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [objetivo, setObjetivo] = useState('Mensual (Diario) - S/ 80');
-  const [horario, setHorario] = useState('Mañana con entrenador (6:00 am - 11:00 am)');
+  const [objetivo, setObjetivo] = useState(opcionesPlanes[0]);
+  const [horario, setHorario] = useState('');
   const [empresa, setEmpresa] = useState(''); // Honeypot
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onSelectPlan = (ev: Event) => {
+      const custom = ev as CustomEvent<string>;
+      if (typeof custom.detail === 'string' && custom.detail) {
+        setObjetivo(custom.detail);
+        setExito(false);
+      }
+    };
+    window.addEventListener('zentra:select-plan', onSelectPlan);
+    return () => window.removeEventListener('zentra:select-plan', onSelectPlan);
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setEnviando(true);
     try {
+      const horarioEnvio = horario.trim() || 'Por definir';
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, telefono, objetivo, horario, empresa }),
+        body: JSON.stringify({
+          nombre,
+          telefono,
+          objetivo,
+          horario: horarioEnvio,
+          empresa,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'No se pudo enviar tu solicitud');
+        setError(data.error ?? 'No se pudo enviar tu solicitud. Revisa tus datos e intenta de nuevo.');
       } else {
         setExito(true);
         setNombre('');
         setTelefono('');
+        setHorario('');
       }
     } catch {
-      setError('Error de red. Intenta nuevamente.');
+      setError('Error de conexión. Verifica tu red e intenta nuevamente.');
     } finally {
       setEnviando(false);
     }
@@ -617,19 +826,21 @@ export function LeadContactForm() {
 
   if (exito) {
     return (
-      <div className="bg-surface p-6">
-        <div className="flex items-center gap-2 text-ok">
+      <div
+        role="status"
+        aria-live="polite"
+        className="border border-line/80 bg-ink p-6 sm:p-8"
+      >
+        <div className="flex items-center gap-2.5 text-ok">
           <CheckCircle2 size={20} strokeWidth={1.5} />
-          <p className="font-semibold">Solicitud registrada</p>
+          <p className="text-base font-semibold text-bone">
+            Listo, te escribimos por WhatsApp en breve.
+          </p>
         </div>
-        <p className="mt-2 text-sm text-muted">
-          Tus datos ya están en el panel de recepción de Zentra Fitness. Te escribiremos por
-          WhatsApp desde el <span className="font-mono text-bone">998 180 873</span> en breve.
-        </p>
         <button
           type="button"
           onClick={() => setExito(false)}
-          className="btn btn-secondary mt-4 !min-h-9"
+          className="btn btn-secondary mt-5"
         >
           Enviar otra consulta
         </button>
@@ -638,7 +849,7 @@ export function LeadContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 bg-surface p-5 sm:p-8">
+    <form onSubmit={onSubmit} className="space-y-4 border border-line/80 bg-ink p-5 sm:p-8">
       <input
         type="text"
         name="empresa"
@@ -647,11 +858,12 @@ export function LeadContactForm() {
         value={empresa}
         onChange={(e) => setEmpresa(e.target.value)}
         className="hidden"
+        aria-hidden="true"
       />
 
       <div>
         <label htmlFor="lead-nombre" className="label">
-          Nombre completo *
+          Nombre *
         </label>
         <input
           id="lead-nombre"
@@ -660,13 +872,13 @@ export function LeadContactForm() {
           placeholder="Tu nombre y apellido"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="field !bg-surface-2"
+          className="field !bg-surface"
         />
       </div>
 
       <div>
         <label htmlFor="lead-telefono" className="label">
-          Número de celular / WhatsApp *
+          Celular / WhatsApp *
         </label>
         <input
           id="lead-telefono"
@@ -675,7 +887,7 @@ export function LeadContactForm() {
           placeholder="Ej: 998 180 873"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
-          className="field !bg-surface-2 tabular-nums"
+          className="field !bg-surface tabular-nums"
         />
       </div>
 
@@ -688,33 +900,33 @@ export function LeadContactForm() {
             id="lead-objetivo"
             value={objetivo}
             onChange={(e) => setObjetivo(e.target.value)}
-            className="field !bg-surface-2"
+            className="field !bg-surface tabular-nums"
           >
-            <option>Mensual (Diario) - S/ 80</option>
-            <option>Mensual (Interdiario) - S/ 60</option>
-            <option>2 meses (Diario) - S/ 140</option>
-            <option>2 meses (Interdiario) - S/ 100</option>
-            <option>3 meses (Diario) - S/ 200</option>
-            <option>3 meses (Interdiario) - S/ 150</option>
-            <option>Semanal - S/ 25</option>
-            <option>Por día - S/ 10</option>
+            {opcionesPlanes.map((op) => (
+              <option key={op} value={op}>
+                {op}
+              </option>
+            ))}
           </select>
         </div>
 
         <div>
           <label htmlFor="lead-horario" className="label">
-            Horario en el que sueles entrenar
+            Horario en el que sueles entrenar <span className="text-muted/70">(opcional)</span>
           </label>
           <select
             id="lead-horario"
             value={horario}
             onChange={(e) => setHorario(e.target.value)}
-            className="field !bg-surface-2"
+            className="field !bg-surface"
           >
-            <option>Mañana con entrenador (6:00 am - 11:00 am)</option>
-            <option>Mediodía libre sin entrenador (11:00 am - 4:00 pm)</option>
-            <option>Tarde/Noche con entrenador (4:00 pm - 10:30 pm)</option>
-            <option>Fin de semana (Sábado / Domingo)</option>
+            <option value="">Sin preferencia</option>
+            <option value="Mañana (6:00 am - 11:00 am)">Mañana (6:00 am - 11:00 am)</option>
+            <option value="Mediodía (11:00 am - 4:00 pm)">Mediodía (11:00 am - 4:00 pm)</option>
+            <option value="Tarde / Noche (4:00 pm - 10:30 pm)">
+              Tarde / Noche (4:00 pm - 10:30 pm)
+            </option>
+            <option value="Fin de semana">Fin de semana</option>
           </select>
         </div>
       </div>
@@ -725,9 +937,9 @@ export function LeadContactForm() {
         </p>
       )}
 
-      <button type="submit" disabled={enviando} className="btn btn-primary w-full !min-h-11">
+      <button type="submit" disabled={enviando} className="btn btn-primary w-full">
         {enviando && <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />}
-        Solicitar inscripción
+        Separa tu inscripción
       </button>
     </form>
   );

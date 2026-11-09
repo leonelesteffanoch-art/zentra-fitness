@@ -633,4 +633,3 @@ where g.slug = 'zentra-fitness';
 -- Crear staff: 1) Authentication > Users > Add user (email/clave)
 --              2) insert into perfiles(id, gym_id, nombre, rol)
 --                 values ('<uuid auth>', (select id from gyms where slug = 'zentra-fitness'), 'Dueño', 'admin');
-

@@ -23,12 +23,43 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zentrafitness.vercel.app";
+const SITE_TITLE = "Zentra Fitness | Gimnasio en Villa Estela, Ancón · Desde S/ 10";
+const SITE_DESCRIPTION =
+  "Gimnasio en Villa Estela, Ancón. Peso libre, máquinas y entrenadores en sala. Sin matrícula, planes desde S/ 10.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Zentra Fitness",
+    default: SITE_TITLE,
     template: "%s · Zentra Fitness",
   },
-  description: "Zentra Fitness, gimnasio en Villa Estela Km. 39 - Ancón.",
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Zentra Fitness",
+    locale: "es_PE",
+    type: "website",
+    images: [
+      {
+        url: "/brand/zentra-cover.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Zentra Fitness · Gimnasio en Villa Estela, Ancón",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/brand/zentra-cover.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

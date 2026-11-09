@@ -6,13 +6,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: BASE_URL,
-      lastModified: new Date('2026-11-06'),
+      lastModified: new Date('2026-11-08'),
       changeFrequency: 'weekly',
       priority: 1,
     },
     {
       url: `${BASE_URL}/consulta`,
-      lastModified: new Date('2026-11-06'),
+      lastModified: new Date('2026-11-08'),
       changeFrequency: 'monthly',
       priority: 0.7,
     },
