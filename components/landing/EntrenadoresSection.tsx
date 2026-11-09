@@ -1,6 +1,7 @@
 'use client';
 
-import { Award, Clock, Dumbbell, ShieldCheck, Sparkles, User } from 'lucide-react';
+import { useState } from 'react';
+import { Award, Clock, Dumbbell, RotateCcw, RotateCw, ShieldCheck, Sparkles, User } from 'lucide-react';
 
 export interface EntrenadorData {
   nombre: string;
@@ -48,6 +49,15 @@ const ENTRENADORES: EntrenadorData[] = [
 ];
 
 export function EntrenadoresSection() {
+  const [volteados, setVolteados] = useState<Record<string, boolean>>({});
+
+  const toggleVoltear = (nombre: string) => {
+    setVolteados((prev) => ({
+      ...prev,
+      [nombre]: !prev[nombre],
+    }));
+  };
+
   return (
     <div className="mt-16 pt-12 border-t border-line/70">
       {/* Subtítulo y encabezado propio */}
@@ -62,225 +72,179 @@ export function EntrenadoresSection() {
             Acompañamiento profesional, corrección biomecánica y supervisión constante en cada turno.
           </p>
         </div>
-        <p className="text-xs text-muted/80 hidden md:block">
-          Pasa el cursor sobre la foto para ver experiencia
-        </p>
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-line/80 bg-surface px-3 py-1 text-xs font-medium text-muted">
+          <RotateCw size={13} className="text-brand animate-spin-slow" />
+          <span>Toca una tarjeta para voltearla y ver su info</span>
+        </div>
       </div>
 
-      {/* Grid de entrenadores con diseño adaptado a desktop (4:3 hover) y móvil (legible y fluido) */}
+      {/* Grid de entrenadores con efecto 3D flip al tocar o hacer clic */}
       <div className="grid gap-6 md:grid-cols-2">
-        {ENTRENADORES.map((coach) => (
-          <article
-            key={coach.nombre}
-            className="group overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-2xl transition-all duration-300 hover:border-brand/70 hover:shadow-[0_20px_50px_-20px_rgba(255,194,26,0.2)]"
-          >
-            {/* ========================================================
-                VISTA DESKTOP (md:block hidden): Formato 4:3 con hover interactivo
-               ======================================================== */}
-            <div className="relative hidden md:block aspect-[4/3] w-full overflow-hidden bg-ink cursor-pointer">
-              {coach.fotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={coach.fotoUrl}
-                  alt={`Entrenador ${coach.nombre} en Zentra Fitness`}
-                  className="h-full w-full object-cover saturate-75 transition-transform duration-700 group-hover:scale-105"
-                />
-              ) : (
-                <div
-                  className={`relative h-full w-full bg-gradient-to-b ${coach.fondoDegradado} flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden`}
-                >
-                  <div className="bg-gridlines absolute inset-0 opacity-40" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,_rgba(255,194,26,0.12),_transparent_60%)]" />
+        {ENTRENADORES.map((coach) => {
+          const estaVolteada = Boolean(volteados[coach.nombre]);
 
-                  <div className="relative z-10 flex h-28 w-28 items-center justify-center rounded-2xl border border-line/90 bg-surface-2/90 shadow-2xl backdrop-blur-md group-hover:border-brand/60 transition-colors">
-                    <User
-                      size={48}
-                      strokeWidth={1.5}
-                      className="text-bone/70 group-hover:text-brand transition-colors"
+          return (
+            <div
+              key={coach.nombre}
+              onClick={() => toggleVoltear(coach.nombre)}
+              className="perspective-1000 w-full aspect-[4/5] sm:aspect-[4/3] min-h-[430px] select-none cursor-pointer group"
+              role="button"
+              tabIndex={0}
+              aria-label={`Tarjeta de ${coach.nombre}. ${estaVolteada ? 'Mostrando información' : 'Toca para voltear y ver horarios y experiencia'}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleVoltear(coach.nombre);
+                }
+              }}
+            >
+              <div
+                className={`relative h-full w-full transform-style-3d transition-transform duration-700 ease-out ${
+                  estaVolteada ? 'rotate-y-180' : ''
+                }`}
+              >
+                {/* ========================================================
+                    CARA FRONTAL (FOTO + NOMBRE)
+                   ======================================================== */}
+                <div className="absolute inset-0 h-full w-full backface-hidden rounded-3xl border border-line/80 bg-surface shadow-2xl overflow-hidden flex flex-col justify-end transition-all duration-300 group-hover:border-brand/70 group-hover:shadow-[0_20px_50px_-20px_rgba(255,194,26,0.25)]">
+                  {/* Foto real o Placeholder atlético */}
+                  {coach.fotoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coach.fotoUrl}
+                      alt={`Entrenador ${coach.nombre} en Zentra Fitness`}
+                      className="absolute inset-0 h-full w-full object-cover saturate-75"
                     />
-                    <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-ink text-xs font-black shadow-md">
-                      ✓
-                    </span>
-                  </div>
+                  ) : (
+                    <div
+                      className={`absolute inset-0 h-full w-full bg-gradient-to-b ${coach.fondoDegradado} flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden`}
+                    >
+                      <div className="bg-gridlines absolute inset-0 opacity-40" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,_rgba(255,194,26,0.12),_transparent_60%)]" />
 
-                  <div className="relative z-10 mt-3 flex items-center gap-1.5 text-xs font-medium text-muted/90">
-                    <Dumbbell size={13} className="text-brand" />
-                    <span>Coach de planta</span>
-                  </div>
-                </div>
-              )}
+                      <div className="relative z-10 flex h-28 w-28 items-center justify-center rounded-2xl border border-line/90 bg-surface-2/90 shadow-2xl backdrop-blur-md">
+                        <User
+                          size={48}
+                          strokeWidth={1.5}
+                          className="text-bone/70 group-hover:text-brand transition-colors"
+                        />
+                        <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-ink text-xs font-black shadow-md">
+                          ✓
+                        </span>
+                      </div>
 
-              {/* Sombreado abajo oscuro */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/65 to-transparent transition-opacity duration-300" />
+                      <div className="relative z-10 mt-3 flex items-center gap-1.5 text-xs font-medium text-muted/90">
+                        <Dumbbell size={13} className="text-brand" />
+                        <span>Coach de planta</span>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Datos visibles en reposo */}
-              <div className="absolute bottom-0 inset-x-0 p-7 flex items-end justify-between gap-4 z-10 transition-transform duration-300 group-hover:-translate-y-2">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2/95 border border-line/80 px-3 py-1 text-xs font-semibold text-brand backdrop-blur-md shadow-md mb-2">
-                    <Clock size={12} strokeWidth={2} />
-                    {coach.turno}
-                  </span>
-                  <h4 className="font-[family-name:var(--font-archivo)] text-4xl font-black italic tracking-wide text-white drop-shadow-lg">
-                    {coach.nombre}
-                  </h4>
-                  <p className="text-sm font-medium text-bone/90 mt-0.5 drop-shadow">
-                    {coach.rol}
-                  </p>
-                </div>
+                  {/* Sombreado abajo oscuro para que el nombre resalte */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/65 to-transparent" />
 
-                <span className="rounded-full bg-ink/75 border border-line px-3 py-1 text-xs font-semibold text-muted/90 backdrop-blur-xs shrink-0 group-hover:hidden inline-block">
-                  + Info
-                </span>
-              </div>
-
-              {/* Capa de datos completos al pasar el mouse por encima */}
-              <div className="absolute inset-0 bg-ink/95 backdrop-blur-md p-7 flex flex-col justify-end z-20 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between border-b border-line/80 pb-3 gap-3">
+                  {/* Datos visibles en el frente */}
+                  <div className="relative z-10 p-6 sm:p-7 flex items-end justify-between gap-3">
                     <div>
-                      <span className="text-xs font-semibold text-brand uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2/95 border border-line/80 px-3 py-1 text-xs font-semibold text-brand backdrop-blur-md shadow-md mb-2">
+                        <Clock size={12} strokeWidth={2} />
                         {coach.turno}
                       </span>
-                      <h4 className="text-2xl font-black italic text-white tracking-wide">
+                      <h4 className="font-[family-name:var(--font-archivo)] text-3xl sm:text-4xl font-black italic tracking-wide text-white drop-shadow-lg">
                         {coach.nombre}
                       </h4>
+                      <p className="text-xs sm:text-sm font-medium text-bone/90 mt-0.5 drop-shadow">
+                        {coach.rol}
+                      </p>
                     </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      {coach.bloquesHorario.map((b) => (
+
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand text-brand-ink px-3 py-1.5 text-xs font-black shadow-xl shrink-0 transition-transform group-hover:scale-105">
+                      <RotateCw size={12} strokeWidth={2.5} />
+                      <span>Ver ficha</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ========================================================
+                    CARA TRASERA (INFORMACIÓN AL VOLTEARSE)
+                   ======================================================== */}
+                <div className="absolute inset-0 h-full w-full backface-hidden rotate-y-180 rounded-3xl border border-brand/60 bg-ink p-6 sm:p-7 shadow-2xl flex flex-col justify-between overflow-y-auto">
+                  <div className="space-y-4">
+                    {/* Encabezado del reverso */}
+                    <div className="flex items-start justify-between border-b border-line/80 pb-3 gap-3">
+                      <div>
+                        <span className="text-xs font-semibold text-brand uppercase tracking-wider">
+                          {coach.turno}
+                        </span>
+                        <h4 className="font-[family-name:var(--font-archivo)] text-2xl sm:text-3xl font-black italic text-white tracking-wide">
+                          {coach.nombre}
+                        </h4>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted hover:text-bone shrink-0 shadow-sm">
+                        <RotateCcw size={12} />
+                        <span>Volver</span>
+                      </span>
+                    </div>
+
+                    {/* Horarios de atención */}
+                    <div className="rounded-xl border border-line/70 bg-surface/80 p-3.5">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-2">
+                        <Clock size={13} className="text-brand" />
+                        <span>Horarios en planta</span>
+                      </p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {coach.bloquesHorario.map((b) => (
+                          <div
+                            key={b.rango}
+                            className="flex items-center justify-between rounded-lg border border-line/80 bg-surface-2 px-3 py-1.5 text-xs text-bone"
+                          >
+                            <span className="text-muted font-medium">{b.turno}</span>
+                            <span className="font-semibold tabular-nums text-bone flex items-center gap-1.5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
+                              {b.rango}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Experiencia y técnica */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1.5">
+                        <Award size={14} className="text-brand" />
+                        <span>Experiencia y técnica</span>
+                      </p>
+                      <p className="text-xs sm:text-sm leading-relaxed text-bone/95 font-normal">
+                        {coach.experiencia}
+                      </p>
+                    </div>
+
+                    {/* Especialidades */}
+                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-line/50">
+                      {coach.especialidades.map((esp) => (
                         <span
-                          key={b.rango}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-surface-2/95 border border-line px-2.5 py-0.5 text-xs font-semibold text-bone tabular-nums"
+                          key={esp}
+                          className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-bone"
                         >
-                          <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-                          <span>{b.rango}</span>
+                          <Sparkles size={11} className="text-brand" />
+                          {esp}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1.5">
-                      <Award size={14} className="text-brand" />
-                      <span>Experiencia y técnica</span>
-                    </p>
-                    <p className="text-sm leading-relaxed text-bone/95 font-normal">
-                      {coach.experiencia}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-1 border-t border-line/50">
-                    {coach.especialidades.map((esp) => (
-                      <span
-                        key={esp}
-                        className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-bone"
-                      >
-                        <Sparkles size={11} className="text-brand" />
-                        {esp}
-                      </span>
-                    ))}
+                  {/* Indicador inferior para volver a la foto */}
+                  <div className="pt-3 border-t border-line/40 text-center">
+                    <span className="text-[11px] font-medium text-muted/80 inline-flex items-center gap-1.5">
+                      <RotateCcw size={11} className="text-brand" />
+                      <span>Toca en cualquier parte para ver la foto</span>
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* ========================================================
-                VISTA TELÉFONO / MOBILE (block md:hidden): Optimizado, sin recortes
-               ======================================================== */}
-            <div className="block md:hidden">
-              {/* Cabecera visual con foto / avatar */}
-              <div className="relative h-48 w-full overflow-hidden bg-ink">
-                {coach.fotoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={coach.fotoUrl}
-                    alt={`Entrenador ${coach.nombre} en Zentra Fitness`}
-                    className="h-full w-full object-cover saturate-75"
-                  />
-                ) : (
-                  <div
-                    className={`relative h-full w-full bg-gradient-to-b ${coach.fondoDegradado} flex flex-col items-center justify-center text-center select-none overflow-hidden`}
-                  >
-                    <div className="bg-gridlines absolute inset-0 opacity-40" />
-                    <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-2xl border border-line/90 bg-surface-2/90 shadow-xl backdrop-blur-md">
-                      <User size={36} strokeWidth={1.5} className="text-bone/70" />
-                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-brand-ink text-[10px] font-black shadow-md">
-                        ✓
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Sombreado inferior oscuro */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent" />
-
-                {/* Nombre y turno superpuestos en la parte inferior */}
-                <div className="absolute bottom-3 inset-x-4 z-10 flex items-end justify-between">
-                  <div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-surface-2/95 border border-line/80 px-2.5 py-0.5 text-[11px] font-semibold text-brand backdrop-blur-md shadow-sm mb-1">
-                      <Clock size={11} strokeWidth={2} />
-                      {coach.turno}
-                    </span>
-                    <h4 className="font-[family-name:var(--font-archivo)] text-2xl font-black italic tracking-wide text-white drop-shadow">
-                      {coach.nombre}
-                    </h4>
-                  </div>
-                  <p className="text-[11px] font-medium text-bone/80 text-right max-w-[150px] leading-tight">
-                    {coach.rol}
-                  </p>
-                </div>
-              </div>
-
-              {/* Detalle completo sin recortes para móvil */}
-              <div className="p-4 sm:p-5 space-y-3.5 border-t border-line/70 bg-surface">
-                {/* Bloques de horario en móvil */}
-                <div className="rounded-xl border border-line/70 bg-surface-2/70 p-3">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-brand mb-2">
-                    <Clock size={13} strokeWidth={2} />
-                    <span>Horarios de atención</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {coach.bloquesHorario.map((b) => (
-                      <div
-                        key={b.rango}
-                        className="flex items-center justify-between rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-bone"
-                      >
-                        <span className="text-muted font-medium">{b.turno}</span>
-                        <span className="font-semibold tabular-nums text-bone flex items-center gap-1.5">
-                          <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-                          {b.rango}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Experiencia */}
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1">
-                    <Award size={13} className="text-brand" />
-                    <span>Experiencia y técnica</span>
-                  </p>
-                  <p className="text-xs sm:text-sm leading-relaxed text-bone/90">
-                    {coach.experiencia}
-                  </p>
-                </div>
-
-                {/* Especialidades */}
-                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-line/50">
-                  {coach.especialidades.map((esp) => (
-                    <span
-                      key={esp}
-                      className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-[11px] font-medium text-bone"
-                    >
-                      <Sparkles size={10} className="text-brand" />
-                      {esp}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

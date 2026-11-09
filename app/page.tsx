@@ -240,7 +240,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-ink text-bone">
+    <div className="min-h-screen bg-ink text-bone overflow-x-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -248,7 +248,7 @@ export default async function HomePage() {
 
       <LandingHeader />
 
-      <main>
+      <main className="overflow-x-hidden">
         {/* 1. HERO (bg-ink) */}
         <section className="relative overflow-hidden bg-ink">
           <div
@@ -421,31 +421,33 @@ export default async function HomePage() {
 
                 {/* Tarjetas de contacto directo: WhatsApp + Redes (uno encima de otro, formato horizontal más largo y estilizado) */}
                 <div className="flex flex-col gap-3.5">
-                  <div className="rounded-2xl border border-line/80 bg-surface p-5 sm:p-6 transition-all duration-200 hover:border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                      <dt className="text-xs text-muted font-medium flex items-center gap-1.5">
-                        <MessageCircle size={15} className="text-ok shrink-0" />
-                        <span>WhatsApp oficial</span>
-                      </dt>
-                      <dd className="mt-1 text-2xl sm:text-3xl font-black italic tracking-wide text-bone tabular-nums font-[family-name:var(--font-archivo)]">
-                        {WHATSAPP_VISIBLE}
-                      </dd>
-                      <p className="text-xs text-muted mt-0.5 leading-relaxed">
-                        Atención directa con Lucas para consultas y reservas
-                      </p>
+                  <div className="rounded-2xl border border-line/80 bg-surface p-5 sm:p-6 transition-all duration-200 hover:border-line overflow-hidden">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <dt className="text-xs text-muted font-medium flex items-center gap-1.5">
+                          <MessageCircle size={15} className="text-ok shrink-0" />
+                          <span>WhatsApp oficial</span>
+                        </dt>
+                        <dd className="mt-1 text-2xl sm:text-3xl font-black italic tracking-wide text-bone tabular-nums font-[family-name:var(--font-archivo)]">
+                          {WHATSAPP_VISIBLE}
+                        </dd>
+                        <p className="text-xs text-muted mt-0.5 leading-relaxed">
+                          Atención directa con Lucas para consultas y reservas
+                        </p>
+                      </div>
+                      <a
+                        href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary !min-h-11 shrink-0 px-5 text-xs font-semibold gap-2 w-full sm:w-auto justify-center"
+                      >
+                        <span>Escribir al chat</span>
+                        <ArrowUpRight size={14} strokeWidth={1.5} />
+                      </a>
                     </div>
-                    <a
-                      href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-secondary !min-h-11 shrink-0 px-5 text-xs font-semibold gap-2 w-full sm:w-auto justify-center"
-                    >
-                      <span>Escribir al chat</span>
-                      <ArrowUpRight size={14} strokeWidth={1.5} />
-                    </a>
                   </div>
 
-                  <div className="rounded-2xl border border-line/80 bg-surface p-5 sm:p-6 transition-all duration-200 hover:border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-5 sm:p-6 transition-all duration-200 hover:border-line overflow-hidden">
                     <div>
                       <dt className="text-xs text-muted font-medium">Redes sociales</dt>
                       <p className="mt-1 font-[family-name:var(--font-archivo)] text-xl sm:text-2xl font-black italic text-bone">
@@ -455,7 +457,7 @@ export default async function HomePage() {
                         Videos de entrenamientos y novedades diarias
                       </p>
                     </div>
-                    <dd className="flex flex-wrap items-center gap-2 shrink-0">
+                    <dd className="mt-4 flex flex-wrap items-center gap-2 border-t border-line/60 pt-3.5">
                       {REDES.map((red) => (
                         <a
                           key={red.nombre}
@@ -514,9 +516,9 @@ export default async function HomePage() {
         target="_blank"
         rel="noreferrer"
         aria-label={`Escribir por WhatsApp al ${WHATSAPP_VISIBLE}`}
-        className="fixed bottom-5 right-5 z-30 flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface-2 px-4 py-2.5 text-xs font-semibold text-bone shadow-2xl transition-all hover:scale-105 hover:border-bone"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex min-h-11 max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full border border-line bg-surface-2 px-4 py-2.5 text-xs font-semibold text-bone shadow-2xl transition-all hover:scale-105 hover:border-bone"
       >
-        <MessageCircle size={17} strokeWidth={2} className="text-ok" />
+        <MessageCircle size={17} strokeWidth={2} className="text-ok shrink-0" />
         <span className="hidden sm:inline">WhatsApp</span>
       </a>
     </div>
