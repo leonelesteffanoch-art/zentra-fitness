@@ -2,38 +2,38 @@ import Link from 'next/link';
 import { cacheLife } from 'next/cache';
 import { ArrowUpRight, Lock, MapPin, MessageCircle, UserCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import {
+  DIRECCION,
+  ETIQUETA_TIPO,
+  GOOGLE_MAPS_EMBED_URL,
+  GOOGLE_MAPS_URL,
+  HORARIOS,
+  REDES,
+  SITE_URL,
+  WHATSAPP_NUMERO,
+  WHATSAPP_VISIBLE,
+  formatoHora,
+  horariosSchema,
+} from '@/lib/landing-config';
+import type { PlanLandingItem } from '@/lib/planes-landing';
 import { Logo } from '@/components/Logo';
 import {
-  DisciplinasAccordion,
   FaqAccordion,
   HeroVisualCard,
   LandingHeader,
   LeadContactForm,
-  PlanesPricingSection,
-  RevealOnScroll,
-  type DisciplinaItem,
-  type PlanLandingItem,
 } from '@/components/LandingInteractive';
-
-/** Enlace a Google Maps (reemplazar por el pin exacto cuando esté confirmado). */
-export const GOOGLE_MAPS_URL =
-  'https://www.google.com/maps/search/?api=1&query=Zentra+Fitness+Villa+Estela+Ancón';
+import { RevealOnScroll } from '@/components/landing/Motion';
+import { SectionHeading } from '@/components/landing/SectionHeading';
+import { StatsStrip } from '@/components/landing/StatsStrip';
+import { ZonasShowcase, type ZonaItem } from '@/components/landing/ZonasShowcase';
+import { PlanesSection } from '@/components/landing/PlanesSection';
+import { HorariosTimeline } from '@/components/landing/HorariosTimeline';
+import { ComoFunciona } from '@/components/landing/ComoFunciona';
 
 const PLANES_FALLBACK: PlanLandingItem[] = [
-  {
-    id: 'por-dia',
-    nombre: 'Por día',
-    descripcion: null,
-    duracion_dias: 1,
-    precio: 10,
-  },
-  {
-    id: 'semanal',
-    nombre: 'Semanal',
-    descripcion: null,
-    duracion_dias: 7,
-    precio: 25,
-  },
+  { id: 'por-dia', nombre: 'Por día', descripcion: null, duracion_dias: 1, precio: 10 },
+  { id: 'semanal', nombre: 'Semanal', descripcion: null, duracion_dias: 7, precio: 25 },
   {
     id: 'mensual-interdiario',
     nombre: 'Mensual (Interdiario)',
@@ -78,20 +78,24 @@ const PLANES_FALLBACK: PlanLandingItem[] = [
   },
 ];
 
-const DISCIPLINAS: DisciplinaItem[] = [
+const ZONAS: ZonaItem[] = [
   {
     num: '01',
     nombre: 'Musculación y peso libre',
     enfoque: 'Hipertrofia · Fuerza base',
     detalle:
       'Jaulas de potencia, bancas olímpicas, mancuernas pesadas y máquinas de palanca convergente para progresión real de cargas.',
-    intensidad: 'Alta / Progresiva',
+    intensidad: 'Alta',
+    nivel: 5,
+    icono: 'dumbbell',
     imagen: '/brand/zonas/zona-01.jpg',
     equipamiento: [
-      'Racks de sentadilla y jaulas de potencia',
-      'Bancas olímpicas planas, inclinadas y declinadas',
-      'Set de mancuernas y barras olímpicas',
-      'Máquinas de palanca y poleas duales',
+      'Racks de sentadilla',
+      'Jaulas de potencia',
+      'Bancas olímpicas',
+      'Mancuernas y barras olímpicas',
+      'Máquinas de palanca',
+      'Poleas duales',
     ],
   },
   {
@@ -101,12 +105,16 @@ const DISCIPLINAS: DisciplinaItem[] = [
     detalle:
       'Circuito dedicado al desarrollo técnico de pierna y glúteo con ángulos biomecánicos seguros para cargas altas.',
     intensidad: 'Alta',
+    nivel: 5,
+    icono: 'footprints',
     imagen: '/brand/zonas/zona-02.jpg',
     equipamiento: [
-      'Prensa de piernas a 45° de alto tonelaje',
-      'Hack squat y estación de Hip Thrust',
-      'Camilla de femorales y sillón de cuádriceps',
-      'Poleas bajas con tobilleras y discos olímpicos',
+      'Prensa 45°',
+      'Hack squat',
+      'Estación de Hip Thrust',
+      'Camilla de femorales',
+      'Sillón de cuádriceps',
+      'Poleas bajas con tobilleras',
     ],
   },
   {
@@ -115,13 +123,17 @@ const DISCIPLINAS: DisciplinaItem[] = [
     enfoque: 'Potencia · Estabilidad',
     detalle:
       'Espacio despejado para trabajo multiarticular con barras libres, kettlebells y peso corporal enfocado en coordinación y potencia.',
-    intensidad: 'Media / Alta',
+    intensidad: 'Media–alta',
+    nivel: 4,
+    icono: 'zap',
     imagen: '/brand/zonas/zona-03.jpg',
     equipamiento: [
-      'Kettlebells, balones medicinales y bandas',
-      'Estructura de dominadas y fondos libres',
-      'Cajones pliométricos y piso amortiguado',
-      'Espacio libre para peso muerto y desplantes',
+      'Kettlebells',
+      'Balones medicinales',
+      'Dominadas y fondos',
+      'Cajones pliométricos',
+      'Piso amortiguado',
+      'Zona de peso muerto',
     ],
   },
   {
@@ -130,13 +142,16 @@ const DISCIPLINAS: DisciplinaItem[] = [
     enfoque: 'Capacidad aeróbica · HIIT',
     detalle:
       'Línea cardiovascular lista para entrar en calor antes de las pesas, sostener ritmo continuo o trabajar intervalos de alta intensidad.',
-    intensidad: 'Adaptable a tu ritmo',
+    intensidad: 'Adaptable',
+    nivel: 3,
+    icono: 'heart',
     imagen: '/brand/zonas/zona-04.jpg',
     equipamiento: [
-      'Trotadoras de alto tráfico con inclinación',
-      'Bicicletas estacionarias y de spinning',
-      'Elípticas de bajo impacto articular',
-      'Zona de salto con cuerda y trabajo aeróbico',
+      'Trotadoras con inclinación',
+      'Bicicletas de spinning',
+      'Bicicletas estacionarias',
+      'Elípticas',
+      'Cuerdas de salto',
     ],
   },
   {
@@ -146,12 +161,15 @@ const DISCIPLINAS: DisciplinaItem[] = [
     detalle:
       'Combinación práctica de sobrecarga en máquinas guiadas y trabajo continuo, con guía técnica del entrenador en turno.',
     intensidad: 'Progresiva',
+    nivel: 3,
+    icono: 'activity',
     imagen: '/brand/zonas/zona-05.jpg',
     equipamiento: [
-      'Circuito completo de máquinas selectorizadas',
-      'Estaciones de torso, espalda y hombro',
-      'Pesos libres ligeros y medianos',
-      'Orientación de entrenadores en sala',
+      'Máquinas selectorizadas',
+      'Estaciones de torso y espalda',
+      'Press de hombro guiado',
+      'Pesos libres medianos',
+      'Guía de entrenador en sala',
     ],
   },
   {
@@ -160,13 +178,17 @@ const DISCIPLINAS: DisciplinaItem[] = [
     enfoque: 'Prevención · Rango articular',
     detalle:
       'Área para activación articular previa al levantamiento, descompresión lumbar y fortalecimiento de la zona media.',
-    intensidad: 'Media / Controlada',
+    intensidad: 'Controlada',
+    nivel: 2,
+    icono: 'person',
     imagen: '/brand/zonas/zona-06.jpg',
     equipamiento: [
-      'Colchonetas de alta densidad y rodillos',
-      'Bancas abdominales y soporte de lumbares',
-      'Bandas elásticas de activación y movilidad',
-      'Rueda abdominal y barras de suspensión',
+      'Colchonetas y rodillos',
+      'Bancas abdominales',
+      'Soporte de lumbares',
+      'Bandas de activación',
+      'Rueda abdominal',
+      'Barras de suspensión',
     ],
   },
 ];
@@ -182,48 +204,14 @@ const ENTRENADORES: EntrenadorPlanta[] = [
   {
     nombre: 'Lucas',
     turno: 'Lun–Vie',
-    // especialidad: 'Musculación y fuerza',
+    // especialidad: '...',
     // fotoUrl: '/brand/entrenadores/lucas.jpg',
   },
   {
     nombre: 'Juan',
     turno: 'Sábados',
-    // especialidad: 'Entrenamiento integral',
+    // especialidad: '...',
     // fotoUrl: '/brand/entrenadores/juan.jpg',
-  },
-];
-
-interface BloqueHorario {
-  dia: string;
-  rangos: {
-    rango: string;
-    tipo: 'entrenador' | 'libre' | 'pase';
-    etiqueta: string;
-  }[];
-}
-
-const TABLA_HORARIOS: BloqueHorario[] = [
-  {
-    dia: 'Lun–Vie',
-    rangos: [
-      { rango: '6:00 am – 11:00 am', tipo: 'entrenador', etiqueta: 'Con entrenador' },
-      { rango: '11:00 am – 4:00 pm', tipo: 'libre', etiqueta: 'Sala libre' },
-      { rango: '4:00 pm – 10:30 pm', tipo: 'entrenador', etiqueta: 'Con entrenador' },
-    ],
-  },
-  {
-    dia: 'Sáb',
-    rangos: [
-      { rango: '7:00 am – 11:00 am', tipo: 'entrenador', etiqueta: 'Con entrenador' },
-      { rango: '11:00 am – 4:00 pm', tipo: 'libre', etiqueta: 'Sala libre' },
-      { rango: '4:00 pm – 10:00 pm', tipo: 'entrenador', etiqueta: 'Con entrenador' },
-    ],
-  },
-  {
-    dia: 'Dom',
-    rangos: [
-      { rango: '9:00 am – 2:00 pm', tipo: 'pase', etiqueta: 'Solo pase por día (S/ 10)' },
-    ],
   },
 ];
 
@@ -259,8 +247,9 @@ export default async function HomePage() {
     name: 'Zentra Fitness',
     description:
       'Gimnasio en Villa Estela, Ancón. Peso libre, máquinas y entrenadores en sala. Sin matrícula, planes desde S/ 10.',
-    url: 'https://zentrafitness.vercel.app',
-    telephone: '+51998180873',
+    url: SITE_URL,
+    image: `${SITE_URL}/brand/hero.jpg`,
+    telephone: `+${WHATSAPP_NUMERO}`,
     priceRange: 'S/ 10 - S/ 200',
     address: {
       '@type': 'PostalAddress',
@@ -269,26 +258,7 @@ export default async function HomePage() {
       addressRegion: 'Lima',
       addressCountry: 'PE',
     },
-    openingHoursSpecification: [
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-        opens: '06:00',
-        closes: '22:30',
-      },
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Saturday'],
-        opens: '07:00',
-        closes: '22:00',
-      },
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Sunday'],
-        opens: '09:00',
-        closes: '14:00',
-      },
-    ],
+    openingHoursSpecification: horariosSchema(),
   };
 
   return (
@@ -301,17 +271,17 @@ export default async function HomePage() {
       <LandingHeader />
 
       <main>
-        {/* 1. HERO */}
-        <section className="relative overflow-hidden">
+        {/* 1. HERO (bg-ink) */}
+        <section className="relative overflow-hidden bg-ink">
           <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,194,26,0.065),_transparent_55%)]"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,194,26,0.08),_transparent_55%)]"
           />
 
-          <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:py-16 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-24">
+          <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-10 sm:px-8 sm:py-20 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-24">
             <div className="flex flex-col justify-between lg:col-span-7">
               <div>
-                <h1 className="font-display text-[3.25rem] leading-[0.9] tracking-tight sm:text-7xl lg:text-8xl">
+                <h1 className="font-display text-[3.35rem] leading-[0.9] tracking-tight sm:text-7xl lg:text-8xl">
                   Hierro real.
                   <br />
                   Tu propio ritmo.
@@ -342,113 +312,70 @@ export default async function HomePage() {
               <HeroVisualCard />
             </div>
           </div>
-
-          {/* Franja inferior: una línea por dato, sin etiquetas largas */}
-          <div className="border-y border-line/70 bg-surface">
-            <div className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-line/60 px-5 text-sm text-bone sm:px-8 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
-              <p className="py-3.5 lg:py-4 lg:pr-6">
-                Av. Arquitectos, espalda de la Loza 4 · Villa Estela, Ancón
-              </p>
-              <p className="py-3.5 tabular-nums lg:px-6 lg:py-4">
-                Lun–Sáb 6:00 am–10:30 pm, Sáb hasta 10:00 pm · Dom 9:00 am–2:00 pm
-              </p>
-              <p className="py-3.5 tabular-nums lg:py-4 lg:pl-6">
-                <a
-                  href="https://wa.me/51998180873?text=Hola%20Zentra%20Fitness,%20quisiera%20informaci%C3%B3n"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-colors hover:text-brand"
-                >
-                  WhatsApp 998 180 873
-                </a>
-              </p>
-            </div>
-          </div>
         </section>
 
-        {/* 2. ZONAS */}
-        <section id="disciplinas" className="scroll-mt-20 py-16 lg:py-28">
+        {/* 2. FRANJA DE 4 CIFRAS + MARQUEE (bg-surface) */}
+        <StatsStrip />
+
+        {/* 3. ZONAS (bg-ink) */}
+        <section id="disciplinas" className="scroll-mt-20 bg-ink py-16 lg:py-28">
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
-            <div className="mb-10 sm:mb-12">
-              <h2 className="section-title text-2xl sm:text-3xl">Seis zonas, un solo acceso</h2>
-              <p className="mt-2 text-sm text-muted">
+            <SectionHeading
+              num="01"
+              antes="Seis zonas, un solo"
+              destacado="acceso"
+            >
+              <p className="max-w-xl text-sm text-muted">
                 Entrena a tu ritmo y sin separar máquinas.
               </p>
-            </div>
+            </SectionHeading>
 
-            <DisciplinasAccordion items={DISCIPLINAS} />
+            <ZonasShowcase items={ZONAS} />
           </RevealOnScroll>
         </section>
 
-        {/* 3. PLANES */}
-        <section id="planes" className="scroll-mt-20 border-y border-line/60 bg-surface py-16 lg:py-28">
+        {/* 4. PLANES (bg-surface) */}
+        <section
+          id="planes"
+          className="scroll-mt-20 border-y border-line/60 bg-surface py-16 lg:py-28"
+        >
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
-            <div className="mb-10 sm:text-center">
-              <h2 className="section-title text-2xl sm:text-3xl">Planes</h2>
-              <p className="mt-2 text-sm text-muted">
-                Sin matrícula · Todas las zonas incluidas
-              </p>
-            </div>
+            <SectionHeading num="02" destacado="Planes" centrado>
+              <p className="text-sm text-muted">Sin matrícula · Todas las zonas incluidas</p>
+            </SectionHeading>
 
-            <PlanesPricingSection planes={planes} />
+            <PlanesSection planes={planes} />
           </RevealOnScroll>
         </section>
 
-        {/* 4. HORARIOS Y ENTRENADORES */}
-        <section id="horarios" className="scroll-mt-20 py-16 lg:py-28">
+        {/* 5. HORARIOS Y ENTRENADORES (bg-ink) */}
+        <section id="horarios" className="scroll-mt-20 bg-ink py-16 lg:py-28">
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
-            <h2 className="section-title mb-8 text-2xl sm:mb-10 sm:text-3xl">Horarios</h2>
+            <SectionHeading num="03" destacado="Horarios" />
 
-            <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
-              {/* Tabla limpia: Día · Rango · Tipo */}
-              <div className="overflow-x-auto border border-line/80 bg-surface lg:col-span-8">
-                <table className="w-full border-collapse text-left text-sm">
+            <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
+              <div className="lg:col-span-8">
+                <HorariosTimeline />
+
+                {/* Tabla semántica accesible de respaldo (sr-only) */}
+                <table className="sr-only">
+                  <caption>Horarios de atención de Zentra Fitness</caption>
                   <thead>
-                    <tr className="border-b border-line/80 text-xs font-medium text-muted">
-                      <th scope="col" className="px-4 py-3.5 sm:px-6">
-                        Día
-                      </th>
-                      <th scope="col" className="px-4 py-3.5 sm:px-6">
-                        Horario
-                      </th>
-                      <th scope="col" className="px-4 py-3.5 sm:px-6">
-                        Modalidad
-                      </th>
+                    <tr>
+                      <th scope="col">Día</th>
+                      <th scope="col">Rango</th>
+                      <th scope="col">Tipo</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-line/60">
-                    {TABLA_HORARIOS.map((bloque) =>
-                      bloque.rangos.map((fila, idx) => (
-                        <tr key={`${bloque.dia}-${fila.rango}`} className="tabular-nums">
-                          <td className="whitespace-nowrap px-4 py-3.5 font-semibold text-bone sm:px-6">
-                            {idx === 0 ? bloque.dia : ''}
+                  <tbody>
+                    {HORARIOS.map((dia) =>
+                      dia.bloques.map((b) => (
+                        <tr key={`${dia.id}-${b.desde}`}>
+                          <td>{dia.etiquetaLarga}</td>
+                          <td>
+                            {formatoHora(b.desde)} – {formatoHora(b.hasta)}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3.5 text-bone sm:px-6">
-                            {fila.rango}
-                          </td>
-                          <td className="px-4 py-3.5 sm:px-6">
-                            {fila.tipo === 'entrenador' && (
-                              <span className="inline-flex items-center gap-2 text-bone">
-                                <span
-                                  className="h-2 w-2 shrink-0 rounded-full bg-ok"
-                                  aria-hidden="true"
-                                />
-                                {fila.etiqueta}
-                              </span>
-                            )}
-                            {fila.tipo === 'libre' && (
-                              <span className="text-muted">{fila.etiqueta}</span>
-                            )}
-                            {fila.tipo === 'pase' && (
-                              <span className="inline-flex items-center gap-2 font-medium text-warn">
-                                <span
-                                  className="h-2 w-2 shrink-0 rounded-full bg-warn"
-                                  aria-hidden="true"
-                                />
-                                {fila.etiqueta}
-                              </span>
-                            )}
-                          </td>
+                          <td>{ETIQUETA_TIPO[b.tipo]}</td>
                         </tr>
                       ))
                     )}
@@ -457,7 +384,7 @@ export default async function HomePage() {
               </div>
 
               {/* Tarjeta compacta de entrenadores, lista para foto + especialidad */}
-              <aside className="border border-line/80 bg-surface p-6 lg:col-span-4">
+              <aside className="border border-line/80 bg-surface p-6 lg:col-span-4 lg:mt-16">
                 <h3 className="text-xs font-medium text-muted">Entrenadores en sala</h3>
                 <ul className="mt-4 divide-y divide-line/60">
                   {ENTRENADORES.map((coach) => (
@@ -497,100 +424,115 @@ export default async function HomePage() {
           </RevealOnScroll>
         </section>
 
-        {/* 5. FAQ CORTO */}
-        <section id="preguntas" className="scroll-mt-20 border-t border-line/60 py-16 lg:py-24">
+        {/* 6. ASÍ FUNCIONA (bg-surface) */}
+        <section
+          id="como-funciona"
+          className="scroll-mt-20 border-y border-line/60 bg-surface py-16 lg:py-28"
+        >
+          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
+            <SectionHeading num="04" antes="Así" destacado="funciona" />
+            <ComoFunciona />
+          </RevealOnScroll>
+        </section>
+
+        {/* 7. FAQ CORTO (bg-ink) */}
+        <section id="preguntas" className="scroll-mt-20 bg-ink py-16 lg:py-24">
           <RevealOnScroll className="mx-auto max-w-3xl px-5 sm:px-8">
-            <h2 className="section-title mb-8 text-2xl sm:text-3xl">Preguntas frecuentes</h2>
+            <SectionHeading num="05" antes="Preguntas" destacado="frecuentes" />
             <FaqAccordion />
           </RevealOnScroll>
         </section>
 
-        {/* 6. CONTACTO / INSCRIPCIÓN */}
-        <section id="contacto" className="scroll-mt-20 border-t border-line/60 bg-surface py-16 lg:py-28">
-          <RevealOnScroll className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-8 lg:grid-cols-12 lg:gap-12">
-            <div className="flex flex-col justify-between lg:col-span-5">
-              <div>
-                <h2 className="section-title text-2xl sm:text-3xl">Separa tu inscripción</h2>
-                <p className="mt-2 text-sm text-muted">
-                  Déjanos tus datos y te escribimos por WhatsApp.
-                </p>
+        {/* 8. UBICACIÓN Y CONTACTO (bg-surface) */}
+        <section
+          id="contacto"
+          className="scroll-mt-20 border-t border-line/60 bg-surface py-16 lg:py-28"
+        >
+          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
+            <SectionHeading num="06" antes="Separa tu" destacado="inscripción">
+              <p className="text-sm text-muted">
+                Déjanos tus datos y te escribimos por WhatsApp.
+              </p>
+            </SectionHeading>
 
-                <dl className="mt-8 space-y-6 border-t border-line/70 pt-6 text-sm">
-                  <div>
-                    <dt className="text-xs text-muted">Dirección</dt>
-                    <dd className="mt-1.5 flex items-start gap-2 font-medium text-bone">
-                      <MapPin size={16} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted" />
-                      <span>
-                        A la espalda de la Loza 4 – Av. Arquitectos, Villa Estela, Ancón
-                      </span>
-                    </dd>
-                    <div className="mt-3">
-                      <a
-                        href={GOOGLE_MAPS_URL}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-secondary !min-h-11 gap-1.5 text-xs"
-                      >
-                        Cómo llegar <ArrowUpRight size={14} strokeWidth={1.5} />
-                      </a>
-                    </div>
+            <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
+              <div className="space-y-6 lg:col-span-5">
+                {/* Mapa embebido estilizado en oscuro (TODO: ver lib/landing-config.ts para pin exacto) */}
+                <div className="overflow-hidden border border-line/80 bg-ink">
+                  <div className="relative aspect-[16/10] w-full bg-ink">
+                    <iframe
+                      title="Ubicación de Zentra Fitness en Villa Estela, Ancón"
+                      src={GOOGLE_MAPS_EMBED_URL}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="h-full w-full border-0 opacity-80 grayscale invert contrast-125"
+                    />
                   </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/70 p-4">
+                    <p className="flex items-start gap-2 text-xs text-bone sm:text-sm">
+                      <MapPin
+                        size={16}
+                        strokeWidth={1.5}
+                        className="mt-0.5 shrink-0 text-muted"
+                        aria-hidden="true"
+                      />
+                      <span>{DIRECCION}</span>
+                    </p>
+                    <a
+                      href={GOOGLE_MAPS_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary !min-h-11 shrink-0 gap-1.5 text-xs"
+                    >
+                      Cómo llegar <ArrowUpRight size={14} strokeWidth={1.5} />
+                    </a>
+                  </div>
+                </div>
 
+                <dl className="grid gap-6 border border-line/80 bg-ink p-5 text-sm sm:grid-cols-2">
                   <div>
                     <dt className="text-xs text-muted">WhatsApp</dt>
                     <dd className="mt-1 text-base font-semibold text-bone tabular-nums">
                       <a
-                        href="https://wa.me/51998180873?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme"
+                        href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex min-h-11 items-center hover:text-brand"
+                        className="inline-flex min-h-11 items-center transition-colors hover:text-brand"
                       >
-                        998 180 873
+                        {WHATSAPP_VISIBLE}
                       </a>
                     </dd>
                   </div>
 
                   <div>
                     <dt className="text-xs text-muted">Redes sociales</dt>
-                    <dd className="mt-1 flex flex-wrap gap-5 text-sm font-medium text-bone">
-                      <a
-                        href="https://www.tiktok.com/@zentrafitnessperu?_r=1&_t=ZS-9BFZ0vSjjqG"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-11 items-center gap-1 hover:text-brand"
-                      >
-                        TikTok <ArrowUpRight size={13} strokeWidth={1.5} className="text-muted" />
-                      </a>
-                      <a
-                        href="https://www.facebook.com/share/1E53yWwEMJ/"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-11 items-center gap-1 hover:text-brand"
-                      >
-                        Facebook <ArrowUpRight size={13} strokeWidth={1.5} className="text-muted" />
-                      </a>
-                      <a
-                        href="https://www.instagram.com/zentrafitnessperu?obrf=cTZmbnVzMWVmem02"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-11 items-center gap-1 hover:text-brand"
-                      >
-                        Instagram <ArrowUpRight size={13} strokeWidth={1.5} className="text-muted" />
-                      </a>
+                    <dd className="mt-1 flex flex-wrap gap-4 text-sm font-medium text-bone">
+                      {REDES.map((red) => (
+                        <a
+                          key={red.nombre}
+                          href={red.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-h-11 items-center gap-1 transition-colors hover:text-brand"
+                        >
+                          {red.nombre}{' '}
+                          <ArrowUpRight size={13} strokeWidth={1.5} className="text-muted" />
+                        </a>
+                      ))}
                     </dd>
                   </div>
                 </dl>
               </div>
-            </div>
 
-            <div className="lg:col-span-7">
-              <LeadContactForm planes={planes} />
+              <div className="lg:col-span-7">
+                <LeadContactForm planes={planes} />
+              </div>
             </div>
           </RevealOnScroll>
         </section>
       </main>
 
-      {/* 7. FOOTER */}
+      {/* 9. FOOTER (bg-ink) */}
       <footer className="border-t border-line/80 bg-ink py-10">
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 px-5 sm:flex-row sm:items-center sm:px-8">
           <div className="flex flex-wrap items-center gap-4">
@@ -619,10 +561,10 @@ export default async function HomePage() {
 
       {/* Botón flotante de WhatsApp */}
       <a
-        href="https://wa.me/51998180873?text=Hola%20Zentra%20Fitness,%20quisiera%20informaci%C3%B3n%20sobre%20los%20planes"
+        href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20informaci%C3%B3n%20sobre%20los%20planes`}
         target="_blank"
         rel="noreferrer"
-        aria-label="Escribir por WhatsApp al 998 180 873"
+        aria-label={`Escribir por WhatsApp al ${WHATSAPP_VISIBLE}`}
         className="fixed bottom-5 right-5 z-30 flex min-h-11 items-center gap-2 border border-line bg-surface-2 px-4 py-2.5 text-xs font-medium text-bone transition-colors hover:border-bone"
       >
         <MessageCircle size={16} strokeWidth={1.5} className="text-ok" />

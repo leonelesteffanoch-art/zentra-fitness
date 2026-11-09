@@ -167,6 +167,104 @@ body {
   }
 }
 
+/* ---------- Recursos editoriales de la landing ---------- */
+
+/* h2 de sección: misma familia display del hero, a tamaño medio */
+.display-h2 {
+  font-family: var(--font-archivo), var(--font-inter), sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-stretch: 118%;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  line-height: 0.98;
+  font-size: clamp(2.25rem, 4.6vw, 3.5rem);
+  color: var(--bone);
+}
+
+/* Número fantasma grande detrás del título */
+.ghost-num {
+  font-family: var(--font-archivo), var(--font-inter), sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  font-stretch: 125%;
+  line-height: 0.8;
+  font-size: clamp(6rem, 16vw, 12rem);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(242, 239, 233, 0.07);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Texto outline decorativo (marquee) */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(242, 239, 233, 0.22);
+}
+
+/* Rejilla fina para paneles visuales sin foto */
+.bg-gridlines {
+  background-image:
+    linear-gradient(rgba(242, 239, 233, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242, 239, 233, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Marquee lento y continuo */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Cross-fade + leve desplazamiento al cambiar de zona / modalidad */
+.anim-swap {
+  animation: swap-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Barra de progreso del avance automático de zonas */
+.anim-progress {
+  transform-origin: left;
+  animation: progress-x linear both;
+}
+@keyframes progress-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .anim-swap,
+  .anim-progress {
+    animation: none !important;
+  }
+}
+
 /* Foco visible con estilo propio */
 :focus-visible {
   outline: 2px solid var(--brand);

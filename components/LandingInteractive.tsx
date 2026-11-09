@@ -1,23 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type MouseEvent, type ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import {
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  Loader2,
-  Menu,
-  UserCheck,
-  X,
-} from 'lucide-react';
+import { CheckCircle2, ChevronDown, Loader2, Menu, UserCheck, X } from 'lucide-react';
 import { Logo } from '@/components/Logo';
-
-/** Formatea montos para la landing en soles sin decimales innecesarios y con fuente sans tabular. */
-export function formatoPrecioLanding(n: number): string {
-  const redondeado = Math.round(n * 100) / 100;
-  return Number.isInteger(redondeado) ? `S/ ${redondeado}` : `S/ ${redondeado.toFixed(2)}`;
-}
+import {
+  formatoPrecioLanding,
+  precioPase,
+  precioPlan,
+  type PlanLandingItem,
+} from '@/lib/planes-landing';
 
 /** Desplazamiento suave garantizado hacia cualquier sección #id de la landing. */
 export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after?: () => void) {
@@ -31,7 +24,7 @@ export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after
 }
 
 /** Selecciona un plan en el formulario de inscripción y desplaza suavemente hacia #contacto. */
-function elegirPlanEIrAContacto(planLabel: string) {
+export function elegirPlanEIrAContacto(planLabel: string) {
   window.dispatchEvent(new CustomEvent('zentra:select-plan', { detail: planLabel }));
   const destino = document.getElementById('contacto');
   if (destino) {
@@ -42,43 +35,6 @@ function elegirPlanEIrAContacto(planLabel: string) {
       inputNombre?.focus({ preventScroll: true });
     }, 450);
   }
-}
-
-// ---------- 0. Micro-interacción: Reveal suave al hacer scroll (1 sola vez) ----------
-
-export function RevealOnScroll({
-  children,
-  className = '',
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={ref} className={`${visible ? 'reveal-visible' : 'reveal-hidden'} ${className}`}>
-      {children}
-    </div>
-  );
 }
 
 // ---------- 1. Header: Zonas, Planes, Horarios, Ubicación + Mi DNI + Inscríbete hoy ----------
@@ -110,7 +66,7 @@ export function LandingHeader() {
             : 'border-b border-line/40 bg-ink'
         }`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-8 sm:py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-8">
           <Link href="/" aria-label="Zentra Fitness - Inicio" className="shrink-0">
             <Logo className="w-32 sm:w-36" />
           </Link>
@@ -128,7 +84,6 @@ export function LandingHeader() {
             ))}
           </nav>
 
-          {/* Acciones en desktop: Mi DNI + único botón primario */}
           <div className="hidden items-center gap-6 lg:flex">
             <Link
               href="/consulta"
@@ -146,7 +101,6 @@ export function LandingHeader() {
             </a>
           </div>
 
-          {/* Acciones en móvil: Mi DNI + botón de menú */}
           <div className="flex items-center gap-1.5 lg:hidden">
             <Link
               href="/consulta"
@@ -167,7 +121,6 @@ export function LandingHeader() {
         </div>
       </header>
 
-      {/* Menú móvil a pantalla completa */}
       {menuAbierto && (
         <div
           role="dialog"
@@ -193,10 +146,11 @@ export function LandingHeader() {
                 key={item.href}
                 href={item.href}
                 onClick={(e) => irASeccion(e, item.href, () => setMenuAbierto(false))}
-                className="flex min-h-14 items-baseline justify-between py-4 text-xl font-semibold text-bone"
+                className="flex min-h-14 items-baseline justify-between py-4 font-[family-name:var(--font-archivo)] text-3xl font-black uppercase italic text-bone"
+                style={{ fontStretch: '115%' }}
               >
                 <span>{item.label}</span>
-                <span className="font-mono text-xs text-muted">0{idx + 1}</span>
+                <span className="font-mono text-xs not-italic text-muted">0{idx + 1}</span>
               </a>
             ))}
           </nav>
@@ -224,60 +178,26 @@ export function LandingHeader() {
   );
 }
 
-// ---------- 2. Pieza visual del Hero con fallback editorial elegante ----------
+// ---------- 2. Pieza visual del Hero (foto real del gimnasio) ----------
 
 export function HeroVisualCard() {
-  const [srcActual, setSrcActual] = useState<string>('/brand/hero.jpg');
-  const [mostrarImg, setMostrarImg] = useState(false);
-
   return (
     <div className="relative overflow-hidden border border-line/80 bg-surface">
-      <div className="bg-grain relative aspect-[16/10] sm:aspect-[4/3] lg:aspect-[4/4.5]">
-        {/* Composición atmosférica base: luce completa aunque no exista fotografía */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,_rgba(255,194,26,0.12),_transparent_60%)]"
+      <div className="relative aspect-[4/3] lg:aspect-[4/4.6]">
+        <Image
+          src="/brand/hero.jpg"
+          alt="Socios entrenando en la sala de Zentra Fitness, Villa Estela"
+          fill
+          priority
+          sizes="(min-width: 1024px) 460px, 100vw"
+          className="object-cover saturate-[.85]"
         />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 flex items-center justify-center p-8 select-none"
-        >
-          <Logo className="w-3/4 max-w-xs opacity-20" />
-        </div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/10 to-transparent" />
 
-        {/* Fotografía con ruta lista (/brand/hero.jpg -> fallback /brand/zentra-cover.jpg) */}
-        {srcActual && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={srcActual}
-            alt="Sala de entrenamiento de Zentra Fitness en Villa Estela, Ancón"
-            onLoad={() => setMostrarImg(true)}
-            onError={() => {
-              if (srcActual === '/brand/hero.jpg') {
-                setSrcActual('/brand/zentra-cover.jpg');
-              } else {
-                setSrcActual('');
-                setMostrarImg(false);
-              }
-            }}
-            className={`h-full w-full object-cover saturate-50 transition-opacity duration-500 ${
-              mostrarImg ? 'opacity-80' : 'opacity-0'
-            }`}
-          />
-        )}
-
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
-
-        {/* Diferencial único del DNI en tarjeta inferior */}
-        <div className="absolute bottom-4 left-4 right-4 border border-line/80 bg-ink/90 p-4 backdrop-blur-xs sm:bottom-5 sm:left-5 sm:right-5">
-          <div className="flex items-center justify-between text-xs text-muted">
-            <span className="inline-flex items-center gap-1.5 font-medium text-bone">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-              Portal de socio
-            </span>
-            <span className="font-mono text-[11px] text-muted">DNI ACTIVO</span>
-          </div>
-          <p className="mt-1.5 text-sm font-medium text-bone">
+        {/* Diferencial único del DNI */}
+        <div className="absolute bottom-4 left-4 right-4 border border-line/80 bg-ink/85 p-4 backdrop-blur-sm sm:bottom-5 sm:left-5 sm:right-5">
+          <p className="flex items-center gap-2 text-sm font-medium text-bone">
+            <UserCheck size={16} strokeWidth={1.5} className="shrink-0 text-muted" aria-hidden="true" />
             Consulta tus días y tu vencimiento con tu DNI.
           </p>
         </div>
@@ -286,415 +206,20 @@ export function HeroVisualCard() {
   );
 }
 
-// ---------- 3. Zonas de entrenamiento: lista limpia a la izquierda + detalle a la derecha ----------
+// ---------- 3. FAQ Corto (5 preguntas en acordeón) ----------
 
-export interface DisciplinaItem {
-  num: string;
-  nombre: string;
-  enfoque: string;
-  detalle: string;
-  intensidad: string;
-  equipamiento: string[];
-  imagen?: string;
-}
-
-function ZonaImageSlot({ src, alt }: { src?: string; alt: string }) {
-  const [cargada, setCargada] = useState(false);
-  const [fallo, setFallo] = useState(false);
-
-  if (!src || fallo) return null;
-
-  return (
-    <div
-      className={`overflow-hidden transition-all duration-300 ${
-        cargada ? 'mb-6 aspect-[21/9] border border-line/70 bg-ink' : 'h-0'
-      }`}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={alt}
-        onLoad={() => setCargada(true)}
-        onError={() => setFallo(true)}
-        className="h-full w-full object-cover opacity-85 saturate-75"
-      />
-    </div>
-  );
-}
-
-export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
-  const [activa, setActiva] = useState<number>(0);
-  const actual = items[activa] ?? items[0];
-
-  return (
-    <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
-      <ul className="divide-y divide-line/80 border-y border-line/80 lg:col-span-5">
-        {items.map((d, idx) => {
-          const abierta = activa === idx;
-          return (
-            <li key={d.num}>
-              <button
-                type="button"
-                onMouseEnter={() => setActiva(idx)}
-                onFocus={() => setActiva(idx)}
-                onClick={() => setActiva(idx)}
-                aria-expanded={abierta}
-                className={`flex min-h-14 w-full items-center justify-between gap-4 px-2 py-4 text-left transition-colors sm:px-3 ${
-                  abierta ? 'bg-surface/60' : 'hover:bg-surface/30'
-                }`}
-              >
-                <div className="flex items-baseline gap-3.5 sm:gap-4">
-                  <span
-                    className={`font-mono text-xs transition-colors ${
-                      abierta ? 'text-brand' : 'text-muted'
-                    }`}
-                  >
-                    {d.num}
-                  </span>
-                  <span
-                    className={`text-base font-semibold tracking-tight transition-colors sm:text-lg ${
-                      abierta ? 'text-bone' : 'text-muted hover:text-bone'
-                    }`}
-                  >
-                    {d.nombre}
-                  </span>
-                </div>
-                <ChevronDown
-                  size={16}
-                  strokeWidth={1.5}
-                  className={`shrink-0 text-muted transition-transform lg:hidden ${
-                    abierta ? 'rotate-180 text-bone' : ''
-                  }`}
-                />
-              </button>
-
-              {/* En móvil: acordeón bajo la fila */}
-              {abierta && (
-                <div className="space-y-4 px-3 pb-5 pt-2 text-sm lg:hidden">
-                  <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-muted">
-                    {d.enfoque}
-                  </span>
-                  <p className="leading-relaxed text-bone/90">{d.detalle}</p>
-
-                  <div className="space-y-1.5 pt-1">
-                    <p className="text-xs font-medium text-muted">Equipamiento</p>
-                    <ul className="grid grid-cols-1 gap-1.5 text-xs text-bone sm:grid-cols-2">
-                      {d.equipamiento.map((eq) => (
-                        <li key={eq} className="flex items-center gap-2">
-                          <Check size={13} strokeWidth={1.75} className="shrink-0 text-muted" />
-                          <span>{eq}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="border-t border-line/60 pt-3 text-xs text-muted">
-                    Intensidad: <strong className="font-medium text-bone">{d.intensidad}</strong>
-                  </div>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-
-      {/* En desktop: detalle solo en el panel derecho */}
-      {actual && (
-        <aside className="bg-grain relative hidden flex-col justify-between overflow-hidden border border-line/80 bg-surface p-8 lg:col-span-7 lg:flex">
-          <ZonaImageSlot key={actual.num} src={actual.imagen} alt={actual.nombre} />
-
-          <div className="flex items-start justify-between border-b border-line/70 pb-6">
-            <div>
-              <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
-                {actual.enfoque}
-              </span>
-              <h3 className="section-title mt-3 text-2xl sm:text-3xl">{actual.nombre}</h3>
-            </div>
-            <span className="font-mono text-4xl font-bold leading-none text-bone/15 select-none">
-              {actual.num}
-            </span>
-          </div>
-
-          <p className="mt-6 text-base leading-relaxed text-muted">{actual.detalle}</p>
-
-          <div className="mt-7 border border-line/60 bg-ink/60 p-5">
-            <p className="text-xs font-medium text-muted">Equipamiento</p>
-            <ul className="mt-3 grid grid-cols-2 gap-3 text-sm text-bone">
-              {actual.equipamiento.map((eq) => (
-                <li key={eq} className="flex items-center gap-2.5">
-                  <Check size={15} strokeWidth={1.75} className="shrink-0 text-muted" />
-                  <span>{eq}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="mt-7 flex items-center justify-between border-t border-line/70 pt-5 text-xs">
-            <span className="text-muted">Intensidad</span>
-            <span className="text-sm font-semibold text-bone">{actual.intensidad}</span>
-          </div>
-        </aside>
-      )}
-    </div>
-  );
-}
-
-// ---------- 4. Planes: Toggle Diario / Interdiario + 3 tarjetas de datos + Pases ----------
-
-export interface PlanLandingItem {
-  id: string;
-  nombre: string;
-  descripcion: string | null;
-  duracion_dias: number;
-  precio: number;
-}
-
-/**
- * Busca el plan correspondiente en Supabase evitando que 'interdiario' coincida con 'diario'.
- */
-export function buscarPlanPorModalidad(
-  planes: PlanLandingItem[],
-  duracionDias: number,
-  modalidad: 'diario' | 'interdiario'
-): PlanLandingItem | undefined {
-  return planes.find((p) => {
-    if (p.duracion_dias !== duracionDias) return false;
-    const nombre = p.nombre.toLowerCase();
-    if (modalidad === 'interdiario') {
-      return nombre.includes('interdiario');
-    }
-    return nombre.includes('diario') && !nombre.includes('interdiario');
-  });
-}
-
-export function PlanesPricingSection({ planes }: { planes: PlanLandingItem[] }) {
-  const [modalidad, setModalidad] = useState<'diario' | 'interdiario'>('diario');
-
-  const plan1Mes = buscarPlanPorModalidad(planes, 30, modalidad) ?? {
-    id: `m-30-${modalidad}`,
-    nombre: modalidad === 'diario' ? 'Mensual (Diario)' : 'Mensual (Interdiario)',
-    precio: modalidad === 'diario' ? 80 : 60,
-    duracion_dias: 30,
-    descripcion: null,
-  };
-
-  const plan2Meses = buscarPlanPorModalidad(planes, 60, modalidad) ?? {
-    id: `m-60-${modalidad}`,
-    nombre: modalidad === 'diario' ? '2 meses (Diario)' : '2 meses (Interdiario)',
-    precio: modalidad === 'diario' ? 140 : 100,
-    duracion_dias: 60,
-    descripcion: null,
-  };
-
-  const plan3Meses = buscarPlanPorModalidad(planes, 90, modalidad) ?? {
-    id: `m-90-${modalidad}`,
-    nombre: modalidad === 'diario' ? '3 meses (Diario)' : '3 meses (Interdiario)',
-    precio: modalidad === 'diario' ? 200 : 150,
-    duracion_dias: 90,
-    descripcion: null,
-  };
-
-  const planDia = planes.find((p) => p.duracion_dias === 1) ?? {
-    id: 'por-dia',
-    nombre: 'Por día',
-    precio: 10,
-    duracion_dias: 1,
-    descripcion: null,
-  };
-
-  const planSemana = planes.find((p) => p.duracion_dias === 7) ?? {
-    id: 'semanal',
-    nombre: 'Semanal',
-    precio: 25,
-    duracion_dias: 7,
-    descripcion: null,
-  };
-
-  // Cálculo real de costo mensual y ahorro respecto al plan de 1 mes
-  const precioBaseMensual = plan1Mes.precio;
-  const alMes2 = Math.round(plan2Meses.precio / 2);
-  const ahorro2 = Math.max(0, precioBaseMensual * 2 - plan2Meses.precio);
-  const alMes3 = Math.round(plan3Meses.precio / 3);
-  const ahorro3 = Math.max(0, precioBaseMensual * 3 - plan3Meses.precio);
-
-  const etiquetaModalidad = modalidad === 'diario' ? 'Diario' : 'Interdiario';
-
-  const tarjetas = [
-    {
-      id: '1-mes',
-      encabezado: '1 mes · 30 días',
-      precio: plan1Mes.precio,
-      detalleAhorro: null as string | null,
-      destacado: true,
-      tag: 'Más elegido' as string | null,
-      valorFormulario: `1 mes (${etiquetaModalidad}) - ${formatoPrecioLanding(plan1Mes.precio)}`,
-    },
-    {
-      id: '2-meses',
-      encabezado: '2 meses · 60 días',
-      precio: plan2Meses.precio,
-      detalleAhorro: `${formatoPrecioLanding(alMes2)} al mes · ahorras ${formatoPrecioLanding(ahorro2)}`,
-      destacado: false,
-      tag: null as string | null,
-      valorFormulario: `2 meses (${etiquetaModalidad}) - ${formatoPrecioLanding(plan2Meses.precio)}`,
-    },
-    {
-      id: '3-meses',
-      encabezado: '3 meses · 90 días',
-      precio: plan3Meses.precio,
-      detalleAhorro: `${formatoPrecioLanding(alMes3)} al mes · ahorras ${formatoPrecioLanding(ahorro3)}`,
-      destacado: false,
-      tag: null as string | null,
-      valorFormulario: `3 meses (${etiquetaModalidad}) - ${formatoPrecioLanding(plan3Meses.precio)}`,
-    },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Toggle Diario | Interdiario */}
-      <div className="flex flex-col items-start sm:items-center">
-        <div
-          role="group"
-          aria-label="Modalidad de entrenamiento"
-          className="inline-grid w-full grid-cols-2 rounded-xs border border-line bg-ink p-1 sm:w-auto"
-        >
-          <button
-            type="button"
-            aria-pressed={modalidad === 'diario'}
-            onClick={() => setModalidad('diario')}
-            className={`min-h-11 rounded-xs px-6 text-sm font-semibold transition-all duration-200 ${
-              modalidad === 'diario'
-                ? 'bg-brand text-brand-ink'
-                : 'text-muted hover:text-bone'
-            }`}
-          >
-            Diario
-          </button>
-          <button
-            type="button"
-            aria-pressed={modalidad === 'interdiario'}
-            onClick={() => setModalidad('interdiario')}
-            className={`min-h-11 rounded-xs px-6 text-sm font-semibold transition-all duration-200 ${
-              modalidad === 'interdiario'
-                ? 'bg-brand text-brand-ink'
-                : 'text-muted hover:text-bone'
-            }`}
-          >
-            Interdiario
-          </button>
-        </div>
-
-        <p className="mt-3 text-sm text-muted">
-          {modalidad === 'diario'
-            ? 'Lunes a sábado, un ingreso por día.'
-            : '3 veces por semana, día por medio.'}
-        </p>
-      </div>
-
-      {/* 3 tarjetas limpias, solo datos */}
-      <div className="grid gap-5 md:grid-cols-3">
-        {tarjetas.map((t) => (
-          <article
-            key={`${modalidad}-${t.id}`}
-            className={`flex flex-col justify-between border p-6 transition-colors duration-200 sm:p-7 ${
-              t.destacado
-                ? 'border-brand/70 bg-ink'
-                : 'border-line/80 bg-ink/70 hover:border-muted/60'
-            }`}
-          >
-            <div>
-              <div className="flex min-h-6 items-center justify-between gap-2">
-                <h3 className="text-sm font-medium text-muted">{t.encabezado}</h3>
-                {t.tag && (
-                  <span className="rounded-xs bg-brand px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
-                    {t.tag}
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-5 tabular-nums">
-                <p className="text-4xl font-bold tracking-tight text-bone sm:text-5xl">
-                  {formatoPrecioLanding(t.precio)}
-                </p>
-                <p className="mt-2 min-h-5 text-sm text-muted">
-                  {t.detalleAhorro ?? '\u00A0'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => elegirPlanEIrAContacto(t.valorFormulario)}
-              className={`btn mt-8 w-full ${t.destacado ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              Elegir plan
-            </button>
-          </article>
-        ))}
-      </div>
-
-      {/* Única línea bajo las tarjetas */}
-      <p className="text-center text-sm text-muted">
-        30 · 60 · 90 días de corrido. Incluye las 6 zonas, asesoría en turno y control de
-        asistencia con tu DNI.
-      </p>
-
-      {/* Pases cortos */}
-      <div className="flex flex-col items-start justify-between gap-4 border border-line/80 bg-ink/70 p-5 sm:flex-row sm:items-center sm:p-6">
-        <div className="flex flex-col gap-1.5 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2">
-          <p className="text-bone tabular-nums">
-            <strong className="font-semibold">
-              Por día {formatoPrecioLanding(planDia.precio)}
-            </strong>{' '}
-            <span className="text-muted">· entra las veces que quieras ese día</span>
-          </p>
-          <p className="text-bone tabular-nums">
-            <strong className="font-semibold">
-              Semanal {formatoPrecioLanding(planSemana.precio)}
-            </strong>{' '}
-            <span className="text-muted">· 7 días seguidos</span>
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            elegirPlanEIrAContacto(`Por día - ${formatoPrecioLanding(planDia.precio)}`)
-          }
-          className="btn btn-secondary w-full shrink-0 sm:w-auto"
-        >
-          Pedir pase en recepción
-        </button>
-      </div>
-
-      {/* Línea de métodos de pago */}
-      <p className="text-center text-xs text-muted">
-        Paga con efectivo, Yape, Plin o tarjeta.
-      </p>
-    </div>
-  );
-}
-
-// ---------- 5. FAQ Corto (5 preguntas en acordeón) ----------
-
-export interface FaqItem {
+interface FaqItem {
   pregunta: string;
   respuesta: ReactNode;
 }
 
 const PREGUNTAS_FAQ: FaqItem[] = [
-  {
-    pregunta: '¿Hay matrícula?',
-    respuesta: 'No, sin cobro de matrícula.',
-  },
+  { pregunta: '¿Hay matrícula?', respuesta: 'No, sin cobro de matrícula.' },
   {
     pregunta: '¿Puedo entrar más de una vez al día?',
     respuesta: 'Solo con el pase por día (S/ 10). Los planes permiten 1 ingreso por día.',
   },
-  {
-    pregunta: '¿Cómo cuentan los días de mi plan?',
-    respuesta: 'De corrido, desde el día de inicio.',
-  },
+  { pregunta: '¿Cómo cuentan los días de mi plan?', respuesta: 'De corrido, desde el día de inicio.' },
   {
     pregunta: '¿Cómo sé cuándo vence mi plan?',
     respuesta: (
@@ -707,10 +232,7 @@ const PREGUNTAS_FAQ: FaqItem[] = [
       </>
     ),
   },
-  {
-    pregunta: '¿Cómo puedo pagar?',
-    respuesta: 'Efectivo, Yape, Plin o tarjeta en recepción.',
-  },
+  { pregunta: '¿Cómo puedo pagar?', respuesta: 'Efectivo, Yape, Plin o tarjeta en recepción.' },
 ];
 
 export function FaqAccordion() {
@@ -720,25 +242,35 @@ export function FaqAccordion() {
     <div className="divide-y divide-line/80 border-y border-line/80">
       {PREGUNTAS_FAQ.map((item, idx) => {
         const activa = abierta === idx;
+        const panelId = `faq-panel-${idx}`;
         return (
           <div key={item.pregunta}>
-            <button
-              type="button"
-              onClick={() => setAbierta(activa ? null : idx)}
-              aria-expanded={activa}
-              className="flex min-h-14 w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:text-bone"
-            >
-              <span className="text-base font-semibold text-bone">{item.pregunta}</span>
-              <ChevronDown
-                size={18}
-                strokeWidth={1.5}
-                className={`shrink-0 text-muted transition-transform duration-200 ${
-                  activa ? 'rotate-180 text-bone' : ''
-                }`}
-              />
-            </button>
+            <h3>
+              <button
+                type="button"
+                onClick={() => setAbierta(activa ? null : idx)}
+                aria-expanded={activa}
+                aria-controls={panelId}
+                className="flex min-h-16 w-full items-center justify-between gap-4 py-4 text-left"
+              >
+                <span className="flex items-baseline gap-4">
+                  <span className="font-mono text-xs text-muted">0{idx + 1}</span>
+                  <span className="text-base font-semibold text-bone sm:text-lg">{item.pregunta}</span>
+                </span>
+                <ChevronDown
+                  size={18}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                  className={`shrink-0 text-muted transition-transform duration-200 ${
+                    activa ? 'rotate-180 text-bone' : ''
+                  }`}
+                />
+              </button>
+            </h3>
             {activa && (
-              <div className="pb-5 pr-8 text-sm leading-relaxed text-muted">{item.respuesta}</div>
+              <div id={panelId} className="anim-swap pb-5 pl-9 pr-8 text-sm leading-relaxed text-muted">
+                {item.respuesta}
+              </div>
             )}
           </div>
         );
@@ -747,27 +279,18 @@ export function FaqAccordion() {
   );
 }
 
-// ---------- 6. Formulario de Contacto / Inscripción ----------
+// ---------- 4. Formulario de Contacto / Inscripción ----------
 
 export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
-  const p1Diario = buscarPlanPorModalidad(planes, 30, 'diario')?.precio ?? 80;
-  const p1Inter = buscarPlanPorModalidad(planes, 30, 'interdiario')?.precio ?? 60;
-  const p2Diario = buscarPlanPorModalidad(planes, 60, 'diario')?.precio ?? 140;
-  const p2Inter = buscarPlanPorModalidad(planes, 60, 'interdiario')?.precio ?? 100;
-  const p3Diario = buscarPlanPorModalidad(planes, 90, 'diario')?.precio ?? 200;
-  const p3Inter = buscarPlanPorModalidad(planes, 90, 'interdiario')?.precio ?? 150;
-  const pSemana = planes.find((p) => p.duracion_dias === 7)?.precio ?? 25;
-  const pDia = planes.find((p) => p.duracion_dias === 1)?.precio ?? 10;
-
   const opcionesPlanes = [
-    `1 mes (Diario) - ${formatoPrecioLanding(p1Diario)}`,
-    `1 mes (Interdiario) - ${formatoPrecioLanding(p1Inter)}`,
-    `2 meses (Diario) - ${formatoPrecioLanding(p2Diario)}`,
-    `2 meses (Interdiario) - ${formatoPrecioLanding(p2Inter)}`,
-    `3 meses (Diario) - ${formatoPrecioLanding(p3Diario)}`,
-    `3 meses (Interdiario) - ${formatoPrecioLanding(p3Inter)}`,
-    `Semanal - ${formatoPrecioLanding(pSemana)}`,
-    `Por día - ${formatoPrecioLanding(pDia)}`,
+    `1 mes (Diario) - ${formatoPrecioLanding(precioPlan(planes, 30, 'diario'))}`,
+    `1 mes (Interdiario) - ${formatoPrecioLanding(precioPlan(planes, 30, 'interdiario'))}`,
+    `2 meses (Diario) - ${formatoPrecioLanding(precioPlan(planes, 60, 'diario'))}`,
+    `2 meses (Interdiario) - ${formatoPrecioLanding(precioPlan(planes, 60, 'interdiario'))}`,
+    `3 meses (Diario) - ${formatoPrecioLanding(precioPlan(planes, 90, 'diario'))}`,
+    `3 meses (Interdiario) - ${formatoPrecioLanding(precioPlan(planes, 90, 'interdiario'))}`,
+    `Semanal - ${formatoPrecioLanding(precioPase(planes, 7))}`,
+    `Por día - ${formatoPrecioLanding(precioPase(planes, 1))}`,
   ];
 
   const [nombre, setNombre] = useState('');
@@ -796,7 +319,6 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
     setError(null);
     setEnviando(true);
     try {
-      const horarioEnvio = horario.trim() || 'Por definir';
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -804,7 +326,8 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
           nombre,
           telefono,
           objetivo,
-          horario: horarioEnvio,
+          // La API exige el campo; si el visitante no elige, se envía "Por definir"
+          horario: horario.trim() || 'Por definir',
           empresa,
         }),
       });
@@ -826,22 +349,12 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
 
   if (exito) {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="border border-line/80 bg-ink p-6 sm:p-8"
-      >
+      <div role="status" aria-live="polite" className="border border-line/80 bg-ink p-6 sm:p-8">
         <div className="flex items-center gap-2.5 text-ok">
           <CheckCircle2 size={20} strokeWidth={1.5} />
-          <p className="text-base font-semibold text-bone">
-            Listo, te escribimos por WhatsApp en breve.
-          </p>
+          <p className="text-base font-semibold text-bone">Listo, te escribimos por WhatsApp en breve.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setExito(false)}
-          className="btn btn-secondary mt-5"
-        >
+        <button type="button" onClick={() => setExito(false)} className="btn btn-secondary mt-5">
           Enviar otra consulta
         </button>
       </div>
@@ -869,10 +382,11 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
           id="lead-nombre"
           type="text"
           required
+          autoComplete="name"
           placeholder="Tu nombre y apellido"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="field !bg-surface"
+          className="field"
         />
       </div>
 
@@ -884,10 +398,12 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
           id="lead-telefono"
           type="tel"
           required
-          placeholder="Ej: 998 180 873"
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="Ej: 987 654 321"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
-          className="field !bg-surface tabular-nums"
+          className="field tabular-nums"
         />
       </div>
 
@@ -900,7 +416,7 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
             id="lead-objetivo"
             value={objetivo}
             onChange={(e) => setObjetivo(e.target.value)}
-            className="field !bg-surface tabular-nums"
+            className="field tabular-nums"
           >
             {opcionesPlanes.map((op) => (
               <option key={op} value={op}>
@@ -918,28 +434,26 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
             id="lead-horario"
             value={horario}
             onChange={(e) => setHorario(e.target.value)}
-            className="field !bg-surface"
+            className="field"
           >
             <option value="">Sin preferencia</option>
             <option value="Mañana (6:00 am - 11:00 am)">Mañana (6:00 am - 11:00 am)</option>
             <option value="Mediodía (11:00 am - 4:00 pm)">Mediodía (11:00 am - 4:00 pm)</option>
-            <option value="Tarde / Noche (4:00 pm - 10:30 pm)">
-              Tarde / Noche (4:00 pm - 10:30 pm)
-            </option>
+            <option value="Tarde / Noche (4:00 pm - 10:30 pm)">Tarde / Noche (4:00 pm - 10:30 pm)</option>
             <option value="Fin de semana">Fin de semana</option>
           </select>
         </div>
       </div>
 
       {error && (
-        <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
+        <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-sm text-bad">
           {error}
         </p>
       )}
 
-      <button type="submit" disabled={enviando} className="btn btn-primary w-full">
+      <button type="submit" disabled={enviando} className="btn btn-primary w-full !min-h-12">
         {enviando && <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />}
-        Separa tu inscripción
+        Quiero inscribirme
       </button>
     </form>
   );
