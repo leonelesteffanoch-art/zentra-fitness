@@ -8,29 +8,31 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
+  Download,
   Edit3,
   Loader2,
   RefreshCw,
-  Snowflake,
   UserPlus,
   Users,
   X,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { SearchBar } from '@/components/SearchBar';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
+import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
 import {
   anularMembresia,
   buscarSocios,
-  congelarMembresia,
   listarSociosEstado,
   membresiasDeSocio,
   type FiltroEstadoSocio,
 } from '@/services/sociosService';
+import { ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import { soles } from '@/lib/formato';
-import type { MembresiaEstado, Semaforo, SocioEstado } from '@/types';
+import { hoyLima, soles } from '@/lib/formato';
+import type { Asistencia, MembresiaEstado, Semaforo, SocioEstado } from '@/types';
 
 const BADGE_SEMAFORO: Record<Semaforo, { cls: string; txt: string }> = {
   VERDE: { cls: 'bg-ok/15 text-ok', txt: 'Activo' },
@@ -55,19 +57,19 @@ export default function SociosPage() {
   const [termino, setTermino] = useState('');
   const [filtro, setFiltro] = useState<FiltroEstadoSocio>('todos');
   const [cargando, setCargando] = useState(true);
+  const [exportando, setExportando] = useState(false);
   const [hayTurno, setHayTurno] = useState(false);
 
   const [seleccionado, setSeleccionado] = useState<SocioEstado | null>(null);
   const [historial, setHistorial] = useState<MembresiaEstado[]>([]);
+  const [asistenciasSocio, setAsistenciasSocio] = useState<Asistencia[]>([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
   // Modales
   const [modalSocio, setModalSocio] = useState<'nuevo' | 'editar' | null>(null);
   const [modoCobro, setModoCobro] = useState<ModoCobro | null>(null);
 
-  // Acciones sobre una membresía (congelar / anular)
-  const [congelandoId, setCongelandoId] = useState<string | null>(null);
-  const [diasCongelar, setDiasCongelar] = useState('3');
+  // Acción sobre una membresía (anular — solo admin)
   const [anulandoId, setAnulandoId] = useState<string | null>(null);
   const [motivoAnular, setMotivoAnular] = useState('');
   const [procesandoAccion, setProcesandoAccion] = useState(false);
@@ -123,12 +125,15 @@ export default function SociosPage() {
 
   const cargarFicha = useCallback(async (socio: SocioEstado) => {
     setSeleccionado(socio);
-    setCongelandoId(null);
     setAnulandoId(null);
     setCargandoHistorial(true);
     try {
-      const mems = await membresiasDeSocio(socio.socio_id);
+      const [mems, asis] = await Promise.all([
+        membresiasDeSocio(socio.socio_id),
+        ultimasAsistencias(socio.socio_id),
+      ]);
       setHistorial(mems);
+      setAsistenciasSocio(asis);
     } catch (e) {
       setAviso({
         tipo: 'error',
@@ -163,32 +168,6 @@ export default function SociosPage() {
     }
   }
 
-  async function handleCongelar(membresiaId: string) {
-    const dias = Number(diasCongelar);
-    if (!Number.isInteger(dias) || dias <= 0) {
-      setAviso({ tipo: 'error', texto: 'Ingresa una cantidad de días válida' });
-      return;
-    }
-    setProcesandoAccion(true);
-    setAviso(null);
-    try {
-      const nuevaFecha = await congelarMembresia(membresiaId, dias);
-      setCongelandoId(null);
-      setAviso({
-        tipo: 'ok',
-        texto: `Membresía congelada +${dias} días. Nueva fecha fin: ${nuevaFecha}`,
-      });
-      if (seleccionado) await refrescarSeleccionado(seleccionado.dni);
-    } catch (e) {
-      setAviso({
-        tipo: 'error',
-        texto: e instanceof Error ? e.message : 'No se pudo congelar la membresía',
-      });
-    } finally {
-      setProcesandoAccion(false);
-    }
-  }
-
   async function handleAnularMembresia(membresiaId: string) {
     if (!motivoAnular.trim()) return;
     setProcesandoAccion(true);
@@ -209,6 +188,74 @@ export default function SociosPage() {
     }
   }
 
+  /** Exporta el padrón en el formato exacto de Excel del gimnasio:
+   *  [Nombres, DNI, Celular, Plan, Pagado, Deuda, Inicio de la Membresía, Fin de Membresía, Días Restantes]
+   */
+  async function exportarExcelSocios() {
+    if (!gymId) return;
+    setExportando(true);
+    setAviso(null);
+    try {
+      const todos: SocioEstado[] = [];
+      let pag = 0;
+      while (pag < 20) {
+        const lote = await listarSociosEstado(gymId, pag, 'todos');
+        todos.push(...lote);
+        if (lote.length < 20) break;
+        pag += 1;
+      }
+
+      if (todos.length === 0) {
+        setAviso({ tipo: 'error', texto: 'No hay socios registrados para exportar' });
+        return;
+      }
+
+      const filas = todos.map((s) => ({
+        Nombres: `${s.apellidos}, ${s.nombres}`,
+        DNI: s.dni,
+        Celular: s.telefono ?? '—',
+        'Plan Elegido': s.plan ?? 'Sin membresía',
+        Deuda: Number(s.saldo_pendiente) || 0,
+        'Inicio de la Membresía': s.fecha_inicio ?? '—',
+        'Fin de Membresía': s.fecha_fin ?? '—',
+        'Días Restantes': s.dias_restantes ?? 0,
+        Estado:
+          s.semaforo === 'VERDE'
+            ? 'Activo'
+            : s.semaforo === 'AMBAR'
+            ? 'Por vencer / Deuda'
+            : 'Vencido',
+      }));
+
+      const hoja = XLSX.utils.json_to_sheet(filas);
+      hoja['!cols'] = [
+        { wch: 28 },
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 10 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 16 },
+      ];
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, 'Socios');
+      XLSX.writeFile(libro, `Zentra_Fitness_Socios_${hoyLima()}.xlsx`);
+      setAviso({
+        tipo: 'ok',
+        texto: `Padrón de socios exportado a Excel (${filas.length} inscritos)`,
+      });
+    } catch (e) {
+      setAviso({
+        tipo: 'error',
+        texto: e instanceof Error ? e.message : 'No se pudo exportar a Excel',
+      });
+    } finally {
+      setExportando(false);
+    }
+  }
+
   const hayMasDeUnaPagina = termino.length < 2 && (pagina > 0 || socios.length === 20);
 
   return (
@@ -216,14 +263,29 @@ export default function SociosPage() {
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-4xl sm:text-5xl">Socios</h1>
-        <button
-          type="button"
-          onClick={() => setModalSocio('nuevo')}
-          className="btn btn-secondary"
-        >
-          <UserPlus size={16} strokeWidth={1.5} />
-          Nuevo socio
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            disabled={exportando}
+            onClick={exportarExcelSocios}
+            className="btn btn-ghost !min-h-10"
+          >
+            {exportando ? (
+              <Loader2 size={15} strokeWidth={1.5} className="animate-spin" />
+            ) : (
+              <Download size={15} strokeWidth={1.5} />
+            )}
+            Exportar Excel
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalSocio('nuevo')}
+            className="btn btn-secondary !min-h-10"
+          >
+            <UserPlus size={16} strokeWidth={1.5} />
+            Nuevo socio
+          </button>
+        </div>
       </div>
 
       {/* Buscador + Chips de filtro rápido */}
@@ -298,7 +360,7 @@ export default function SociosPage() {
                     return (
                       <tr
                         key={s.socio_id}
-                        onClick={() => cargarFicha(s)}
+                        onClick={() => void cargarFicha(s)}
                         className={`cursor-pointer transition-colors ${
                           activo ? 'bg-surface-2' : 'hover:bg-surface-2/60'
                         }`}
@@ -337,7 +399,6 @@ export default function SociosPage() {
             </table>
           </div>
 
-          {/* Paginación visible solo si hay más de una página */}
           {hayMasDeUnaPagina && (
             <div className="flex items-center justify-end gap-2">
               <button
@@ -368,14 +429,15 @@ export default function SociosPage() {
           )}
         </section>
 
-        {/* Columna derecha: EmptyState o Ficha ordenada (Datos -> Membresía -> Acciones) */}
+        {/* Columna derecha: EmptyState o Ficha ordenada */}
         <section aria-label="Detalle del socio" className="bg-surface p-6">
           {!seleccionado ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Users size={32} strokeWidth={1.5} className="text-muted" />
               <p className="mt-3 text-sm font-medium text-bone">Ningún socio seleccionado</p>
               <p className="mt-1 max-w-xs text-xs text-muted">
-                Elige un socio de la tabla para ver su ficha y membresía, o inscribe uno nuevo.
+                Elige un socio de la tabla para ver su ficha, calendario semanal y membresía, o
+                inscribe uno nuevo.
               </p>
               <button
                 type="button"
@@ -434,14 +496,20 @@ export default function SociosPage() {
                   </div>
                   {seleccionado.telefono && (
                     <div>
-                      <dt className="inline">Tel / WhatsApp: </dt>
+                      <dt className="inline">Celular / WhatsApp: </dt>
                       <dd className="inline tabular-nums text-bone">{seleccionado.telefono}</dd>
                     </div>
                   )}
                 </dl>
               </div>
 
-              {/* 3. Membresía e historial + 4. Acciones de membresía */}
+              {/* 3. Calendario semanal de asistencias */}
+              <WeeklyAttendanceCalendar
+                asistencias={asistenciasSocio}
+                planNombre={seleccionado.plan}
+              />
+
+              {/* 4. Membresías registradas */}
               <div className="space-y-3 border-t border-line/70 pt-5">
                 <h3 className="text-xs font-medium text-muted">Membresías registradas</h3>
 
@@ -472,44 +540,48 @@ export default function SociosPage() {
                           </div>
 
                           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted tabular-nums">
-                            <span>Total: <strong className="font-medium text-bone">{soles(m.precio_total)}</strong></span>
-                            <span>Pagado: <strong className="font-medium text-ok">{soles(m.monto_pagado)}</strong></span>
+                            <span>
+                              Total:{' '}
+                              <strong className="font-medium text-bone">
+                                {soles(m.precio_total)}
+                              </strong>
+                            </span>
+                            <span>
+                              Pagado:{' '}
+                              <strong className="font-medium text-ok">
+                                {soles(m.monto_pagado)}
+                              </strong>
+                            </span>
                             {m.saldo_pendiente > 0 && (
                               <span className="font-semibold text-warn">
-                                Saldo: {soles(m.saldo_pendiente)}
+                                Deuda: {soles(m.saldo_pendiente)}
                               </span>
-                            )}
-                            {m.dias_congelados > 0 && (
-                              <span>Congelados: {m.dias_congelados} d</span>
                             )}
                           </div>
 
-                          {/* 4. Acciones sobre la membresía */}
-                          {!anulada && (
+                          {/* Acción de anulación exclusiva para el administrador */}
+                          {!anulada && esAdmin && (
                             <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-line/60 pt-2.5">
-                              {congelandoId === m.membresia_id ? (
+                              {anulandoId === m.membresia_id ? (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs text-muted">Días a congelar:</span>
                                   <input
-                                    type="number"
-                                    min="1"
-                                    max="60"
-                                    value={diasCongelar}
-                                    onChange={(e) => setDiasCongelar(e.target.value)}
-                                    className="field !min-h-8 !w-16 !px-2 text-xs tabular-nums"
+                                    type="text"
+                                    placeholder="Motivo de anulación"
+                                    value={motivoAnular}
+                                    onChange={(e) => setMotivoAnular(e.target.value)}
+                                    className="field !min-h-8 !w-40 !px-2 text-xs"
                                   />
                                   <button
                                     type="button"
-                                    disabled={procesandoAccion}
-                                    onClick={() => handleCongelar(m.membresia_id)}
+                                    disabled={procesandoAccion || !motivoAnular.trim()}
+                                    onClick={() => handleAnularMembresia(m.membresia_id)}
                                     className="btn btn-secondary !min-h-8 !px-2.5"
-                                    title="Confirmar congelamiento"
                                   >
                                     <Check size={14} strokeWidth={1.5} />
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => setCongelandoId(null)}
+                                    onClick={() => setAnulandoId(null)}
                                     className="btn btn-ghost !min-h-8 !px-2"
                                   >
                                     <X size={14} strokeWidth={1.5} />
@@ -519,58 +591,14 @@ export default function SociosPage() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setCongelandoId(m.membresia_id);
-                                    setAnulandoId(null);
+                                    setAnulandoId(m.membresia_id);
+                                    setMotivoAnular('');
                                   }}
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-bone hover:underline"
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-bad"
                                 >
-                                  <Snowflake size={13} strokeWidth={1.5} />
-                                  Congelar días
+                                  <Ban size={13} strokeWidth={1.5} />
+                                  Anular membresía
                                 </button>
-                              )}
-
-                              {esAdmin && (
-                                <>
-                                  {anulandoId === m.membresia_id ? (
-                                    <div className="flex items-center gap-1.5">
-                                      <input
-                                        type="text"
-                                        placeholder="Motivo de anulación"
-                                        value={motivoAnular}
-                                        onChange={(e) => setMotivoAnular(e.target.value)}
-                                        className="field !min-h-8 !w-40 !px-2 text-xs"
-                                      />
-                                      <button
-                                        type="button"
-                                        disabled={procesandoAccion || !motivoAnular.trim()}
-                                        onClick={() => handleAnularMembresia(m.membresia_id)}
-                                        className="btn btn-secondary !min-h-8 !px-2.5"
-                                      >
-                                        <Check size={14} strokeWidth={1.5} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setAnulandoId(null)}
-                                        className="btn btn-ghost !min-h-8 !px-2"
-                                      >
-                                        <X size={14} strokeWidth={1.5} />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setAnulandoId(m.membresia_id);
-                                        setCongelandoId(null);
-                                        setMotivoAnular('');
-                                      }}
-                                      className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-bad"
-                                    >
-                                      <Ban size={13} strokeWidth={1.5} />
-                                      Anular membresía
-                                    </button>
-                                  )}
-                                </>
                               )}
                             </div>
                           )}
@@ -597,7 +625,7 @@ export default function SociosPage() {
             setAviso({
               tipo: 'ok',
               texto: esNuevo
-                ? 'Socio registrado. Ahora puedes asignarle su membresía.'
+                ? 'Socio registrado. Ahora puedes asignarle su plan.'
                 : 'Datos del socio actualizados.',
             });
             await refrescarSeleccionado(dniGuardado);

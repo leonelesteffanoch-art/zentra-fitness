@@ -422,9 +422,35 @@ export default function CajaPage() {
             </div>
 
             <form onSubmit={handleRegistrarEgreso} className="space-y-4">
+              <div className="space-y-1.5">
+                <span className="label">Motivo rápido</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConceptoEgreso('Retiro de efectivo por el dueño');
+                      setMetodoEgreso('Efectivo');
+                      if (resumen && resumen.efectivo_esperado > 0) {
+                        setMontoEgreso(resumen.efectivo_esperado.toFixed(2));
+                      }
+                    }}
+                    className="rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-bone hover:bg-line"
+                  >
+                    Retiro por el dueño
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConceptoEgreso('Limpieza / insumos del gimnasio')}
+                    className="rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted hover:text-bone"
+                  >
+                    Limpieza / insumos
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="egreso-concepto" className="label">
-                  Concepto del gasto
+                  Concepto del gasto o retiro
                 </label>
                 <input
                   id="egreso-concepto"

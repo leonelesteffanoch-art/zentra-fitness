@@ -37,8 +37,6 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
   const [pDesc, setPDesc] = useState('');
   const [pDias, setPDias] = useState('30');
   const [pPrecio, setPPrecio] = useState('80');
-  const [pCongelar, setPCongelar] = useState(true);
-  const [pMaxCongelar, setPMaxCongelar] = useState('7');
   const [pVisible, setPVisible] = useState(true);
   const [pActivo, setPActivo] = useState(true);
   const [guardandoPlan, setGuardandoPlan] = useState(false);
@@ -60,8 +58,6 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
     setPDesc('');
     setPDias('30');
     setPPrecio('80');
-    setPCongelar(true);
-    setPMaxCongelar('7');
     setPVisible(true);
     setPActivo(true);
     setMostrarFormPlan(true);
@@ -73,8 +69,6 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
     setPDesc(p.descripcion ?? '');
     setPDias(String(p.duracion_dias));
     setPPrecio(String(p.precio));
-    setPCongelar(p.permite_congelar);
-    setPMaxCongelar(p.max_dias_congelar !== null ? String(p.max_dias_congelar) : '');
     setPVisible(p.visible_landing);
     setPActivo(p.activo);
     setMostrarFormPlan(true);
@@ -93,8 +87,8 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
       descripcion: pDesc.trim() || null,
       duracion_dias: duracion,
       precio,
-      permite_congelar: pCongelar,
-      max_dias_congelar: pCongelar && pMaxCongelar.trim() ? Number(pMaxCongelar) : null,
+      permite_congelar: false,
+      max_dias_congelar: null,
       visible_landing: pVisible,
       activo: pActivo,
     };
@@ -179,7 +173,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
       {/* 1. PLANES DE MEMBRESÍA */}
       <section aria-label="Planes de membresía" className="bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="section-title text-base">Planes de membresía</h3>
+          <h3 className="section-title text-base">Planes de entrenamiento</h3>
           <button
             type="button"
             onClick={abrirNuevoPlan}
@@ -206,7 +200,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   value={pNombre}
                   onChange={(e) => setPNombre(e.target.value)}
                   className="field !min-h-9"
-                  placeholder="Ej: Mensual"
+                  placeholder="Ej: Mensual (Diario)"
                 />
               </div>
               <div>
@@ -251,32 +245,12 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   value={pDesc}
                   onChange={(e) => setPDesc(e.target.value)}
                   className="field !min-h-9"
-                  placeholder="Ej: Acceso libre a musculación y cardio"
+                  placeholder="Ej: 30 días con ingreso todos los días"
                 />
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 pt-1 text-xs">
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={pCongelar}
-                  onChange={(e) => setPCongelar(e.target.checked)}
-                />
-                Permite congelar
-              </label>
-              {pCongelar && (
-                <label className="inline-flex items-center gap-1.5">
-                  Máx. días:
-                  <input
-                    type="number"
-                    min="1"
-                    value={pMaxCongelar}
-                    onChange={(e) => setPMaxCongelar(e.target.value)}
-                    className="field !min-h-7 !w-16 !px-2 tabular-nums"
-                  />
-                </label>
-              )}
               <label className="inline-flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -327,14 +301,11 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                 <p className="font-medium text-bone">
                   {p.nombre}{' '}
                   <span className="text-xs font-normal text-muted tabular-nums">
-                    ({p.duracion_dias} días)
+                    ({p.duracion_dias === 1 ? '1 día' : `${p.duracion_dias} días`})
                   </span>
                 </p>
                 <p className="text-xs text-muted">
-                  {p.permite_congelar
-                    ? `Congelable (${p.max_dias_congelar ?? '∞'} d)`
-                    : 'Sin congelamiento'}{' '}
-                  · {p.visible_landing ? 'Visible en web' : 'Oculto en web'}
+                  {p.visible_landing ? 'Visible en web' : 'Oculto en web'}
                   {!p.activo && ' · Inactivo'}
                 </p>
               </div>
@@ -387,7 +358,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   value={prNombre}
                   onChange={(e) => setPrNombre(e.target.value)}
                   className="field !min-h-9"
-                  placeholder="Ej: Agua San Mateo 600ml"
+                  placeholder="Ej: Agua Cielo (Helada)"
                 />
               </div>
               <div>
@@ -448,7 +419,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   checked={prServicio}
                   onChange={(e) => setPrServicio(e.target.checked)}
                 />
-                Es servicio (sin control de stock, ej. Pase diario)
+                Es servicio (sin control de stock, ej. Pase por día)
               </label>
               <label className="inline-flex items-center gap-2">
                 <input

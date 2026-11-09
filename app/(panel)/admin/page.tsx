@@ -6,6 +6,8 @@ import { CheckCircle2, Download, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { CatalogManager } from '@/components/CatalogManager';
+import { GymStatsSection } from '@/components/GymStatsSection';
+import { LeadsPanel } from '@/components/LeadsPanel';
 import { StaffManager } from '@/components/StaffManager';
 import {
   listarProductos,
@@ -309,6 +311,10 @@ export default function AdminPage() {
           </dl>
         </div>
       </section>
+
+      {/* 1.5 Estadísticas operativas + Interesados desde la web */}
+      {gymId && <GymStatsSection gymId={gymId} />}
+      <LeadsPanel />
 
       {/* 2. Gestión de precios y catálogo */}
       {gymId && (

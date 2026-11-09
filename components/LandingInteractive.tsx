@@ -31,7 +31,7 @@ export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after
 const LINKS_NAV = [
   { href: '#disciplinas', label: 'Zonas' },
   { href: '#planes', label: 'Planes' },
-  { href: '#metodo', label: 'El club' },
+  { href: '#horarios', label: 'Horarios' },
   { href: '#contacto', label: 'Ubicación' },
 ];
 
@@ -196,7 +196,7 @@ export function LandingHeader() {
   );
 }
 
-// ---------- 2. Zonas de entrenamiento: sin duración ni horarios; ficha técnica editorial ----------
+// ---------- 2. Zonas de entrenamiento: ficha técnica editorial ----------
 
 export interface DisciplinaItem {
   num: string;
@@ -288,10 +288,9 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
         })}
       </ul>
 
-      {/* Panel derecho exclusivo en desktop: Ficha técnica editorial (sin repetir la imagen con el logo) */}
+      {/* Panel derecho exclusivo en desktop */}
       {actual && (
         <aside className="relative hidden flex-col justify-between overflow-hidden bg-surface p-8 lg:col-span-7 lg:flex">
-          {/* Cabecera técnica de la zona */}
           <div className="flex items-start justify-between border-b border-line/70 pb-6">
             <div>
               <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
@@ -304,10 +303,8 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
             </span>
           </div>
 
-          {/* Descripción principal */}
           <p className="mt-6 text-base leading-relaxed text-muted">{actual.detalle}</p>
 
-          {/* Estaciones y máquinas de la zona */}
           <div className="mt-7 bg-ink/60 p-5">
             <p className="text-xs font-medium text-muted">Estaciones y equipamiento disponible</p>
             <ul className="mt-3 grid grid-cols-2 gap-3 text-sm text-bone">
@@ -320,7 +317,6 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
             </ul>
           </div>
 
-          {/* Metadatos reales: Intensidad + Tiempo libre (sin límite de duración ni horarios fijos) */}
           <dl className="mt-7 grid grid-cols-2 gap-6 border-t border-line/70 pt-5 text-xs">
             <div>
               <dt className="text-muted">Intensidad de trabajo</dt>
@@ -333,7 +329,7 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
           </dl>
 
           <div className="mt-6 flex items-center justify-between border-t border-line/50 pt-4 text-xs text-muted">
-            <span>Incluida en todos los planes y pases diarios</span>
+            <span>Incluida en todos los planes diarios, interdiarios y pases por día</span>
             <a
               href="#planes"
               onClick={(e) => irASeccion(e, '#planes')}
@@ -348,13 +344,13 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
   );
 }
 
-// ---------- 3. Formulario de Contacto / Leads ----------
+// ---------- 3. Formulario de Inscripción / Interesados (conectado al panel de control) ----------
 
 export function LeadContactForm() {
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [objetivo, setObjetivo] = useState('Fuerza e hipertrofia');
-  const [horario, setHorario] = useState('Mañana (6:00 am - 12:00 pm)');
+  const [objetivo, setObjetivo] = useState('Mensual (Diario) - S/ 80');
+  const [horario, setHorario] = useState('Mañana con entrenador (6:00 am - 11:00 am)');
   const [empresa, setEmpresa] = useState(''); // Honeypot
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
@@ -390,11 +386,11 @@ export function LeadContactForm() {
       <div className="bg-surface p-6">
         <div className="flex items-center gap-2 text-ok">
           <CheckCircle2 size={20} strokeWidth={1.5} />
-          <p className="font-semibold">Datos recibidos</p>
+          <p className="font-semibold">Solicitud registrada</p>
         </div>
         <p className="mt-2 text-sm text-muted">
-          Gracias por escribirnos. El equipo de recepción de Zentra Fitness te contactará por
-          WhatsApp o llamada en breve.
+          Tus datos ya están en el panel de recepción de Zentra Fitness. Te escribiremos por
+          WhatsApp desde el <span className="font-mono text-bone">998 180 873</span> en breve.
         </p>
         <button
           type="button"
@@ -436,13 +432,13 @@ export function LeadContactForm() {
 
       <div>
         <label htmlFor="lead-telefono" className="label">
-          Teléfono / WhatsApp *
+          Número de celular / WhatsApp *
         </label>
         <input
           id="lead-telefono"
           type="tel"
           required
-          placeholder="Ej: 987 654 321"
+          placeholder="Ej: 998 180 873"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
           className="field !bg-surface-2 tabular-nums"
@@ -452,7 +448,7 @@ export function LeadContactForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="lead-objetivo" className="label">
-            Objetivo principal
+            Plan de interés
           </label>
           <select
             id="lead-objetivo"
@@ -460,16 +456,20 @@ export function LeadContactForm() {
             onChange={(e) => setObjetivo(e.target.value)}
             className="field !bg-surface-2"
           >
-            <option>Fuerza e hipertrofia</option>
-            <option>Recomposición corporal</option>
-            <option>Acondicionamiento funcional</option>
-            <option>Salud y movilidad</option>
+            <option>Mensual (Diario) - S/ 80</option>
+            <option>Mensual (Interdiario) - S/ 60</option>
+            <option>2 meses (Diario) - S/ 140</option>
+            <option>2 meses (Interdiario) - S/ 100</option>
+            <option>3 meses (Diario) - S/ 200</option>
+            <option>3 meses (Interdiario) - S/ 150</option>
+            <option>Semanal - S/ 25</option>
+            <option>Por día - S/ 10</option>
           </select>
         </div>
 
         <div>
           <label htmlFor="lead-horario" className="label">
-            Turno en el que sueles entrenar
+            Horario en el que sueles entrenar
           </label>
           <select
             id="lead-horario"
@@ -477,9 +477,10 @@ export function LeadContactForm() {
             onChange={(e) => setHorario(e.target.value)}
             className="field !bg-surface-2"
           >
-            <option>Mañana (6:00 am - 12:00 pm)</option>
-            <option>Tarde (12:00 pm - 5:00 pm)</option>
-            <option>Noche (5:00 pm - 10:00 pm)</option>
+            <option>Mañana con entrenador (6:00 am - 11:00 am)</option>
+            <option>Mediodía libre sin entrenador (11:00 am - 4:00 pm)</option>
+            <option>Tarde/Noche con entrenador (4:00 pm - 10:30 pm)</option>
+            <option>Fin de semana (Sábado / Domingo)</option>
           </select>
         </div>
       </div>
@@ -492,7 +493,7 @@ export function LeadContactForm() {
 
       <button type="submit" disabled={enviando} className="btn btn-primary w-full !min-h-11">
         {enviando && <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />}
-        Solicitar información de inscripción
+        Solicitar inscripción
       </button>
     </form>
   );

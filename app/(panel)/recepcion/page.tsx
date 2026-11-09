@@ -7,10 +7,11 @@ import { SearchBar } from '@/components/SearchBar';
 import { MemberStatusCard } from '@/components/MemberStatusCard';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
+import { LeadsPanel } from '@/components/LeadsPanel';
 import { buscarSocios } from '@/services/sociosService';
-import { registrarAsistencia } from '@/services/asistenciasService';
+import { registrarAsistencia, ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import type { Semaforo, SocioEstado } from '@/types';
+import type { Asistencia, Semaforo, SocioEstado } from '@/types';
 
 const BADGE_ESTADO: Record<Semaforo, { cls: string; txt: string }> = {
   VERDE: { cls: 'bg-ok/15 text-ok', txt: 'Activo' },
@@ -25,6 +26,7 @@ export default function RecepcionPage() {
   const [resultados, setResultados] = useState<SocioEstado[]>([]);
   const [termino, setTermino] = useState('');
   const [seleccionado, setSeleccionado] = useState<SocioEstado | null>(null);
+  const [asistenciasSocio, setAsistenciasSocio] = useState<Asistencia[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
   const [yaIngreso, setYaIngreso] = useState(false);
@@ -40,12 +42,24 @@ export default function RecepcionPage() {
       .catch(() => setHayTurno(false));
   }, [gymId]);
 
+  const seleccionarSocioConAsistencias = useCallback(async (socio: SocioEstado) => {
+    setSeleccionado(socio);
+    setYaIngreso(false);
+    try {
+      const lista = await ultimasAsistencias(socio.socio_id);
+      setAsistenciasSocio(lista);
+    } catch {
+      setAsistenciasSocio([]);
+    }
+  }, []);
+
   const buscar = useCallback(
     async (t: string) => {
       if (!gymId) return;
       setTermino(t);
       setAviso(null);
       setSeleccionado(null);
+      setAsistenciasSocio([]);
       setYaIngreso(false);
       if (t.length < 2) {
         setResultados([]);
@@ -55,14 +69,16 @@ export default function RecepcionPage() {
       try {
         const r = await buscarSocios(gymId, t);
         setResultados(r);
-        if (r.length === 1) setSeleccionado(r[0]);
+        if (r.length === 1) {
+          await seleccionarSocioConAsistencias(r[0]);
+        }
       } catch (e) {
         setAviso({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al buscar' });
       } finally {
         setBuscando(false);
       }
     },
-    [gymId]
+    [gymId, seleccionarSocioConAsistencias]
   );
 
   async function checkIn() {
@@ -70,6 +86,8 @@ export default function RecepcionPage() {
     setRegistrando(true);
     try {
       await registrarAsistencia(seleccionado.socio_id);
+      const listaActualizada = await ultimasAsistencias(seleccionado.socio_id);
+      setAsistenciasSocio(listaActualizada);
       setYaIngreso(true);
       setAviso({ tipo: 'ok', texto: `Ingreso registrado: ${seleccionado.nombres}` });
     } catch (e) {
@@ -86,7 +104,7 @@ export default function RecepcionPage() {
     if (!gymId || !dni) return;
     const [actualizado] = await buscarSocios(gymId, dni);
     if (actualizado) {
-      setSeleccionado(actualizado);
+      await seleccionarSocioConAsistencias(actualizado);
       setResultados((rs) =>
         rs.map((r) => (r.socio_id === actualizado.socio_id ? actualizado : r))
       );
@@ -94,13 +112,18 @@ export default function RecepcionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-4xl sm:text-5xl">Recepción</h1>
+        <div>
+          <h1 className="font-display text-4xl sm:text-5xl">Recepción</h1>
+          <p className="mt-1 text-xs text-muted">
+            Escribe o pide el DNI al ingresar para ver su semáforo y calendario semanal.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => setModalNuevoSocio(true)}
-          className="btn btn-ghost"
+          className="btn btn-secondary"
         >
           <UserPlus size={16} strokeWidth={1.5} />
           Nuevo socio
@@ -110,7 +133,8 @@ export default function RecepcionPage() {
       {hayTurno === false && (
         <p className="flex items-start gap-3 bg-surface px-4 py-3 text-sm text-warn">
           <AlertTriangle size={18} strokeWidth={1.5} className="mt-0.5 shrink-0" />
-          No hay un turno de caja abierto. Puedes registrar ingresos, pero para cobrar primero abre turno en Caja y POS.
+          No hay un turno de caja abierto. Puedes registrar asistencias, pero para cobrar primero
+          abre turno en Caja y POS.
         </p>
       )}
 
@@ -119,7 +143,7 @@ export default function RecepcionPage() {
         buscando={buscando}
         size="lg"
         autoFocus
-        placeholder="Buscar por DNI o nombre del socio..."
+        placeholder="Dictar DNI (8 dígitos) o nombre del socio..."
       />
 
       {aviso && (
@@ -137,6 +161,7 @@ export default function RecepcionPage() {
       {seleccionado && gymId && (
         <MemberStatusCard
           socio={seleccionado}
+          asistencias={asistenciasSocio}
           registrando={registrando}
           yaIngreso={yaIngreso}
           onCheckIn={checkIn}
@@ -152,10 +177,7 @@ export default function RecepcionPage() {
             return (
               <li key={s.socio_id}>
                 <button
-                  onClick={() => {
-                    setSeleccionado(s);
-                    setYaIngreso(false);
-                  }}
+                  onClick={() => void seleccionarSocioConAsistencias(s)}
                   className="flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors hover:bg-surface-2"
                 >
                   <div>
@@ -163,6 +185,7 @@ export default function RecepcionPage() {
                       {s.apellidos}, {s.nombres}
                     </span>
                     <span className="ml-3 font-mono text-xs text-muted">{s.dni}</span>
+                    {s.plan && <span className="ml-3 text-xs text-muted">· {s.plan}</span>}
                   </div>
                   <span className={`rounded-xs px-2 py-0.5 text-xs font-semibold ${b.cls}`}>
                     {b.txt}
@@ -188,6 +211,11 @@ export default function RecepcionPage() {
         </div>
       )}
 
+      {/* Apartado de clientes interesados inscritos desde el formulario de la Landing */}
+      <div className="border-t border-line/70 pt-6">
+        <LeadsPanel />
+      </div>
+
       {modalNuevoSocio && gymId && perfil && (
         <MemberFormModal
           gymId={gymId}
@@ -198,7 +226,7 @@ export default function RecepcionPage() {
             const r = await buscarSocios(gymId, dniCreado);
             setResultados(r);
             if (r[0]) {
-              setSeleccionado(r[0]);
+              await seleccionarSocioConAsistencias(r[0]);
               setCobro('renovar');
             }
           }}

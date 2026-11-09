@@ -40,6 +40,9 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Regla de negocio: Pagos a cuenta permitidos para antiguos miembros, no para nuevos
+  const esSocioNuevo = !socio.membresia_id;
+
   useEffect(() => {
     if (modo !== 'renovar') return;
     listarPlanes(gymId)
@@ -65,6 +68,9 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
   const motivoBloqueo = (() => {
     if (modo === 'renovar' && !plan) return 'Elige un plan';
     if (pagado > total) return 'El pago supera el total';
+    if (modo === 'renovar' && esSocioNuevo && pendiente > 0) {
+      return 'Socio nuevo: la primera inscripción debe cancelarse completa (pagos a cuenta solo aplican a miembros antiguos)';
+    }
     if (modo === 'abonar' && pagado <= 0) return 'Ingresa el monto a abonar';
     if (pagado > 0 && !hayTurno) return 'Abre un turno de caja para cobrar';
     return null;
@@ -113,10 +119,17 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <div>
             <p className="text-xs text-muted">
-              {socio.apellidos}, {socio.nombres}
+              {socio.apellidos}, {socio.nombres} ·{' '}
+              <span className="text-bone">
+                {esSocioNuevo ? 'Inscripción de socio nuevo' : 'Socio antiguo'}
+              </span>
             </p>
             <h2 id="cobro-titulo" className="section-title mt-0.5 text-xl">
-              {modo === 'renovar' ? 'Renovar membresía' : 'Cobrar saldo pendiente'}
+              {modo === 'renovar'
+                ? esSocioNuevo
+                  ? 'Asignar primer plan'
+                  : 'Renovar membresía'
+                : 'Cobrar saldo pendiente'}
             </h2>
           </div>
           <button onClick={onClose} className="btn btn-ghost !min-h-9 !px-2" aria-label="Cerrar">
@@ -141,7 +154,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                           type="button"
                           onClick={() => {
                             setPlanId(p.id);
-                            setLineas([{ metodo: 'Efectivo', monto: '' }]);
+                            setLineas([{ metodo: 'Efectivo', monto: p.precio.toFixed(2) }]);
                           }}
                           aria-pressed={activo}
                           className={`rounded-xs p-3.5 text-left transition-colors ${
@@ -157,7 +170,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                             </span>
                           </div>
                           <span className="mt-0.5 block text-xs text-muted">
-                            {p.duracion_dias} días
+                            {p.duracion_dias === 1 ? '1 día' : `${p.duracion_dias} días`}
                           </span>
                         </button>
                       );
@@ -207,7 +220,11 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
           </fieldset>
 
           <fieldset className="space-y-2">
-            <legend className="label">Detalle del pago (mixto o a cuenta)</legend>
+            <legend className="label">
+              {esSocioNuevo
+                ? 'Detalle del pago (efectivo, digital o mixto — sin deuda para nuevos)'
+                : 'Detalle del pago (mixto o pago a cuenta para socio antiguo)'}
+            </legend>
             {lineas.map((l, i) => (
               <div key={i} className="flex gap-2">
                 <select
@@ -278,8 +295,13 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
             </div>
           </dl>
 
-          {(error || (motivoBloqueo && pagado > 0 && !hayTurno)) && (
-            <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-sm text-bad">
+          {(error ||
+            (motivoBloqueo &&
+              ((pagado > 0 && !hayTurno) || (esSocioNuevo && plan && pendiente > 0)))) && (
+            <p
+              role="alert"
+              className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad"
+            >
               {error ?? motivoBloqueo}
             </p>
           )}
