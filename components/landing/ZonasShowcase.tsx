@@ -231,17 +231,6 @@ export function ZonasShowcase({ items }: { items: ZonaItem[] }) {
             );
           })}
         </ul>
-
-        {/* Progreso del avance automático (solo desktop) */}
-        <div className="mt-3 hidden h-px w-full bg-line/60 lg:block" aria-hidden="true">
-          {autoActivo && (
-            <div
-              key={activa}
-              className="anim-progress h-px w-full bg-bone/60"
-              style={{ animationDuration: `${AVANCE_MS}ms` }}
-            />
-          )}
-        </div>
       </div>
 
       {/* Desktop: panel derecho con cross-fade */}

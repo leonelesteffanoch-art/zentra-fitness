@@ -11,12 +11,12 @@ export function StatsStrip() {
       <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
         <dl className="grid grid-cols-2 lg:grid-cols-4">
           <div className="border-b border-r border-line/60 py-8 pr-4 sm:py-10 lg:border-b-0">
-            <dt className="sr-only">Días abierto a la semana</dt>
+            <dt className="sr-only">Clientes activos</dt>
             <dd>
               <span className={cifra} style={{ fontStretch: '125%' }}>
-                <CountUp valor={7} />
+                <CountUp valor={170} prefijo="+" />
               </span>
-              <p className="mt-3 text-sm text-muted">días abierto a la semana</p>
+              <p className="mt-3 text-sm text-muted">clientes activos</p>
             </dd>
           </div>
 

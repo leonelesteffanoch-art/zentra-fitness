@@ -7,6 +7,7 @@ export interface EntrenadorData {
   nombre: string;
   turno: string;
   horario: string;
+  bloquesHorario: { turno: string; rango: string }[];
   rol: string;
   experiencia: string;
   especialidades: string[];
@@ -19,6 +20,10 @@ const ENTRENADORES: EntrenadorData[] = [
     nombre: 'Lucas',
     turno: 'Lunes a Viernes',
     horario: '6:00 am – 11:00 am y 4:00 pm – 10:30 pm',
+    bloquesHorario: [
+      { turno: 'Mañana', rango: '6:00 am – 11:00 am' },
+      { turno: 'Tarde / Noche', rango: '4:00 pm – 10:30 pm' },
+    ],
     rol: 'Entrenador principal & coach biomecánico',
     experiencia:
       'Especialista en sobrecarga progresiva, aumento de fuerza e hipertrofia. Te acompaña en la postura exacta de sentadillas, peso muerto y empuje en máquinas para que entrenes pesado y con total seguridad.',
@@ -30,6 +35,10 @@ const ENTRENADORES: EntrenadorData[] = [
     nombre: 'Juan',
     turno: 'Sábados',
     horario: '7:00 am – 11:00 am y 4:00 pm – 10:00 pm',
+    bloquesHorario: [
+      { turno: 'Mañana', rango: '7:00 am – 11:00 am' },
+      { turno: 'Tarde / Noche', rango: '4:00 pm – 10:00 pm' },
+    ],
     rol: 'Entrenador de fin de semana & acondicionamiento',
     experiencia:
       'Especialista en acondicionamiento físico, dinámicas funcionales y motivación deportiva. Supervisa tu ritmo y técnica en los entrenamientos intensos de fin de semana.',
@@ -138,7 +147,7 @@ export function EntrenadoresSection() {
                   }`}
                 >
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-line/80 pb-3">
+                    <div className="flex items-start justify-between border-b border-line/80 pb-3 gap-3">
                       <div>
                         <span className="text-xs font-semibold text-brand uppercase tracking-wider">
                           {coach.turno}
@@ -147,9 +156,17 @@ export function EntrenadoresSection() {
                           {coach.nombre}
                         </h4>
                       </div>
-                      <span className="rounded-full bg-surface-2 border border-line px-3 py-1 text-xs font-semibold text-bone tabular-nums">
-                        {coach.horario.split(' y ')[0]}
-                      </span>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {coach.bloquesHorario.map((b) => (
+                          <span
+                            key={b.rango}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-surface-2/95 border border-line px-2.5 py-0.5 text-xs font-semibold text-bone tabular-nums"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+                            <span>{b.rango}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
                     <div>

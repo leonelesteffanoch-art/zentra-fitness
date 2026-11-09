@@ -419,35 +419,39 @@ export default async function HomePage() {
                   </div>
                 </div>
 
-                {/* Tarjetas de contacto directo: WhatsApp + Redes */}
+                {/* Tarjetas de contacto directo: WhatsApp + Redes (más largas y proporcionadas) */}
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-line/80 bg-surface p-5 flex flex-col justify-between">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-6 flex flex-col justify-between min-h-[180px] transition-colors hover:border-line">
                     <div>
                       <dt className="text-xs text-muted font-medium flex items-center gap-1.5">
-                        <MessageCircle size={14} className="text-ok" />
+                        <MessageCircle size={15} className="text-ok" />
                         <span>WhatsApp oficial</span>
                       </dt>
-                      <dd className="mt-2 text-lg font-bold text-bone tabular-nums">
+                      <dd className="mt-2 text-xl font-bold text-bone tabular-nums">
                         {WHATSAPP_VISIBLE}
                       </dd>
-                      <p className="text-xs text-muted mt-0.5">Atención directa con Lucas</p>
+                      <p className="text-xs text-muted mt-1 leading-relaxed">
+                        Atención directa con Lucas para consultas y reservas
+                      </p>
                     </div>
                     <a
                       href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn btn-secondary !min-h-9 text-xs font-semibold mt-4 w-full justify-between"
+                      className="btn btn-secondary !min-h-10 text-xs font-semibold mt-4 w-full justify-between"
                     >
                       <span>Escribir al chat</span>
-                      <ArrowUpRight size={13} strokeWidth={1.5} />
+                      <ArrowUpRight size={14} strokeWidth={1.5} />
                     </a>
                   </div>
 
-                  <div className="rounded-2xl border border-line/80 bg-surface p-5 flex flex-col justify-between">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-6 flex flex-col justify-between min-h-[180px] transition-colors hover:border-line">
                     <div>
                       <dt className="text-xs text-muted font-medium">Redes sociales</dt>
-                      <p className="text-xs text-bone/90 font-medium mt-1">@zentrafitnessperu</p>
-                      <p className="text-xs text-muted mt-0.5">Videos, rutinas y avisos</p>
+                      <p className="text-base text-bone font-bold mt-1">@zentrafitnessperu</p>
+                      <p className="text-xs text-muted mt-1 leading-relaxed">
+                        Videos de entrenamientos y novedades diarias
+                      </p>
                     </div>
                     <dd className="mt-4 flex flex-wrap gap-2">
                       {REDES.map((red) => (
@@ -456,29 +460,13 @@ export default async function HomePage() {
                           href={red.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-xs font-medium text-bone transition-colors hover:border-brand hover:text-brand"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-bone transition-colors hover:border-brand hover:text-brand"
                         >
                           {red.nombre}
                           <ArrowUpRight size={11} strokeWidth={1.5} className="text-muted" />
                         </a>
                       ))}
                     </dd>
-                  </div>
-                </div>
-
-                {/* 3 Garantías de atención */}
-                <div className="grid grid-cols-3 gap-2 pt-1 text-center">
-                  <div className="rounded-xl border border-line/60 bg-surface/50 p-3">
-                    <p className="text-xs font-semibold text-bone">Respuesta rápida</p>
-                    <p className="text-[10px] text-muted mt-0.5">&lt; 15 min en WhatsApp</p>
-                  </div>
-                  <div className="rounded-xl border border-line/60 bg-surface/50 p-3">
-                    <p className="text-xs font-semibold text-bone">Sin matrícula</p>
-                    <p className="text-[10px] text-muted mt-0.5">Pagas al iniciar</p>
-                  </div>
-                  <div className="rounded-xl border border-line/60 bg-surface/50 p-3">
-                    <p className="text-xs font-semibold text-bone">Solo con DNI</p>
-                    <p className="text-[10px] text-muted mt-0.5">Control de días</p>
                   </div>
                 </div>
               </div>
