@@ -341,12 +341,23 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
 
   if (exito) {
     return (
-      <div role="status" aria-live="polite" className="border border-line/80 bg-ink p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 text-ok">
-          <CheckCircle2 size={20} strokeWidth={1.5} />
-          <p className="text-base font-semibold text-bone">Listo, te escribimos por WhatsApp en breve.</p>
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-3xl border border-ok/40 bg-surface p-8 sm:p-10 shadow-2xl text-center"
+      >
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-ok/15 text-ok mb-5 shadow-inner">
+          <CheckCircle2 size={36} strokeWidth={2} />
         </div>
-        <button type="button" onClick={() => setExito(false)} className="btn btn-secondary mt-5">
+        <h4 className="text-2xl font-bold text-bone">¡Solicitud recibida con éxito!</h4>
+        <p className="mt-2 text-sm text-muted max-w-md mx-auto leading-relaxed">
+          Listo, te escribiremos por WhatsApp al instante para coordinar tu primer día en el gimnasio.
+        </p>
+        <button
+          type="button"
+          onClick={() => setExito(false)}
+          className="btn btn-secondary mt-7 !px-6"
+        >
           Enviar otra consulta
         </button>
       </div>
@@ -354,99 +365,122 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 border border-line/80 bg-ink p-5 sm:p-8">
-      <input
-        type="text"
-        name="empresa"
-        tabIndex={-1}
-        autoComplete="off"
-        value={empresa}
-        onChange={(e) => setEmpresa(e.target.value)}
-        className="hidden"
-        aria-hidden="true"
-      />
+    <div className="relative overflow-hidden rounded-3xl border border-line bg-surface p-6 sm:p-9 shadow-2xl">
+      {/* Resplandor decorativo de fondo */}
+      <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-brand/10 blur-3xl" />
 
-      <div>
-        <label htmlFor="lead-nombre" className="label">
-          Nombre *
-        </label>
-        <input
-          id="lead-nombre"
-          type="text"
-          required
-          autoComplete="name"
-          placeholder="Tu nombre y apellido"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          className="field"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="lead-telefono" className="label">
-          Celular / WhatsApp *
-        </label>
-        <input
-          id="lead-telefono"
-          type="tel"
-          required
-          autoComplete="tel"
-          inputMode="tel"
-          placeholder="Ej: 987 654 321"
-          value={telefono}
-          onChange={(e) => setTelefono(e.target.value)}
-          className="field tabular-nums"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="lead-objetivo" className="label">
-            Plan de interés
-          </label>
-          <select
-            id="lead-objetivo"
-            value={objetivo}
-            onChange={(e) => setObjetivo(e.target.value)}
-            className="field tabular-nums"
-          >
-            {opcionesPlanes.map((op) => (
-              <option key={op} value={op}>
-                {op}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="lead-horario" className="label">
-            Horario en el que sueles entrenar <span className="text-muted/70">(opcional)</span>
-          </label>
-          <select
-            id="lead-horario"
-            value={horario}
-            onChange={(e) => setHorario(e.target.value)}
-            className="field"
-          >
-            <option value="">Sin preferencia</option>
-            <option value="Mañana (6:00 am - 11:00 am)">Mañana (6:00 am - 11:00 am)</option>
-            <option value="Mediodía (11:00 am - 4:00 pm)">Mediodía (11:00 am - 4:00 pm)</option>
-            <option value="Tarde / Noche (4:00 pm - 10:30 pm)">Tarde / Noche (4:00 pm - 10:30 pm)</option>
-            <option value="Fin de semana">Fin de semana</option>
-          </select>
-        </div>
-      </div>
-
-      {error && (
-        <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-sm text-bad">
-          {error}
+      <div className="mb-6 border-b border-line/70 pb-5">
+        <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+          Inscripción inmediata
+        </span>
+        <h3 className="section-title mt-1 text-2xl sm:text-3xl">¿Listo para entrenar?</h3>
+        <p className="mt-1.5 text-xs sm:text-sm text-muted">
+          Completa tus datos y te contactaremos por WhatsApp para separar tu vacante sin matrícula.
         </p>
-      )}
+      </div>
 
-      <button type="submit" disabled={enviando} className="btn btn-primary w-full !min-h-12">
-        {enviando && <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />}
-        Quiero inscribirme
-      </button>
-    </form>
+      <form onSubmit={onSubmit} className="space-y-4 relative z-10">
+        <input
+          type="text"
+          name="empresa"
+          tabIndex={-1}
+          autoComplete="off"
+          value={empresa}
+          onChange={(e) => setEmpresa(e.target.value)}
+          className="hidden"
+          aria-hidden="true"
+        />
+
+        <div>
+          <label htmlFor="lead-nombre" className="label font-medium text-bone/90">
+            Nombre y apellido *
+          </label>
+          <input
+            id="lead-nombre"
+            type="text"
+            required
+            autoComplete="name"
+            placeholder="Ej: Carlos Ramírez"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            className="field !bg-ink/80 focus:border-brand"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="lead-telefono" className="label font-medium text-bone/90">
+            Número de celular / WhatsApp *
+          </label>
+          <input
+            id="lead-telefono"
+            type="tel"
+            required
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder="Ej: 998 180 873"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            className="field !bg-ink/80 tabular-nums focus:border-brand"
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="lead-objetivo" className="label font-medium text-bone/90">
+              Plan de interés
+            </label>
+            <select
+              id="lead-objetivo"
+              value={objetivo}
+              onChange={(e) => setObjetivo(e.target.value)}
+              className="field !bg-ink/80 tabular-nums focus:border-brand"
+            >
+              {opcionesPlanes.map((op) => (
+                <option key={op} value={op}>
+                  {op}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="lead-horario" className="label font-medium text-bone/90">
+              Turno preferido <span className="text-muted/70">(opcional)</span>
+            </label>
+            <select
+              id="lead-horario"
+              value={horario}
+              onChange={(e) => setHorario(e.target.value)}
+              className="field !bg-ink/80 focus:border-brand"
+            >
+              <option value="">Sin preferencia</option>
+              <option value="Mañana (6:00 am - 11:00 am)">Mañana (6:00 am - 11:00 am)</option>
+              <option value="Mediodía (11:00 am - 4:00 pm)">Mediodía (11:00 am - 4:00 pm)</option>
+              <option value="Tarde / Noche (4:00 pm - 10:30 pm)">Tarde / Noche (4:00 pm - 10:30 pm)</option>
+              <option value="Fin de semana">Fin de semana</option>
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-xl border border-bad/40 bg-bad/15 px-4 py-2.5 text-xs font-medium text-bad">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={enviando}
+          className="btn btn-primary w-full !min-h-13 !text-sm font-bold shadow-lg tracking-wide mt-2"
+        >
+          {enviando && <Loader2 size={16} strokeWidth={2} className="animate-spin" />}
+          Quiero inscribirme ahora →
+        </button>
+
+        <p className="text-center text-[11px] text-muted pt-1">
+          * Pagas directamente en recepción al iniciar tu plan (Efectivo, Yape, Plin o tarjeta).
+        </p>
+      </form>
+    </div>
   );
 }

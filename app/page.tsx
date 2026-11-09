@@ -375,14 +375,14 @@ export default async function HomePage() {
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading num="05" antes="Separa tu" destacado="inscripción">
               <p className="text-sm text-muted">
-                Déjanos tus datos y te escribimos por WhatsApp al instante.
+                Visítanos en Av. Arquitectos o envíanos tu mensaje por WhatsApp para reservar tu plan sin matrícula.
               </p>
             </SectionHeading>
 
             <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
               <div className="space-y-6 lg:col-span-5">
-                {/* Mapa a COLOR (llamativo y real) */}
-                <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl relative">
+                {/* Mapa a COLOR (llamativo, real y enmarcado con estilo premium) */}
+                <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl relative">
                   <div className="relative aspect-[16/10] w-full">
                     <iframe
                       title="Ubicación de Zentra Fitness en Villa Estela, Ancón"
@@ -392,22 +392,22 @@ export default async function HomePage() {
                       className="h-full w-full border-0"
                     />
                     {/* Badge flotante en el mapa */}
-                    <div className="absolute top-3 left-3 flex items-center gap-2 rounded-lg border border-line/80 bg-ink/90 px-3 py-1.5 text-xs font-semibold text-bone backdrop-blur-md shadow-lg pointer-events-none">
-                      <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
-                      <span>Zentra Fitness · Villa Estela</span>
+                    <div className="absolute top-3 left-3 flex items-center gap-2 rounded-xl border border-line/80 bg-ink/90 px-3.5 py-1.5 text-xs font-semibold text-bone backdrop-blur-md shadow-xl pointer-events-none">
+                      <span className="h-2 w-2 rounded-full bg-ok shadow-[0_0_8px_#22c55e]" />
+                      <span>Zentra Fitness · Villa Estela Km. 39</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/70 p-4 sm:p-5 bg-surface">
-                    <p className="flex items-start gap-2 text-xs text-bone sm:text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/70 p-5 bg-surface">
+                    <div className="flex items-start gap-2.5 text-xs text-bone sm:text-sm">
                       <MapPin
-                        size={17}
+                        size={18}
                         strokeWidth={1.5}
                         className="mt-0.5 shrink-0 text-brand"
                         aria-hidden="true"
                       />
                       <span>{DIRECCION}</span>
-                    </p>
+                    </div>
                     <a
                       href={GOOGLE_MAPS_URL}
                       target="_blank"
@@ -419,39 +419,68 @@ export default async function HomePage() {
                   </div>
                 </div>
 
-                <dl className="grid gap-4 rounded-2xl border border-line/80 bg-surface p-5 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="text-xs text-muted font-medium">WhatsApp oficial</dt>
-                    <dd className="mt-1 text-base font-semibold text-bone tabular-nums">
-                      <a
-                        href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-10 items-center transition-colors hover:text-brand"
-                      >
+                {/* Tarjetas de contacto directo: WhatsApp + Redes */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-5 flex flex-col justify-between">
+                    <div>
+                      <dt className="text-xs text-muted font-medium flex items-center gap-1.5">
+                        <MessageCircle size={14} className="text-ok" />
+                        <span>WhatsApp oficial</span>
+                      </dt>
+                      <dd className="mt-2 text-lg font-bold text-bone tabular-nums">
                         {WHATSAPP_VISIBLE}
-                      </a>
-                    </dd>
+                      </dd>
+                      <p className="text-xs text-muted mt-0.5">Atención directa con Lucas</p>
+                    </div>
+                    <a
+                      href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary !min-h-9 text-xs font-semibold mt-4 w-full justify-between"
+                    >
+                      <span>Escribir al chat</span>
+                      <ArrowUpRight size={13} strokeWidth={1.5} />
+                    </a>
                   </div>
 
-                  <div>
-                    <dt className="text-xs text-muted font-medium">Redes sociales</dt>
-                    <dd className="mt-1 flex flex-wrap gap-3.5 text-sm font-medium text-bone">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-5 flex flex-col justify-between">
+                    <div>
+                      <dt className="text-xs text-muted font-medium">Redes sociales</dt>
+                      <p className="text-xs text-bone/90 font-medium mt-1">@zentrafitnessperu</p>
+                      <p className="text-xs text-muted mt-0.5">Videos, rutinas y avisos</p>
+                    </div>
+                    <dd className="mt-4 flex flex-wrap gap-2">
                       {REDES.map((red) => (
                         <a
                           key={red.nombre}
                           href={red.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex min-h-10 items-center gap-1 transition-colors hover:text-brand"
+                          className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-xs font-medium text-bone transition-colors hover:border-brand hover:text-brand"
                         >
-                          {red.nombre}{' '}
-                          <ArrowUpRight size={13} strokeWidth={1.5} className="text-muted" />
+                          {red.nombre}
+                          <ArrowUpRight size={11} strokeWidth={1.5} className="text-muted" />
                         </a>
                       ))}
                     </dd>
                   </div>
-                </dl>
+                </div>
+
+                {/* 3 Garantías de atención */}
+                <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                  <div className="rounded-xl border border-line/60 bg-surface/50 p-3">
+                    <p className="text-xs font-semibold text-bone">Respuesta rápida</p>
+                    <p className="text-[10px] text-muted mt-0.5">&lt; 15 min en WhatsApp</p>
+                  </div>
+                  <div className="rounded-xl border border-line/60 bg-surface/50 p-3">
+                    <p className="text-xs font-semibold text-bone">Sin matrícula</p>
+                    <p className="text-[10px] text-muted mt-0.5">Pagas al iniciar</p>
+                  </div>
+                  <div className="rounded-xl border border-line/60 bg-surface/50 p-3">
+                    <p className="text-xs font-semibold text-bone">Solo con DNI</p>
+                    <p className="text-[10px] text-muted mt-0.5">Control de días</p>
+                  </div>
+                </div>
               </div>
 
               <div className="lg:col-span-7">
