@@ -87,7 +87,7 @@ export function EntrenadoresSection() {
             <div
               key={coach.nombre}
               onClick={() => toggleVoltear(coach.nombre)}
-              className="perspective-1000 w-full aspect-[4/5] sm:aspect-[4/3] min-h-[430px] select-none cursor-pointer group"
+              className="perspective-1000 w-full h-[470px] sm:h-[490px] select-none cursor-pointer group"
               role="button"
               tabIndex={0}
               aria-label={`Tarjeta de ${coach.nombre}. ${estaVolteada ? 'Mostrando información' : 'Toca para voltear y ver horarios y experiencia'}`}
@@ -166,75 +166,73 @@ export function EntrenadoresSection() {
                 </div>
 
                 {/* ========================================================
-                    CARA TRASERA (INFORMACIÓN AL VOLTEARSE)
+                    CARA TRASERA (INFORMACIÓN AL VOLTEARSE - SIN DESPLAZAMIENTO INTERNO)
                    ======================================================== */}
-                <div className="absolute inset-0 h-full w-full backface-hidden rotate-y-180 rounded-3xl border border-brand/60 bg-ink p-6 sm:p-7 shadow-2xl flex flex-col justify-between overflow-y-auto">
-                  <div className="space-y-4">
-                    {/* Encabezado del reverso */}
-                    <div className="flex items-start justify-between border-b border-line/80 pb-3 gap-3">
-                      <div>
-                        <span className="text-xs font-semibold text-brand uppercase tracking-wider">
-                          {coach.turno}
-                        </span>
-                        <h4 className="font-[family-name:var(--font-archivo)] text-2xl sm:text-3xl font-black italic text-white tracking-wide">
-                          {coach.nombre}
-                        </h4>
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted hover:text-bone shrink-0 shadow-sm">
-                        <RotateCcw size={12} />
-                        <span>Volver</span>
-                      </span>
-                    </div>
-
-                    {/* Horarios de atención */}
-                    <div className="rounded-xl border border-line/70 bg-surface/80 p-3.5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-2">
-                        <Clock size={13} className="text-brand" />
-                        <span>Horarios en planta</span>
-                      </p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {coach.bloquesHorario.map((b) => (
-                          <div
-                            key={b.rango}
-                            className="flex items-center justify-between rounded-lg border border-line/80 bg-surface-2 px-3 py-1.5 text-xs text-bone"
-                          >
-                            <span className="text-muted font-medium">{b.turno}</span>
-                            <span className="font-semibold tabular-nums text-bone flex items-center gap-1.5">
-                              <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
-                              {b.rango}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Experiencia y técnica */}
+                <div className="absolute inset-0 h-full w-full backface-hidden rotate-y-180 rounded-3xl border border-brand/60 bg-surface p-5 sm:p-6 shadow-2xl flex flex-col justify-between overflow-hidden">
+                  {/* Encabezado del reverso */}
+                  <div className="flex items-center justify-between border-b border-line/80 pb-3 gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1.5">
-                        <Award size={14} className="text-brand" />
-                        <span>Experiencia y técnica</span>
-                      </p>
-                      <p className="text-xs sm:text-sm leading-relaxed text-bone/95 font-normal">
-                        {coach.experiencia}
-                      </p>
+                      <span className="text-xs font-semibold text-brand uppercase tracking-wider">
+                        {coach.turno}
+                      </span>
+                      <h4 className="font-[family-name:var(--font-archivo)] text-2xl sm:text-3xl font-black italic text-white tracking-wide">
+                        {coach.nombre}
+                      </h4>
                     </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs font-semibold text-bone hover:border-brand shrink-0 shadow-sm transition-colors">
+                      <RotateCcw size={12} className="text-brand" />
+                      <span>Volver</span>
+                    </span>
+                  </div>
 
-                    {/* Especialidades */}
-                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-line/50">
-                      {coach.especialidades.map((esp) => (
-                        <span
-                          key={esp}
-                          className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-bone"
+                  {/* Horarios de atención */}
+                  <div className="rounded-xl border border-line/80 bg-surface-2/70 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1.5">
+                      <Clock size={13} className="text-brand" />
+                      <span>Horarios en planta</span>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {coach.bloquesHorario.map((b) => (
+                        <div
+                          key={b.rango}
+                          className="flex items-center justify-between rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-bone"
                         >
-                          <Sparkles size={11} className="text-brand" />
-                          {esp}
-                        </span>
+                          <span className="text-muted font-medium">{b.turno}</span>
+                          <span className="font-semibold tabular-nums text-bone flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
+                            {b.rango}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </div>
 
+                  {/* Experiencia y técnica */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1">
+                      <Award size={13} className="text-brand" />
+                      <span>Experiencia y técnica</span>
+                    </p>
+                    <p className="text-xs sm:text-sm leading-relaxed text-bone/90 font-normal">
+                      {coach.experiencia}
+                    </p>
+                  </div>
+
+                  {/* Especialidades */}
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-line/50">
+                    {coach.especialidades.map((esp) => (
+                      <span
+                        key={esp}
+                        className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-bone"
+                      >
+                        <Sparkles size={10} className="text-brand" />
+                        {esp}
+                      </span>
+                    ))}
+                  </div>
+
                   {/* Indicador inferior para volver a la foto */}
-                  <div className="pt-3 border-t border-line/40 text-center">
+                  <div className="pt-2 border-t border-line/40 text-center">
                     <span className="text-[11px] font-medium text-muted/80 inline-flex items-center gap-1.5">
                       <RotateCcw size={11} className="text-brand" />
                       <span>Toca en cualquier parte para ver la foto</span>

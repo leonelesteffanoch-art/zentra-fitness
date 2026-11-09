@@ -51,10 +51,24 @@ export function LandingHeader() {
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   useEffect(() => {
+    // Garantiza que la página siempre inicie desde el tope al recargar
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+    const onBeforeUnload = () => {
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   return (
@@ -228,7 +242,7 @@ const PREGUNTAS_FAQ: FaqItem[] = [
 ];
 
 export function FaqAccordion() {
-  const [abierta, setAbierta] = useState<number | null>(0);
+  const [abierta, setAbierta] = useState<number | null>(null);
 
   return (
     <div className="divide-y divide-line/80 border-y border-line/80">
