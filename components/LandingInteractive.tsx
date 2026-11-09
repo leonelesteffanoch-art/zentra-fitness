@@ -182,7 +182,7 @@ export function LandingHeader() {
 
 export function HeroVisualCard() {
   return (
-    <div className="relative overflow-hidden border border-line/80 bg-surface">
+    <div className="relative overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-2xl">
       <div className="relative aspect-[4/3] lg:aspect-[4/4.6]">
         <Image
           src="/brand/hero.jpg"
@@ -190,17 +190,9 @@ export function HeroVisualCard() {
           fill
           priority
           sizes="(min-width: 1024px) 460px, 100vw"
-          className="object-cover saturate-[.85]"
+          className="object-cover saturate-[.88]"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/10 to-transparent" />
-
-        {/* Diferencial único del DNI */}
-        <div className="absolute bottom-4 left-4 right-4 border border-line/80 bg-ink/85 p-4 backdrop-blur-sm sm:bottom-5 sm:left-5 sm:right-5">
-          <p className="flex items-center gap-2 text-sm font-medium text-bone">
-            <UserCheck size={16} strokeWidth={1.5} className="shrink-0 text-muted" aria-hidden="true" />
-            Consulta tus días y tu vencimiento con tu DNI.
-          </p>
-        </div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
       </div>
     </div>
   );

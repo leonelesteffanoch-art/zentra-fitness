@@ -216,9 +216,6 @@ body {
   width: max-content;
   animation: marquee 60s linear infinite;
 }
-.marquee:hover .marquee-track {
-  animation-play-state: paused;
-}
 @keyframes marquee {
   from {
     transform: translateX(0);

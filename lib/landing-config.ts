@@ -53,8 +53,8 @@ const h = (hora: number, min = 0) => hora * 60 + min;
 export const HORARIOS: DiaHorario[] = [
   {
     id: 'lv',
-    etiqueta: 'Lun–Vie',
-    etiquetaLarga: 'Lunes a viernes',
+    etiqueta: 'Lunes a Viernes',
+    etiquetaLarga: 'Lunes a Viernes',
     dias: [1, 2, 3, 4, 5],
     schemaDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
     bloques: [
@@ -65,8 +65,8 @@ export const HORARIOS: DiaHorario[] = [
   },
   {
     id: 'sab',
-    etiqueta: 'Sáb',
-    etiquetaLarga: 'Sábado',
+    etiqueta: 'Sábados',
+    etiquetaLarga: 'Sábados',
     dias: [6],
     schemaDays: ['Saturday'],
     bloques: [
@@ -77,8 +77,8 @@ export const HORARIOS: DiaHorario[] = [
   },
   {
     id: 'dom',
-    etiqueta: 'Dom',
-    etiquetaLarga: 'Domingo',
+    etiqueta: 'Domingos',
+    etiquetaLarga: 'Domingos',
     dias: [0],
     schemaDays: ['Sunday'],
     bloques: [{ desde: h(9), hasta: h(14), tipo: 'pase' }],

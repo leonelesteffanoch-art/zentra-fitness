@@ -29,7 +29,7 @@ import { StatsStrip } from '@/components/landing/StatsStrip';
 import { ZonasShowcase, type ZonaItem } from '@/components/landing/ZonasShowcase';
 import { PlanesSection } from '@/components/landing/PlanesSection';
 import { HorariosTimeline } from '@/components/landing/HorariosTimeline';
-import { ComoFunciona } from '@/components/landing/ComoFunciona';
+import { EntrenadoresSection } from '@/components/landing/EntrenadoresSection';
 
 const PLANES_FALLBACK: PlanLandingItem[] = [
   { id: 'por-dia', nombre: 'Por día', descripcion: null, duracion_dias: 1, precio: 10 },
@@ -193,28 +193,6 @@ const ZONAS: ZonaItem[] = [
   },
 ];
 
-interface EntrenadorPlanta {
-  nombre: string;
-  turno: string;
-  especialidad?: string;
-  fotoUrl?: string;
-}
-
-const ENTRENADORES: EntrenadorPlanta[] = [
-  {
-    nombre: 'Lucas',
-    turno: 'Lun–Vie',
-    // especialidad: '...',
-    // fotoUrl: '/brand/entrenadores/lucas.jpg',
-  },
-  {
-    nombre: 'Juan',
-    turno: 'Sábados',
-    // especialidad: '...',
-    // fotoUrl: '/brand/entrenadores/juan.jpg',
-  },
-];
-
 async function obtenerPlanesPublicos(): Promise<PlanLandingItem[]> {
   'use cache';
   cacheLife('minutes');
@@ -288,15 +266,10 @@ export default async function HomePage() {
                   <br />
                   <span className="text-brand">Fuerza pura.</span>
                 </h1>
-
-                <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                  Peso libre, máquinas de palanca y entrenadores en sala. Sin matrícula, desde
-                  S/ 10.
-                </p>
               </div>
 
               <div className="mt-8 flex flex-col gap-3.5 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
-                <a href="#planes" className="btn btn-primary w-full !min-h-12 !px-8 sm:w-auto">
+                <a href="#planes" className="btn btn-primary w-full !min-h-12 !px-8 sm:w-auto shadow-lg">
                   Ver planes
                 </a>
                 <Link
@@ -314,7 +287,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 2. FRANJA DE 4 CIFRAS + MARQUEE (bg-surface) */}
+        {/* 2. FRANJA DE 4 CIFRAS + MARQUEE CONTINUO (bg-surface) */}
         <StatsStrip />
 
         {/* 3. ZONAS (bg-ink) */}
@@ -326,7 +299,7 @@ export default async function HomePage() {
               destacado="acceso"
             >
               <p className="max-w-xl text-sm text-muted">
-                Entrena a tu ritmo y sin separar máquinas.
+                Entrena a tu ritmo y sin necesidad de separar máquinas.
               </p>
             </SectionHeading>
 
@@ -353,127 +326,84 @@ export default async function HomePage() {
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading num="03" destacado="Horarios" />
 
-            <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
-              <div className="lg:col-span-8">
-                <HorariosTimeline />
+            {/* Línea de tiempo interactiva con Lunes a Viernes, Sábados, Domingos */}
+            <HorariosTimeline />
 
-                {/* Tabla semántica accesible de respaldo (sr-only) */}
-                <table className="sr-only">
-                  <caption>Horarios de atención de Zentra Fitness</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Día</th>
-                      <th scope="col">Rango</th>
-                      <th scope="col">Tipo</th>
+            {/* Tabla semántica accesible de respaldo (sr-only) */}
+            <table className="sr-only">
+              <caption>Horarios de atención de Zentra Fitness</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Día</th>
+                  <th scope="col">Rango</th>
+                  <th scope="col">Tipo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {HORARIOS.map((dia) =>
+                  dia.bloques.map((b) => (
+                    <tr key={`${dia.id}-${b.desde}`}>
+                      <td>{dia.etiquetaLarga}</td>
+                      <td>
+                        {formatoHora(b.desde)} – {formatoHora(b.hasta)}
+                      </td>
+                      <td>{ETIQUETA_TIPO[b.tipo]}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {HORARIOS.map((dia) =>
-                      dia.bloques.map((b) => (
-                        <tr key={`${dia.id}-${b.desde}`}>
-                          <td>{dia.etiquetaLarga}</td>
-                          <td>
-                            {formatoHora(b.desde)} – {formatoHora(b.hasta)}
-                          </td>
-                          <td>{ETIQUETA_TIPO[b.tipo]}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))
+                )}
+              </tbody>
+            </table>
 
-              {/* Tarjeta compacta de entrenadores, lista para foto + especialidad */}
-              <aside className="border border-line/80 bg-surface p-6 lg:col-span-4 lg:mt-16">
-                <h3 className="text-xs font-medium text-muted">Entrenadores en sala</h3>
-                <ul className="mt-4 divide-y divide-line/60">
-                  {ENTRENADORES.map((coach) => (
-                    <li
-                      key={coach.nombre}
-                      className="flex items-center justify-between gap-3 py-3.5 first:pt-0 last:pb-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        {coach.fotoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={coach.fotoUrl}
-                            alt={coach.nombre}
-                            className="h-10 w-10 rounded-xs object-cover"
-                          />
-                        ) : (
-                          <span
-                            aria-hidden="true"
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xs border border-line bg-ink text-xs font-semibold text-muted"
-                          >
-                            {coach.nombre.slice(0, 1)}
-                          </span>
-                        )}
-                        <div>
-                          <p className="text-sm font-semibold text-bone">{coach.nombre}</p>
-                          {coach.especialidad && (
-                            <p className="text-xs text-muted">{coach.especialidad}</p>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted">{coach.turno}</span>
-                    </li>
-                  ))}
-                </ul>
-              </aside>
-            </div>
+            {/* Apartado dedicado y completo de Entrenadores con subtítulo propio y hover interactivo */}
+            <EntrenadoresSection />
           </RevealOnScroll>
         </section>
 
-        {/* 6. ASÍ FUNCIONA (bg-surface) */}
-        <section
-          id="como-funciona"
-          className="scroll-mt-20 border-y border-line/60 bg-surface py-16 lg:py-28"
-        >
-          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
-            <SectionHeading num="04" antes="Así" destacado="funciona" />
-            <ComoFunciona />
-          </RevealOnScroll>
-        </section>
-
-        {/* 7. FAQ CORTO (bg-ink) */}
-        <section id="preguntas" className="scroll-mt-20 bg-ink py-16 lg:py-24">
+        {/* 6. FAQ CORTO (bg-surface) */}
+        <section id="preguntas" className="scroll-mt-20 border-t border-line/60 bg-surface py-16 lg:py-24">
           <RevealOnScroll className="mx-auto max-w-3xl px-5 sm:px-8">
-            <SectionHeading num="05" antes="Preguntas" destacado="frecuentes" />
+            <SectionHeading num="04" antes="Preguntas" destacado="frecuentes" />
             <FaqAccordion />
           </RevealOnScroll>
         </section>
 
-        {/* 8. UBICACIÓN Y CONTACTO (bg-surface) */}
+        {/* 7. UBICACIÓN Y CONTACTO (bg-ink) */}
         <section
           id="contacto"
-          className="scroll-mt-20 border-t border-line/60 bg-surface py-16 lg:py-28"
+          className="scroll-mt-20 border-t border-line/60 bg-ink py-16 lg:py-28"
         >
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
-            <SectionHeading num="06" antes="Separa tu" destacado="inscripción">
+            <SectionHeading num="05" antes="Separa tu" destacado="inscripción">
               <p className="text-sm text-muted">
-                Déjanos tus datos y te escribimos por WhatsApp.
+                Déjanos tus datos y te escribimos por WhatsApp al instante.
               </p>
             </SectionHeading>
 
             <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
               <div className="space-y-6 lg:col-span-5">
-                {/* Mapa embebido estilizado en oscuro (TODO: ver lib/landing-config.ts para pin exacto) */}
-                <div className="overflow-hidden border border-line/80 bg-ink">
-                  <div className="relative aspect-[16/10] w-full bg-ink">
+                {/* Mapa a COLOR (llamativo y real) */}
+                <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl relative">
+                  <div className="relative aspect-[16/10] w-full">
                     <iframe
                       title="Ubicación de Zentra Fitness en Villa Estela, Ancón"
                       src={GOOGLE_MAPS_EMBED_URL}
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
-                      className="h-full w-full border-0 opacity-80 grayscale invert contrast-125"
+                      className="h-full w-full border-0"
                     />
+                    {/* Badge flotante en el mapa */}
+                    <div className="absolute top-3 left-3 flex items-center gap-2 rounded-lg border border-line/80 bg-ink/90 px-3 py-1.5 text-xs font-semibold text-bone backdrop-blur-md shadow-lg pointer-events-none">
+                      <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+                      <span>Zentra Fitness · Villa Estela</span>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/70 p-4">
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/70 p-4 sm:p-5 bg-surface">
                     <p className="flex items-start gap-2 text-xs text-bone sm:text-sm">
                       <MapPin
-                        size={16}
+                        size={17}
                         strokeWidth={1.5}
-                        className="mt-0.5 shrink-0 text-muted"
+                        className="mt-0.5 shrink-0 text-brand"
                         aria-hidden="true"
                       />
                       <span>{DIRECCION}</span>
@@ -482,22 +412,22 @@ export default async function HomePage() {
                       href={GOOGLE_MAPS_URL}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn btn-secondary !min-h-11 shrink-0 gap-1.5 text-xs"
+                      className="btn btn-secondary !min-h-10 shrink-0 gap-1.5 text-xs font-semibold"
                     >
                       Cómo llegar <ArrowUpRight size={14} strokeWidth={1.5} />
                     </a>
                   </div>
                 </div>
 
-                <dl className="grid gap-6 border border-line/80 bg-ink p-5 text-sm sm:grid-cols-2">
+                <dl className="grid gap-4 rounded-2xl border border-line/80 bg-surface p-5 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs text-muted">WhatsApp</dt>
+                    <dt className="text-xs text-muted font-medium">WhatsApp oficial</dt>
                     <dd className="mt-1 text-base font-semibold text-bone tabular-nums">
                       <a
                         href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex min-h-11 items-center transition-colors hover:text-brand"
+                        className="inline-flex min-h-10 items-center transition-colors hover:text-brand"
                       >
                         {WHATSAPP_VISIBLE}
                       </a>
@@ -505,15 +435,15 @@ export default async function HomePage() {
                   </div>
 
                   <div>
-                    <dt className="text-xs text-muted">Redes sociales</dt>
-                    <dd className="mt-1 flex flex-wrap gap-4 text-sm font-medium text-bone">
+                    <dt className="text-xs text-muted font-medium">Redes sociales</dt>
+                    <dd className="mt-1 flex flex-wrap gap-3.5 text-sm font-medium text-bone">
                       {REDES.map((red) => (
                         <a
                           key={red.nombre}
                           href={red.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex min-h-11 items-center gap-1 transition-colors hover:text-brand"
+                          className="inline-flex min-h-10 items-center gap-1 transition-colors hover:text-brand"
                         >
                           {red.nombre}{' '}
                           <ArrowUpRight size={13} strokeWidth={1.5} className="text-muted" />
@@ -532,7 +462,7 @@ export default async function HomePage() {
         </section>
       </main>
 
-      {/* 9. FOOTER (bg-ink) */}
+      {/* FOOTER */}
       <footer className="border-t border-line/80 bg-ink py-10">
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 px-5 sm:flex-row sm:items-center sm:px-8">
           <div className="flex flex-wrap items-center gap-4">
@@ -565,9 +495,9 @@ export default async function HomePage() {
         target="_blank"
         rel="noreferrer"
         aria-label={`Escribir por WhatsApp al ${WHATSAPP_VISIBLE}`}
-        className="fixed bottom-5 right-5 z-30 flex min-h-11 items-center gap-2 border border-line bg-surface-2 px-4 py-2.5 text-xs font-medium text-bone transition-colors hover:border-bone"
+        className="fixed bottom-5 right-5 z-30 flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface-2 px-4 py-2.5 text-xs font-semibold text-bone shadow-2xl transition-all hover:scale-105 hover:border-bone"
       >
-        <MessageCircle size={16} strokeWidth={1.5} className="text-ok" />
+        <MessageCircle size={17} strokeWidth={2} className="text-ok" />
         <span className="hidden sm:inline">WhatsApp</span>
       </a>
     </div>
