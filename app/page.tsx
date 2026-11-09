@@ -419,18 +419,18 @@ export default async function HomePage() {
                   </div>
                 </div>
 
-                {/* Tarjetas de contacto directo: WhatsApp + Redes (más largas y proporcionadas) */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-line/80 bg-surface p-6 flex flex-col justify-between min-h-[180px] transition-colors hover:border-line">
+                {/* Tarjetas de contacto directo: WhatsApp + Redes (uno encima de otro, formato horizontal más largo y estilizado) */}
+                <div className="flex flex-col gap-3.5">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-5 sm:p-6 transition-all duration-200 hover:border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                       <dt className="text-xs text-muted font-medium flex items-center gap-1.5">
-                        <MessageCircle size={15} className="text-ok" />
+                        <MessageCircle size={15} className="text-ok shrink-0" />
                         <span>WhatsApp oficial</span>
                       </dt>
-                      <dd className="mt-2 text-xl font-bold text-bone tabular-nums">
+                      <dd className="mt-1 text-2xl sm:text-3xl font-black italic tracking-wide text-bone tabular-nums font-[family-name:var(--font-archivo)]">
                         {WHATSAPP_VISIBLE}
                       </dd>
-                      <p className="text-xs text-muted mt-1 leading-relaxed">
+                      <p className="text-xs text-muted mt-0.5 leading-relaxed">
                         Atención directa con Lucas para consultas y reservas
                       </p>
                     </div>
@@ -438,32 +438,34 @@ export default async function HomePage() {
                       href={`https://wa.me/${WHATSAPP_NUMERO}?text=Hola%20Zentra%20Fitness,%20quisiera%20inscribirme`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn btn-secondary !min-h-10 text-xs font-semibold mt-4 w-full justify-between"
+                      className="btn btn-secondary !min-h-11 shrink-0 px-5 text-xs font-semibold gap-2 w-full sm:w-auto justify-center"
                     >
                       <span>Escribir al chat</span>
                       <ArrowUpRight size={14} strokeWidth={1.5} />
                     </a>
                   </div>
 
-                  <div className="rounded-2xl border border-line/80 bg-surface p-6 flex flex-col justify-between min-h-[180px] transition-colors hover:border-line">
+                  <div className="rounded-2xl border border-line/80 bg-surface p-5 sm:p-6 transition-all duration-200 hover:border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                       <dt className="text-xs text-muted font-medium">Redes sociales</dt>
-                      <p className="text-base text-bone font-bold mt-1">@zentrafitnessperu</p>
-                      <p className="text-xs text-muted mt-1 leading-relaxed">
+                      <p className="mt-1 font-[family-name:var(--font-archivo)] text-xl sm:text-2xl font-black italic text-bone">
+                        @zentrafitnessperu
+                      </p>
+                      <p className="text-xs text-muted mt-0.5 leading-relaxed">
                         Videos de entrenamientos y novedades diarias
                       </p>
                     </div>
-                    <dd className="mt-4 flex flex-wrap gap-2">
+                    <dd className="flex flex-wrap items-center gap-2 shrink-0">
                       {REDES.map((red) => (
                         <a
                           key={red.nombre}
                           href={red.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-bone transition-colors hover:border-brand hover:text-brand"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-bone transition-colors hover:border-brand hover:text-brand"
                         >
                           {red.nombre}
-                          <ArrowUpRight size={11} strokeWidth={1.5} className="text-muted" />
+                          <ArrowUpRight size={12} strokeWidth={1.5} className="text-muted" />
                         </a>
                       ))}
                     </dd>

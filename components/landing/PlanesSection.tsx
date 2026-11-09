@@ -2,15 +2,11 @@
 
 import { useState } from 'react';
 import {
-  BadgeCheck,
   Banknote,
   CalendarDays,
   CreditCard,
-  IdCard,
   InfinityIcon,
-  LayoutGrid,
   Smartphone,
-  Users,
 } from 'lucide-react';
 import {
   formatoPrecioLanding,
@@ -21,13 +17,6 @@ import {
   type PlanLandingItem,
 } from '@/lib/planes-landing';
 import { elegirPlanEIrAContacto, irASeccion } from '@/components/LandingInteractive';
-
-const INCLUYE = [
-  { icono: LayoutGrid, texto: '6 zonas' },
-  { icono: Users, texto: 'Asesoría en turno' },
-  { icono: IdCard, texto: 'Control con tu DNI' },
-  { icono: BadgeCheck, texto: 'Sin matrícula' },
-];
 
 const PAGOS = [
   { icono: Banknote, texto: 'Efectivo' },
@@ -202,16 +191,6 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
           </article>
         ))}
       </div>
-
-      {/* Qué incluye: 4 ítems con icono */}
-      <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line/70 bg-line/70 lg:grid-cols-4">
-        {INCLUYE.map(({ icono: Icono, texto }) => (
-          <li key={texto} className="flex items-center gap-3 bg-surface px-4 py-4 sm:px-5">
-            <Icono aria-hidden="true" size={20} strokeWidth={1.5} className="shrink-0 text-muted" />
-            <span className="text-sm font-medium text-bone">{texto}</span>
-          </li>
-        ))}
-      </ul>
 
       {/* Pases tipo ticket */}
       <div className="rounded-2xl border border-line/80 bg-surface/50 p-6 sm:p-7">
