@@ -84,12 +84,7 @@ export function MemberStatusCard({
   const hoy = hoyLima();
   const ingresoPrevioHoy = asistencias.find((a) => a.fecha === hoy);
   const horaPrevioHoy = formatearHoraCorta(ingresoPrevioHoy?.hora);
-  const esInterdiario = Boolean(socio.plan && socio.plan.toLowerCase().includes('interdiario'));
-
-  // Si ya tenía un ingreso hoy antes de abrir la ficha:
-  // - Si es plan Diario -> avisar y permitir registrar 2° ingreso
-  // - Si es plan Interdiario -> bloquear 2° ingreso en el mismo día
-  const bloquearPorInterdiarioHoy = Boolean(ingresoPrevioHoy && esInterdiario);
+  const yaAsistioHoy = Boolean(ingresoPrevioHoy || yaIngreso);
 
   return (
     <article aria-live="polite" className={`space-y-5 bg-surface p-6 sm:p-8 ${est.acento}`}>
@@ -124,30 +119,15 @@ export function MemberStatusCard({
       {/* Calendario semanal de asistencias (Lun a Dom) */}
       <WeeklyAttendanceCalendar asistencias={asistencias} planNombre={socio.plan} />
 
-      {/* Aviso de doble ingreso el mismo día (Cardio mañana / Pesas noche) */}
-      {puedeEntrar && ingresoPrevioHoy && !yaIngreso && (
-        <div
-          className={`flex items-start gap-2.5 border-l-2 px-3.5 py-2.5 text-xs ${
-            esInterdiario
-              ? 'border-bad bg-bad/10 text-bad'
-              : 'border-warn bg-warn/10 text-warn'
-          }`}
-        >
+      {/* Aviso si ya ingresó hoy */}
+      {puedeEntrar && ingresoPrevioHoy && (
+        <div className="flex items-start gap-2.5 border-l-2 border-warn bg-warn/10 px-3.5 py-2.5 text-xs text-warn">
           <AlertTriangle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
-          <div>
-            {esInterdiario ? (
-              <p>
-                <strong>Ya ingresó hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
-                Su plan es <strong>Interdiario</strong> y no permite doble ingreso en el mismo día.
-              </p>
-            ) : (
-              <p>
-                <strong>Ya ingresó hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
-                Como cuenta con plan <strong>Diario</strong>, puede registrar un segundo ingreso
-                (ej. cardio en la mañana y pesas en la noche).
-              </p>
-            )}
-          </div>
+          <p>
+            <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
+            Ningún plan incluye doble ingreso en el mismo día. Para un segundo ingreso corresponde abonar un{' '}
+            <strong>Pase por día (S/ 10)</strong> en mostrador.
+          </p>
         </div>
       )}
 
@@ -155,17 +135,11 @@ export function MemberStatusCard({
         {puedeEntrar && (
           <button
             onClick={onCheckIn}
-            disabled={registrando || yaIngreso || bloquearPorInterdiarioHoy}
+            disabled={registrando || yaAsistioHoy}
             className="btn btn-primary !min-h-11 !px-6"
           >
             <LogIn size={17} strokeWidth={1.5} />
-            {yaIngreso
-              ? 'Ingreso registrado'
-              : bloquearPorInterdiarioHoy
-              ? 'Ya ingresó hoy (Plan Interdiario)'
-              : ingresoPrevioHoy
-              ? ' ¿Registrar 2° ingreso de hoy?'
-              : 'Registrar ingreso'}
+            {yaAsistioHoy ? 'Ingreso de hoy ya registrado' : 'Registrar ingreso'}
           </button>
         )}
 

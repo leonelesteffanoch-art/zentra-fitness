@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { soles } from '@/lib/formato';
 
 /** Desplazamiento suave garantizado hacia cualquier sección #id de la landing. */
 export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after?: () => void) {
@@ -214,7 +215,6 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
-      {/* Columna izquierda: filas limpias SOLO con número + nombre (en móvil expande acordeón) */}
       <ul className="divide-y divide-line/80 border-y border-line/80 lg:col-span-5">
         {items.map((d, idx) => {
           const abierta = activa === idx;
@@ -253,7 +253,6 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
                 />
               </button>
 
-              {/* Acordeón exclusivo para móvil */}
               {abierta && (
                 <div className="space-y-4 pb-5 pl-7 pr-1 text-sm lg:hidden">
                   <span className="inline-block rounded-xs bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-muted">
@@ -288,7 +287,6 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
         })}
       </ul>
 
-      {/* Panel derecho exclusivo en desktop */}
       {actual && (
         <aside className="relative hidden flex-col justify-between overflow-hidden bg-surface p-8 lg:col-span-7 lg:flex">
           <div className="flex items-start justify-between border-b border-line/70 pb-6">
@@ -329,13 +327,13 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
           </dl>
 
           <div className="mt-6 flex items-center justify-between border-t border-line/50 pt-4 text-xs text-muted">
-            <span>Incluida en todos los planes diarios, interdiarios y pases por día</span>
+            <span>1 ingreso por día incluido en todos los planes y pases</span>
             <a
               href="#planes"
               onClick={(e) => irASeccion(e, '#planes')}
               className="inline-flex items-center gap-1 font-medium text-bone hover:underline"
             >
-              Ver planes compatibles <ArrowUpRight size={14} strokeWidth={1.5} />
+              Ver planes de membresía <ArrowUpRight size={14} strokeWidth={1.5} />
             </a>
           </div>
         </aside>
@@ -344,7 +342,243 @@ export function DisciplinasAccordion({ items }: { items: DisciplinaItem[] }) {
   );
 }
 
-// ---------- 3. Formulario de Inscripción / Interesados (conectado al panel de control) ----------
+// ---------- 3. Sección de Planes Simplificada (Toggle Diario / Interdiario + 3 Tarjetas + Pases) ----------
+
+export interface PlanLandingItem {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  duracion_dias: number;
+  precio: number;
+}
+
+export function PlanesPricingSection({ planes }: { planes: PlanLandingItem[] }) {
+  const [modalidad, setModalidad] = useState<'diario' | 'interdiario'>('diario');
+
+  // Buscar el plan para cada duración y modalidad
+  const plan1Mes = planes.find(
+    (p) => p.duracion_dias === 30 && p.nombre.toLowerCase().includes(modalidad)
+  ) ?? {
+    id: `m-30-${modalidad}`,
+    nombre: modalidad === 'diario' ? 'Mensual (Diario)' : 'Mensual (Interdiario)',
+    precio: modalidad === 'diario' ? 80 : 60,
+    duracion_dias: 30,
+    descripcion: null,
+  };
+
+  const plan2Meses = planes.find(
+    (p) => p.duracion_dias === 60 && p.nombre.toLowerCase().includes(modalidad)
+  ) ?? {
+    id: `m-60-${modalidad}`,
+    nombre: modalidad === 'diario' ? '2 meses (Diario)' : '2 meses (Interdiario)',
+    precio: modalidad === 'diario' ? 140 : 100,
+    duracion_dias: 60,
+    descripcion: null,
+  };
+
+  const plan3Meses = planes.find(
+    (p) => p.duracion_dias === 90 && p.nombre.toLowerCase().includes(modalidad)
+  ) ?? {
+    id: `m-90-${modalidad}`,
+    nombre: modalidad === 'diario' ? '3 meses (Diario)' : '3 meses (Interdiario)',
+    precio: modalidad === 'diario' ? 200 : 150,
+    duracion_dias: 90,
+    descripcion: null,
+  };
+
+  const planDia = planes.find((p) => p.duracion_dias === 1) ?? { precio: 10 };
+  const planSemana = planes.find((p) => p.duracion_dias === 7) ?? { precio: 25 };
+
+  const tarjetas = [
+    {
+      meses: '1 Mes',
+      nombre: plan1Mes.nombre,
+      precio: plan1Mes.precio,
+      duracion: 30,
+      subtitulo: 'Plan base mensual',
+      tag: modalidad === 'diario' ? 'Más elegido' : 'Plan inicial',
+      destacado: modalidad === 'diario',
+      beneficios: [
+        '30 días calendario de vigencia',
+        modalidad === 'diario'
+          ? 'Entrenamiento de lunes a sábado (1 ingreso/día)'
+          : 'Asistencia interdiaria (3 días por semana, 1 ingreso/día)',
+        'Acceso total a musculación, peso libre y cardio',
+        'Asesoría de entrenador en turnos mañana y noche',
+        'Sin costo de matrícula',
+      ],
+    },
+    {
+      meses: '2 Meses',
+      nombre: plan2Meses.nombre,
+      precio: plan2Meses.precio,
+      duracion: 60,
+      subtitulo:
+        modalidad === 'diario'
+          ? `${soles(70)} / mes · Ahorras ${soles(20)}`
+          : `${soles(50)} / mes · Ahorras ${soles(20)}`,
+      tag: 'Ahorro promocional',
+      destacado: false,
+      beneficios: [
+        '60 días calendario de vigencia',
+        modalidad === 'diario'
+          ? 'Entrenamiento continuo lunes a sábado (1 ingreso/día)'
+          : 'Asistencia interdiaria (3 días por semana, 1 ingreso/día)',
+        'Tarifa reducida con ahorro directo por mes',
+        'Acceso total a todas las zonas y máquinas',
+        'Sin costo de matrícula',
+      ],
+    },
+    {
+      meses: '3 Meses',
+      nombre: plan3Meses.nombre,
+      precio: plan3Meses.precio,
+      duracion: 90,
+      subtitulo:
+        modalidad === 'diario'
+          ? `${soles(66.7)} / mes · Mayor ahorro`
+          : `${soles(50)} / mes · 90 días continuos`,
+      tag: 'Mejor tarifa',
+      destacado: modalidad === 'interdiario',
+      beneficios: [
+        '90 días calendario de vigencia',
+        modalidad === 'diario'
+          ? 'Entrenamiento diario con el costo mensual más bajo'
+          : 'Asistencia interdiaria (3 días por semana, 1 ingreso/día)',
+        'Mayor compromiso y progresión técnica en sala',
+        'Acceso total a todas las zonas del club',
+        'Sin costo de matrícula',
+      ],
+    },
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Selector / Toggle segmentado entre Diario e Interdiario */}
+      <div className="flex flex-col items-center">
+        <div className="inline-flex rounded-xs border border-line bg-surface p-1">
+          <button
+            type="button"
+            onClick={() => setModalidad('diario')}
+            className={`rounded-xs px-5 py-2 text-xs font-semibold transition-all sm:text-sm ${
+              modalidad === 'diario'
+                ? 'bg-brand text-brand-ink shadow-xs'
+                : 'text-muted hover:text-bone'
+            }`}
+          >
+            Entrenamiento Diario (Lunes a Sábado)
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalidad('interdiario')}
+            className={`rounded-xs px-5 py-2 text-xs font-semibold transition-all sm:text-sm ${
+              modalidad === 'interdiario'
+                ? 'bg-brand text-brand-ink shadow-xs'
+                : 'text-muted hover:text-bone'
+            }`}
+          >
+            Entrenamiento Interdiario (3 días/sem)
+          </button>
+        </div>
+
+        <p className="mt-3 text-center text-xs text-muted">
+          {modalidad === 'diario'
+            ? 'Para quienes asisten de lunes a sábado · 1 ingreso por día a todas las salas y máquinas.'
+            : 'Asistencia dejando un día (3 veces por semana) · 1 ingreso por día asistido.'}
+        </p>
+      </div>
+
+      {/* Exactamente 3 tarjetas limpias y legibles */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {tarjetas.map((t) => (
+          <article
+            key={t.meses}
+            className={`flex flex-col justify-between p-6 sm:p-7 ${
+              t.destacado ? 'bg-ink ring-1 ring-brand' : 'bg-ink/70'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-muted">{t.duracion} días</span>
+                <span
+                  className={`rounded-xs px-2 py-0.5 text-xs font-semibold ${
+                    t.destacado ? 'bg-brand text-brand-ink' : 'bg-surface-2 text-bone'
+                  }`}
+                >
+                  {t.tag}
+                </span>
+              </div>
+
+              <h3 className="section-title mt-3 text-xl">{t.meses}</h3>
+
+              <div className="mt-4 border-y border-line/70 py-4 tabular-nums">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-bone">{soles(t.precio)}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted">{t.subtitulo}</p>
+              </div>
+
+              <ul className="mt-5 space-y-2.5 text-xs text-bone">
+                {t.beneficios.map((b) => (
+                  <li key={b} className="flex items-start gap-2">
+                    <Check size={14} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <a
+              href="#contacto"
+              onClick={(e) => irASeccion(e, '#contacto')}
+              className={`btn mt-8 w-full ${t.destacado ? 'btn-primary' : 'btn-secondary'}`}
+            >
+              Elegir {t.meses} ({modalidad === 'diario' ? 'Diario' : 'Interdiario'})
+            </a>
+          </article>
+        ))}
+      </div>
+
+      {/* Franja compacta para Pases Cortos (Por día y Semanal) */}
+      <div className="flex flex-col items-start justify-between gap-4 border border-line/70 bg-surface p-5 sm:flex-row sm:items-center sm:p-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-bold text-brand">PASES FLEXIBLES</span>
+            <span className="text-xs text-muted">· Para visitas sueltas o una semana de paso</span>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
+            <p className="text-bone">
+              <strong className="font-medium text-bone">Pase por día:</strong>{' '}
+              <span className="font-bold text-bone tabular-nums">{soles(planDia.precio)}</span>{' '}
+              <span className="text-xs text-muted">(1 ingreso libre por el día)</span>
+            </p>
+            <p className="text-bone">
+              <strong className="font-medium text-bone">Pase semanal:</strong>{' '}
+              <span className="font-bold text-bone tabular-nums">{soles(planSemana.precio)}</span>{' '}
+              <span className="text-xs text-muted">(7 días continuos)</span>
+            </p>
+          </div>
+        </div>
+        <a
+          href="#contacto"
+          onClick={(e) => irASeccion(e, '#contacto')}
+          className="btn btn-secondary shrink-0 !min-h-9 !px-4 text-xs"
+        >
+          Pedir pase en recepción
+        </a>
+      </div>
+
+      {/* Nota legal y operativa transparente */}
+      <p className="text-center text-xs text-muted">
+        * Todos los planes incluyen 1 ingreso por día. Ningún plan incluye doble ingreso en el mismo
+        día (para volver a ingresar en la misma jornada aplica pase por día en recepción). Los
+        planes no cuentan con congelamiento.
+      </p>
+    </div>
+  );
+}
+
+// ---------- 4. Formulario de Inscripción / Interesados ----------
 
 export function LeadContactForm() {
   const [nombre, setNombre] = useState('');

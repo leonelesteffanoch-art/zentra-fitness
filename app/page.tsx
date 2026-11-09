@@ -1,15 +1,15 @@
 import Link from 'next/link';
 import { cacheLife } from 'next/cache';
-import { ArrowUpRight, Check, Clock, Lock, MapPin, MessageCircle, UserCheck } from 'lucide-react';
+import { ArrowUpRight, Clock, Lock, MapPin, MessageCircle, UserCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Logo } from '@/components/Logo';
 import {
   DisciplinasAccordion,
   LandingHeader,
   LeadContactForm,
+  PlanesPricingSection,
   type DisciplinaItem,
 } from '@/components/LandingInteractive';
-import { soles } from '@/lib/formato';
 
 interface PlanLanding {
   id: string;
@@ -284,8 +284,7 @@ export default async function HomePage() {
                   <span className="font-mono text-bone">ABIERTO LUN – DOM</span>
                 </div>
                 <p className="mt-1 text-sm font-semibold text-bone">
-                  Los planes diarios permiten doble ingreso al día (cardio en la mañana y pesas en
-                  la noche).
+                  1 ingreso por día según tu modalidad (pase por día disponible para reingresos).
                 </p>
               </div>
             </div>
@@ -336,92 +335,22 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 3. PLANES Y TARIFAS REALES (Diarios, Interdiarios, Semanal y Por día) */}
+      {/* 3. PLANES Y MEMBRESÍAS (Selector Diario / Interdiario + 3 Tarjetas + Pases) */}
       <section id="planes" className="scroll-mt-24 bg-surface py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <div className="mb-8 flex flex-col justify-between gap-3 sm:mb-12 sm:flex-row sm:items-end">
+          <div className="mb-10 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div className="max-w-xl">
               <h2 className="section-title text-2xl sm:text-3xl">Planes de entrenamiento</h2>
               <p className="mt-2 text-sm text-muted">
-                Elige entre modalidad <strong className="font-medium text-bone">Diaria</strong>{' '}
-                (ingreso todos los días, incluso mañana y noche) o{' '}
-                <strong className="font-medium text-bone">Interdiaria</strong> (3 veces por semana).
+                Elige entre entrenar a diario de lunes a sábado o en modalidad interdiaria (3 días por semana).
               </p>
             </div>
             <p className="text-xs text-muted">
-              Sin cobro de matrícula · Los planes no incluyen congelamiento
+              Tarifas transparentes · Sin cobro de matrícula
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {planes.map((p) => {
-              const nombreLower = p.nombre.toLowerCase();
-              const esRecomendado = nombreLower === 'mensual (diario)';
-              const esInterdiario = nombreLower.includes('interdiario');
-              const esPorDia = p.duracion_dias === 1;
-
-              return (
-                <article
-                  key={p.id}
-                  className={`flex flex-col justify-between p-6 ${
-                    esRecomendado ? 'bg-ink ring-1 ring-brand' : 'bg-ink/70'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs text-muted">
-                        {p.duracion_dias === 1 ? '1 día' : `${p.duracion_dias} días`}
-                      </span>
-                      {esRecomendado ? (
-                        <span className="rounded-xs bg-brand px-2 py-0.5 text-xs font-semibold text-brand-ink">
-                          Más elegido
-                        </span>
-                      ) : (
-                        <span className="rounded-xs bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
-                          {esPorDia ? 'Pase libre' : esInterdiario ? 'Interdiario' : 'Diario'}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="section-title mt-3 text-lg">{p.nombre}</h3>
-
-                    <div className="mt-3 flex items-baseline gap-2 border-y border-line/70 py-3.5 tabular-nums">
-                      <span className="text-3xl font-bold text-bone">{soles(p.precio)}</span>
-                    </div>
-
-                    <p className="mt-3 text-xs leading-relaxed text-muted">
-                      {p.descripcion ??
-                        `Acceso a todas las zonas de Zentra Fitness durante ${p.duracion_dias} días.`}
-                    </p>
-
-                    <ul className="mt-4 space-y-2 text-xs text-bone">
-                      <li className="flex items-start gap-2">
-                        <Check size={13} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted" />
-                        <span>
-                          {esInterdiario
-                            ? 'Asistencia interdiaria (1 ingreso por día asistido)'
-                            : 'Asistencia diaria (permite doble turno cardio/pesas)'}
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check size={13} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted" />
-                        <span>Acceso a todas las máquinas y asesoría en turno</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <a
-                    href="#contacto"
-                    className={`btn mt-6 w-full !min-h-10 text-xs ${
-                      esRecomendado ? 'btn-primary' : 'btn-secondary'
-                    }`}
-                  >
-                    Inscribirme en {p.nombre}
-                  </a>
-                </article>
-              );
-            })}
-          </div>
+          <PlanesPricingSection planes={planes} />
         </div>
       </section>
 
