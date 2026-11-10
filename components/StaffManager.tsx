@@ -27,6 +27,19 @@ async function obtenerToken(): Promise<string> {
   return data.session?.access_token ?? '';
 }
 
+async function consultarPersonalApi(): Promise<TrabajadorItem[]> {
+  const token = await obtenerToken();
+  if (!token) return [];
+  const res = await fetch('/api/admin/personal', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? 'No se pudo cargar la lista de personal');
+  }
+  return Array.isArray(data.personal) ? data.personal : [];
+}
+
 export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: Props) {
   const [personal, setPersonal] = useState<TrabajadorItem[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -53,38 +66,35 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
 
   const cargarPersonal = useCallback(async () => {
     try {
-      const token = await obtenerToken();
-      if (!token) return;
-      const res = await fetch('/api/admin/personal', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.personal)) {
-        setPersonal(data.personal);
-      }
-    } catch {
-      // Silencioso en carga inicial
+      const lista = await consultarPersonalApi();
+      setPersonal(lista);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Error de red al consultar las cuentas de personal');
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [onError]);
 
   useEffect(() => {
-    obtenerToken()
-      .then((token) =>
-        token
-          ? fetch('/api/admin/personal', {
-              headers: { Authorization: `Bearer ${token}` },
-            }).then((r) => r.json())
-          : null
-      )
-      .then((data) => {
-        if (data && Array.isArray(data.personal)) {
-          setPersonal(data.personal);
+    let cancelado = false;
+    consultarPersonalApi()
+      .then((lista) => {
+        if (!cancelado) setPersonal(lista);
+      })
+      .catch((err: unknown) => {
+        if (!cancelado) {
+          onError(
+            err instanceof Error ? err.message : 'Error de red al consultar las cuentas de personal'
+          );
         }
       })
-      .catch(() => {})
-      .finally(() => setCargando(false));
+      .finally(() => {
+        if (!cancelado) setCargando(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function crearTrabajador(e: FormEvent) {

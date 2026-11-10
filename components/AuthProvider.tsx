@@ -50,7 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let activo = true;
     obtenerPerfil(userId)
       .then((p) => {
-        if (activo) setCargado({ userId, perfil: p });
+        if (!activo) return;
+        if (!p) {
+          setUserId(null);
+          setCargado(null);
+          void cerrarSesion();
+          return;
+        }
+        setCargado({ userId, perfil: p });
       })
       .catch(() => {
         if (activo) setCargado({ userId, perfil: null });

@@ -353,7 +353,7 @@ returns jsonb language sql stable security definer set search_path = public as $
   left join movimientos_caja m on m.turno_id = t.id and m.estado = 'ACTIVO'
   where t.id = p_turno_id
     and t.gym_id = mi_gym_id()
-    and (mi_rol() = 'admin' or t.abierto_por = auth.uid())
+    and mi_gym_id() is not null
   group by t.id
 $$;
 
@@ -511,7 +511,7 @@ begin
   if coalesce(trim(p_motivo),'') = '' then raise exception 'El motivo es obligatorio'; end if;
   update movimientos_caja set estado='ANULADO', anulado_por=auth.uid(), anulado_at=now(), motivo_anulacion=p_motivo
    where id = p_id and gym_id = mi_gym_id() and estado='ACTIVO'
-     and (mi_rol()='admin' or turno_id in (select id from turnos_caja where estado='ABIERTO' and abierto_por=auth.uid()));
+     and (mi_rol()='admin' or turno_id in (select id from turnos_caja where gym_id = mi_gym_id() and estado='ABIERTO'));
   if not found then raise exception 'No se pudo anular (inexistente, ya anulado o turno cerrado)'; end if;
 end $$;
 

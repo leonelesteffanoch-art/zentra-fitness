@@ -242,6 +242,8 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    const actualizacionesAuth: { password?: string; ban_duration?: string } = {};
+
     if (typeof body.password === 'string' && body.password.length > 0) {
       if (body.password.length < 6) {
         return NextResponse.json(
@@ -249,11 +251,20 @@ export async function PATCH(req: NextRequest) {
           { status: 400 }
         );
       }
-      const { error: passErr } = await adminClient.auth.admin.updateUserById(targetId, {
-        password: body.password,
-      });
-      if (passErr) {
-        return NextResponse.json({ error: passErr.message }, { status: 400 });
+      actualizacionesAuth.password = body.password;
+    }
+
+    if (typeof body.activo === 'boolean') {
+      actualizacionesAuth.ban_duration = body.activo ? 'none' : '876000h';
+    }
+
+    if (Object.keys(actualizacionesAuth).length > 0) {
+      const { error: authUpdErr } = await adminClient.auth.admin.updateUserById(
+        targetId,
+        actualizacionesAuth
+      );
+      if (authUpdErr) {
+        return NextResponse.json({ error: authUpdErr.message }, { status: 400 });
       }
     }
 

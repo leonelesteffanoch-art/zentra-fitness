@@ -70,7 +70,10 @@ export default function CajaPage() {
     try {
       const [t, prods] = await Promise.all([turnoAbierto(gymId), listarProductos(gymId)]);
       const [res, movs] = t
-        ? await Promise.all([resumenTurno(t.id), movimientosDeTurno(t.id)])
+        ? await Promise.all([
+            resumenTurno(t.id, Number(t.fondo_inicial) || 0),
+            movimientosDeTurno(t.id),
+          ])
         : [null, [] as MovimientoCaja[]];
       setTurno(t);
       setProductos(prods);
@@ -92,7 +95,10 @@ export default function CajaPage() {
     Promise.all([turnoAbierto(gymId), listarProductos(gymId)])
       .then(async ([t, prods]) => {
         const [res, movs] = t
-          ? await Promise.all([resumenTurno(t.id), movimientosDeTurno(t.id)])
+          ? await Promise.all([
+              resumenTurno(t.id, Number(t.fondo_inicial) || 0),
+              movimientosDeTurno(t.id),
+            ])
           : [null, [] as MovimientoCaja[]];
         if (cancelado) return;
         setTurno(t);

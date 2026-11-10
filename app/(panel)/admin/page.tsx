@@ -11,7 +11,6 @@ import { LeadsPanel } from '@/components/LeadsPanel';
 import { StaffManager } from '@/components/StaffManager';
 import {
   listarProductos,
-  listarTurnosHistorial,
   movimientosParaExport,
   resumenPeriodo,
 } from '@/services/cajaService';
@@ -23,7 +22,6 @@ import type {
   Plan,
   Producto,
   ResumenPeriodoFila,
-  TurnoCaja,
 } from '@/types';
 
 const METODOS: MetodoPago[] = ['Efectivo', 'Yape', 'Plin', 'Tarjeta'];
@@ -41,7 +39,6 @@ export default function AdminPage() {
   const [resumen, setResumen] = useState<ResumenPeriodoFila[]>([]);
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [turnos, setTurnos] = useState<TurnoCaja[]>([]);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   useEffect(() => {
@@ -52,14 +49,12 @@ export default function AdminPage() {
 
   const recargarCatalogos = useCallback(async () => {
     if (!gymId) return;
-    const [pls, prods, trns] = await Promise.all([
+    const [pls, prods] = await Promise.all([
       listarPlanes(gymId, true),
       listarProductos(gymId, true),
-      listarTurnosHistorial(gymId),
     ]);
     setPlanes(pls);
     setProductos(prods);
-    setTurnos(trns);
   }, [gymId]);
 
   const consultarPeriodo = useCallback(async (fDesde: string, fHasta: string) => {
@@ -85,14 +80,12 @@ export default function AdminPage() {
       resumenPeriodo(desde, hasta),
       listarPlanes(gymId, true),
       listarProductos(gymId, true),
-      listarTurnosHistorial(gymId),
     ])
-      .then(([filas, pls, prods, trns]) => {
+      .then(([filas, pls, prods]) => {
         if (cancelado) return;
         setResumen(filas);
         setPlanes(pls);
         setProductos(prods);
-        setTurnos(trns);
       })
       .catch((e: unknown) => {
         if (!cancelado) {
@@ -333,86 +326,7 @@ export default function AdminPage() {
         </section>
       )}
 
-      {/* 3. Auditoría de turnos de caja */}
-      <section aria-label="Historial de turnos" className="space-y-3">
-        <h2 className="section-title text-lg">Auditoría de turnos de caja</h2>
-
-        <div className="overflow-x-auto border border-line bg-surface">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead className="border-b border-line bg-surface-2 text-xs font-medium text-muted">
-              <tr>
-                <th className="px-4 py-2.5">Fecha</th>
-                <th className="px-4 py-2.5">Turno</th>
-                <th className="px-4 py-2.5">Estado</th>
-                <th className="px-4 py-2.5 text-right">Fondo inicial</th>
-                <th className="px-4 py-2.5 text-right">Efec. esperado</th>
-                <th className="px-4 py-2.5 text-right">Efec. real</th>
-                <th className="px-4 py-2.5 text-right">Diferencia</th>
-                <th className="px-4 py-2.5">Observaciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {turnos.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted">
-                    Aún no se han abierto turnos.
-                  </td>
-                </tr>
-              ) : (
-                turnos.map((t) => {
-                  const dif = t.diferencia ?? 0;
-                  return (
-                    <tr key={t.id}>
-                      <td className="px-4 py-2.5 font-mono text-xs">{t.fecha}</td>
-                      <td className="px-4 py-2.5 font-medium text-bone">{t.turno}</td>
-                      <td className="px-4 py-2.5">
-                        <span
-                          className={`inline-block rounded-xs px-2 py-0.5 text-xs font-semibold ${
-                            t.estado === 'ABIERTO'
-                              ? 'bg-ok/15 text-ok'
-                              : 'bg-surface-2 text-muted'
-                          }`}
-                        >
-                          {t.estado === 'ABIERTO' ? 'Abierto' : 'Cerrado'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
-                        {soles(t.fondo_inicial)}
-                      </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
-                        {t.efectivo_esperado !== null ? soles(t.efectivo_esperado) : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
-                        {t.efectivo_real !== null ? soles(t.efectivo_real) : '—'}
-                      </td>
-                      <td
-                        className={`px-4 py-2.5 text-right font-semibold tabular-nums ${
-                          t.diferencia === null
-                            ? 'text-muted'
-                            : dif === 0
-                            ? 'text-ok'
-                            : dif > 0
-                            ? 'text-warn'
-                            : 'text-bad'
-                        }`}
-                      >
-                        {t.diferencia !== null
-                          ? `${dif > 0 ? '+ ' : ''}${soles(dif)}`
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted">
-                        {t.observaciones ?? '—'}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* 4. Personal y permisos + Limpieza de datos de prueba */}
+      {/* 3. Personal y permisos + Limpieza de datos de prueba */}
       {perfil && (
         <StaffManager
           adminId={perfil.id}

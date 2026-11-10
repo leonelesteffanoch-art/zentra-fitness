@@ -37,12 +37,52 @@ export async function abrirTurno(turno: TurnoNombre, fondoInicial: number): Prom
   return data as string;
 }
 
-/** Arqueo teórico y totales por método, calculados en la BD. */
-export async function resumenTurno(turnoId: string): Promise<ResumenTurno> {
+/** Arqueo teórico y totales por método, calculados en la BD (con respaldo local si otro recepcionista abrió el turno). */
+export async function resumenTurno(turnoId: string, fondoInicialFallback = 0): Promise<ResumenTurno> {
   const { data, error } = await supabase.rpc('resumen_turno', { p_turno_id: turnoId });
   if (error) throw new Error(error.message);
-  if (!data) throw new Error('Turno no encontrado o sin permiso');
-  return data as ResumenTurno;
+  if (data) return data as ResumenTurno;
+
+  const { data: movs, error: movErr } = await supabase
+    .from('movimientos_caja')
+    .select('tipo, monto, metodo, estado')
+    .eq('turno_id', turnoId)
+    .eq('estado', 'ACTIVO');
+  if (movErr) throw new Error(movErr.message);
+
+  let ingresos_efectivo = 0;
+  let egresos_efectivo = 0;
+  let ingresos_yape = 0;
+  let ingresos_plin = 0;
+  let ingresos_tarjeta = 0;
+  let total_ingresos = 0;
+  let total_egresos = 0;
+
+  for (const m of movs ?? []) {
+    const monto = Number(m.monto) || 0;
+    if (m.tipo === 'INGRESO') {
+      total_ingresos += monto;
+      if (m.metodo === 'Efectivo') ingresos_efectivo += monto;
+      else if (m.metodo === 'Yape') ingresos_yape += monto;
+      else if (m.metodo === 'Plin') ingresos_plin += monto;
+      else if (m.metodo === 'Tarjeta') ingresos_tarjeta += monto;
+    } else if (m.tipo === 'EGRESO') {
+      total_egresos += monto;
+      if (m.metodo === 'Efectivo') egresos_efectivo += monto;
+    }
+  }
+
+  return {
+    fondo_inicial: fondoInicialFallback,
+    ingresos_efectivo,
+    egresos_efectivo,
+    efectivo_esperado: fondoInicialFallback + ingresos_efectivo - egresos_efectivo,
+    ingresos_yape,
+    ingresos_plin,
+    ingresos_tarjeta,
+    total_ingresos,
+    total_egresos,
+  };
 }
 
 /** Cierra el turno con el efectivo real contado por el recepcionista. */
@@ -151,18 +191,6 @@ export async function anularVenta(ventaGrupoId: string, motivo: string) {
     p_motivo: motivo,
   });
   if (error) throw new Error(error.message);
-}
-
-/** Historial de turnos de caja para auditoría del dueño (máx. 20). */
-export async function listarTurnosHistorial(gymId: string): Promise<TurnoCaja[]> {
-  const { data, error } = await supabase
-    .from('turnos_caja')
-    .select('id, gym_id, turno, fecha, estado, abierto_at, fondo_inicial, cerrado_at, efectivo_esperado, efectivo_real, diferencia, observaciones')
-    .eq('gym_id', gymId)
-    .order('abierto_at', { ascending: false })
-    .limit(20);
-  if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as TurnoCaja[];
 }
 
 /** Totales por fecha/turno/tipo/método calculados en la BD (solo admin). */
