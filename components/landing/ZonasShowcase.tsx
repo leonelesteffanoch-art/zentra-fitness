@@ -92,12 +92,12 @@ function FotoZona({ src, alt }: { src: string; alt: string }) {
         }}
         onLoad={() => setEstado('ok')}
         onError={() => setEstado('error')}
-        className={`absolute inset-0 h-full w-full object-cover saturate-[.7] transition-opacity duration-500 ${
+        className={`absolute inset-0 h-full w-full object-cover saturate-[.88] transition-opacity duration-500 ${
           estado === 'ok' ? 'opacity-100' : 'opacity-0'
         }`}
       />
       {estado === 'ok' && (
-        <div className="absolute inset-0 bg-gradient-to-t from-surface via-ink/50 to-ink/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-ink/45 to-ink/20" />
       )}
     </>
   );
@@ -124,7 +124,7 @@ function AreaVisual({ zona }: { zona: ZonaItem }) {
       )}
       <span
         aria-hidden="true"
-        className="absolute bottom-3 left-6 font-[family-name:var(--font-archivo)] text-[6.5rem] font-black italic leading-none text-bone/15 sm:text-[8rem]"
+        className="absolute bottom-3 left-6 font-[family-name:var(--font-archivo)] text-[6.5rem] font-black italic leading-none text-bone/20 sm:text-[8rem] pointer-events-none drop-shadow-md z-10"
         style={{ fontStretch: '125%' }}
       >
         {zona.num}

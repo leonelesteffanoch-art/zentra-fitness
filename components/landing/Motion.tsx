@@ -18,7 +18,7 @@ export function usePrefersReducedMotion(): boolean {
 }
 
 /** Dispara `true` una sola vez cuando el elemento entra en pantalla. */
-export function useInViewOnce<T extends Element>(threshold = 0.15) {
+export function useInViewOnce<T extends Element>(threshold = 0.01, rootMargin = '300px 0px 50px 0px') {
   const ref = useRef<T | null>(null);
   const [visto, setVisto] = useState(false);
 
@@ -32,16 +32,16 @@ export function useInViewOnce<T extends Element>(threshold = 0.15) {
           obs.disconnect();
         }
       },
-      { threshold, rootMargin: '0px 0px -40px 0px' }
+      { threshold, rootMargin }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [threshold]);
+  }, [threshold, rootMargin]);
 
   return { ref, visto };
 }
 
-/** Reveal: fade + 14px hacia arriba, una sola vez. Estático con reduced-motion (vía CSS). */
+/** Reveal: fade + 12px hacia arriba, una sola vez. En móvil aparece de inmediato para evitar retrasos de carga. */
 export function RevealOnScroll({
   children,
   className = '',
@@ -49,7 +49,7 @@ export function RevealOnScroll({
   children: ReactNode;
   className?: string;
 }) {
-  const { ref, visto } = useInViewOnce<HTMLDivElement>(0.12);
+  const { ref, visto } = useInViewOnce<HTMLDivElement>(0.01, '350px 0px 80px 0px');
   return (
     <div ref={ref} className={`${visto ? 'reveal-visible' : 'reveal-hidden'} ${className}`}>
       {children}

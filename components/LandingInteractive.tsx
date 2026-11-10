@@ -192,21 +192,94 @@ export function LandingHeader() {
   );
 }
 
-// ---------- 2. Pieza visual del Hero (foto real del gimnasio) ----------
+// ---------- 2. Pieza visual del Hero (carrusel de fotos reales cada 4 segundos) ----------
+
+const HERO_SLIDES = [
+  {
+    src: '/brand/hero-01.jpg',
+    alt: 'Sala principal de musculación y máquinas de palanca en Zentra Fitness',
+    etiqueta: 'Sala principal · Peso libre',
+  },
+  {
+    src: '/brand/hero-02.jpg',
+    alt: 'Segundo nivel con grass sintético y zona de potencia en Zentra Fitness',
+    etiqueta: 'Nivel 2 · Césped funcional',
+  },
+  {
+    src: '/brand/hero-03.jpg',
+    alt: 'Rack de mancuernas de hierro y bancas olímpicas en Zentra Fitness',
+    etiqueta: 'Mancuernas y bancas olímpicas',
+  },
+  {
+    src: '/brand/hero-04.jpg',
+    alt: 'Trotadoras curvas mecánicas y prensa 45° en Zentra Fitness',
+    etiqueta: 'Cardio curvo y prensa 45°',
+  },
+];
 
 export function HeroVisualCard() {
+  const [actual, setActual] = useState(0);
+  const [enPausa, setEnPausa] = useState(false);
+
+  useEffect(() => {
+    if (enPausa) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const timer = setInterval(() => {
+      setActual((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [enPausa]);
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-2xl">
-      <div className="relative aspect-[4/3] lg:aspect-[4/4.6]">
-        <Image
-          src="/brand/hero.jpg"
-          alt="Socios entrenando en la sala de Zentra Fitness, Villa Estela"
-          fill
-          priority
-          sizes="(min-width: 1024px) 460px, 100vw"
-          className="object-cover saturate-[.88]"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
+    <div
+      onMouseEnter={() => setEnPausa(true)}
+      onMouseLeave={() => setEnPausa(false)}
+      className="relative overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-2xl group"
+    >
+      <div className="relative aspect-[4/3] lg:aspect-[4/4.6] bg-ink">
+        {HERO_SLIDES.map((slide, idx) => (
+          <div
+            key={slide.src}
+            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              idx === actual ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            }`}
+          >
+            <Image
+              src={slide.src}
+              alt={slide.alt}
+              fill
+              priority={idx === 0}
+              sizes="(min-width: 1024px) 460px, 100vw"
+              className="object-cover saturate-[.92]"
+            />
+          </div>
+        ))}
+
+        {/* Gradiente sutil inferior */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-transparent z-10" />
+
+        {/* Badge descriptivo de la foto actual */}
+        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-full border border-line/80 bg-ink/85 px-3.5 py-1.5 text-xs font-semibold text-bone backdrop-blur-md shadow-lg pointer-events-none">
+          <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+          <span>{HERO_SLIDES[actual].etiqueta}</span>
+        </div>
+
+        {/* Indicadores de diapositiva interactivos */}
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 rounded-full border border-line/80 bg-ink/85 px-3 py-1.5 backdrop-blur-md shadow-lg">
+          {HERO_SLIDES.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setActual(idx)}
+              aria-label={`Ver foto ${idx + 1} del gimnasio`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                idx === actual
+                  ? 'w-6 bg-brand shadow-[0_0_8px_rgba(255,194,26,0.6)]'
+                  : 'w-2 bg-bone/35 hover:bg-bone/80'
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -193,12 +193,12 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
       </div>
 
       {/* Pases tipo ticket */}
-      <div className="rounded-2xl border border-line/80 bg-surface/50 p-6 sm:p-7">
+      <div className="rounded-2xl border border-line/80 bg-surface/50 p-5 sm:p-7">
         <div className="grid gap-4 sm:grid-cols-2">
           <Ticket
             nombre="Por día"
             precio={pDia}
-            detalle="Entra las veces que quieras ese día"
+            detalle="Pase libre"
             icono={<InfinityIcon aria-hidden="true" size={20} strokeWidth={1.5} />}
           />
           <Ticket
@@ -209,25 +209,27 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
           />
         </div>
 
-        <div className="mt-6 flex flex-col items-start justify-between gap-5 border-t border-line/70 pt-5 sm:flex-row sm:items-center">
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-line/70 pt-5 sm:flex-row sm:items-center">
           <a
             href="#contacto"
             onClick={(e) => irASeccion(e, '#contacto')}
-            className="btn btn-secondary w-full sm:w-auto"
+            className="btn btn-secondary w-full sm:w-auto text-xs sm:text-sm font-semibold"
           >
             Pedir pase en recepción
           </a>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs text-muted">Paga con</span>
-            {PAGOS.map(({ icono: Icono, texto }) => (
-              <span
-                key={texto}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-bone"
-              >
-                <Icono aria-hidden="true" size={13} strokeWidth={1.5} className="text-muted" />
-                {texto}
-              </span>
-            ))}
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+            <span className="text-xs text-muted shrink-0 mr-0.5">Paga con</span>
+            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+              {PAGOS.map(({ icono: Icono, texto }) => (
+                <span
+                  key={texto}
+                  className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-bone shrink-0"
+                >
+                  <Icono aria-hidden="true" size={12} strokeWidth={1.5} className="text-muted" />
+                  {texto}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -248,10 +250,10 @@ function Ticket({
 }) {
   return (
     <div className="relative flex min-h-24 rounded-xl border border-line/80 bg-ink">
-      <div className="flex w-28 shrink-0 flex-col justify-center px-5 sm:w-32">
+      <div className="flex shrink-0 flex-col justify-center px-4 sm:px-5 w-auto min-w-[104px] sm:min-w-[124px]">
         <span className="text-xs text-muted">{nombre}</span>
         <span
-          className="mt-0.5 font-[family-name:var(--font-archivo)] text-3xl font-black italic leading-none text-bone"
+          className="mt-0.5 whitespace-nowrap font-[family-name:var(--font-archivo)] text-2xl sm:text-3xl font-black italic leading-none text-bone"
           style={{ fontStretch: '115%', fontVariantNumeric: 'tabular-nums' }}
         >
           {formatoPrecioLanding(precio)}
@@ -261,8 +263,8 @@ function Ticket({
       {/* Línea punteada divisoria */}
       <div className="relative w-px shrink-0 border-l border-dashed border-line" aria-hidden="true" />
 
-      <div className="flex flex-1 items-center gap-3 px-5 py-4 text-sm text-bone">
-        <span className="text-muted">{icono}</span>
+      <div className="flex flex-1 items-center gap-2.5 px-4 sm:px-5 py-4 text-xs sm:text-sm font-medium text-bone">
+        <span className="text-muted shrink-0">{icono}</span>
         <span>{detalle}</span>
       </div>
     </div>
