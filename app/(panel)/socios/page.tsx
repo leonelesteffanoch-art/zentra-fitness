@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  AlertTriangle,
   Ban,
   Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
+  Clock,
   Download,
   Edit3,
   Loader2,
+  MessageCircle,
   RefreshCw,
   UserPlus,
   Users,
@@ -45,6 +48,7 @@ const FILTROS: { id: FiltroEstadoSocio; label: string }[] = [
   { id: 'activos', label: 'Activos' },
   { id: 'por_vencer', label: 'Por vencer' },
   { id: 'vencidos', label: 'Vencidos' },
+  { id: 'morosos', label: '🔴 Morosos' },
 ];
 
 export default function SociosPage() {
@@ -368,8 +372,8 @@ export default function SociosPage() {
                         <td className="px-4 py-3 font-medium text-bone">
                           {s.apellidos}, {s.nombres}
                           {s.saldo_pendiente > 0 && (
-                            <span className="ml-2 text-xs text-warn tabular-nums">
-                              (Debe {soles(s.saldo_pendiente)})
+                            <span className="ml-2 rounded-2xs bg-bad/20 px-1.5 py-0.5 text-[11px] font-bold text-bad tabular-nums">
+                              Debe {soles(s.saldo_pendiente)}
                             </span>
                           )}
                         </td>
@@ -502,6 +506,100 @@ export default function SociosPage() {
                   )}
                 </dl>
               </div>
+
+              {/* Alerta de Moroso / Deuda y Alerta de Inactividad */}
+              {(() => {
+                const hoy = hoyLima();
+                const diasAtraso =
+                  seleccionado.saldo_pendiente > 0 && seleccionado.fecha_inicio
+                    ? Math.max(
+                        0,
+                        Math.floor(
+                          (new Date(hoy).getTime() - new Date(seleccionado.fecha_inicio).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                      )
+                    : 0;
+
+                const ultimaAsis = asistenciasSocio.length > 0 ? asistenciasSocio[0].fecha : null;
+                const fechaRef = ultimaAsis ?? seleccionado.fecha_inicio;
+                const diasSinVenir =
+                  seleccionado.semaforo !== 'ROJO' && fechaRef
+                    ? Math.max(
+                        0,
+                        Math.floor(
+                          (new Date(hoy).getTime() - new Date(fechaRef).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                      )
+                    : 0;
+                const estaInactivo = seleccionado.semaforo !== 'ROJO' && diasSinVenir >= 7;
+
+                return (
+                  <div className="space-y-3">
+                    {seleccionado.saldo_pendiente > 0 && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-bad bg-bad/15 p-3.5 rounded-xs">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 font-bold text-bad text-xs">
+                            <AlertTriangle size={15} strokeWidth={2} />
+                            SALDO PENDIENTE · {diasAtraso > 0 ? `${diasAtraso} DÍAS DE ATRASO` : 'PENDIENTE'}
+                          </span>
+                          <p className="mt-0.5 text-xs text-bone">
+                            Debe <strong className="text-bad font-bold">{soles(seleccionado.saldo_pendiente)}</strong> del plan {seleccionado.plan}.
+                          </p>
+                        </div>
+                        {seleccionado.telefono && (
+                          <a
+                            href={`https://wa.me/51${seleccionado.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+                              `Hola ${seleccionado.nombres}, te saludamos de Zentra Fitness. Te recordamos cordialmente que mantienes un saldo pendiente de ${soles(
+                                seleccionado.saldo_pendiente
+                              )} de tu membresía. Puedes cancelarlo en tu próximo ingreso o vía Yape/Plin. ¡Muchas gracias!`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary !min-h-8 !px-2.5 text-xs text-ok hover:text-ok shrink-0"
+                            title="Enviar recordatorio por WhatsApp"
+                          >
+                            <MessageCircle size={14} />
+                            Cobrar por WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {estaInactivo && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-warn bg-warn/15 p-3.5 rounded-xs">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 font-bold text-warn text-xs">
+                            <Clock size={15} strokeWidth={2} />
+                            INACTIVO · {diasSinVenir} DÍAS SIN ENTRENAR
+                          </span>
+                          <p className="mt-0.5 text-xs text-bone">
+                            {ultimaAsis
+                              ? `Última visita registrada: ${ultimaAsis}.`
+                              : `Inició membresía el ${seleccionado.fecha_inicio} pero aún no registra check-in.`}
+                          </p>
+                        </div>
+                        {seleccionado.telefono && (
+                          <a
+                            href={`https://wa.me/51${seleccionado.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+                              `¡Hola ${seleccionado.nombres}! Te extrañamos en Zentra Fitness 💪 Notamos que llevas ${diasSinVenir} días sin venir a entrenar. Recuerda que tu membresía ${
+                                seleccionado.plan ? `(${seleccionado.plan})` : ''
+                              } sigue activa y la constancia es la clave para tus resultados. ¿Tienes algún horario disponible esta semana para retomar? ¡Te esperamos en la sala!`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary !min-h-8 !px-2.5 text-xs shrink-0"
+                          >
+                            <MessageCircle size={14} className="text-ok" />
+                            Motivar por WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* 3. Calendario semanal de asistencias */}
               <WeeklyAttendanceCalendar

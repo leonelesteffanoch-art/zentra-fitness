@@ -143,7 +143,7 @@ export async function anularMovimiento(movimientoId: string, motivo: string) {
 export async function listarProductos(gymId: string, incluirInactivos = false): Promise<Producto[]> {
   let query = supabase
     .from('productos')
-    .select('id, gym_id, nombre, categoria, precio, stock, es_servicio, activo')
+    .select('*')
     .eq('gym_id', gymId)
     .order('categoria')
     .order('nombre')
@@ -157,7 +157,7 @@ export async function listarProductos(gymId: string, incluirInactivos = false): 
 export type DatosProducto = Pick<
   Producto,
   'nombre' | 'categoria' | 'precio' | 'stock' | 'es_servicio' | 'activo'
->;
+> & { costo?: number };
 
 export async function crearProducto(gymId: string, prod: DatosProducto) {
   const { error } = await supabase.from('productos').insert({ ...prod, gym_id: gymId });
@@ -167,6 +167,46 @@ export async function crearProducto(gymId: string, prod: DatosProducto) {
 export async function actualizarProducto(productoId: string, cambios: Partial<DatosProducto>) {
   const { error } = await supabase.from('productos').update(cambios).eq('id', productoId);
   if (error) throw new Error(error.message);
+}
+
+/** Elimina un producto. Si tiene ventas históricas asociadas, se archiva (activo = false) para no romper auditoría. */
+export async function eliminarProducto(
+  productoId: string
+): Promise<{ eliminado: boolean; archivado: boolean }> {
+  const { error } = await supabase.from('productos').delete().eq('id', productoId);
+  if (!error) {
+    return { eliminado: true, archivado: false };
+  }
+  const { error: updErr } = await supabase
+    .from('productos')
+    .update({ activo: false })
+    .eq('id', productoId);
+  if (updErr) throw new Error(updErr.message);
+  return { eliminado: false, archivado: true };
+}
+
+/** Repone existencias de un producto en el POS y actualiza opcionalmente su costo de compra. */
+export async function reponerStock(
+  productoId: string,
+  cantidadAdicional: number,
+  nuevoCosto?: number
+): Promise<number> {
+  const { data: prod, error: getErr } = await supabase
+    .from('productos')
+    .select('stock, costo')
+    .eq('id', productoId)
+    .single();
+  if (getErr || !prod) throw new Error('Producto no encontrado');
+
+  const nuevoStock = (prod.stock ?? 0) + cantidadAdicional;
+  const updates: Record<string, unknown> = { stock: nuevoStock };
+  if (typeof nuevoCosto === 'number' && nuevoCosto >= 0) {
+    updates.costo = nuevoCosto;
+  }
+
+  const { error } = await supabase.from('productos').update(updates).eq('id', productoId);
+  if (error) throw new Error(error.message);
+  return nuevoStock;
 }
 
 /** Venta rápida de mostrador. Los pagos deben sumar el total. Socio opcional. */
@@ -193,7 +233,138 @@ export async function anularVenta(ventaGrupoId: string, motivo: string) {
   if (error) throw new Error(error.message);
 }
 
-/** Totales por fecha/turno/tipo/método calculados en la BD (solo admin). */
+export interface DesglosePlan {
+  nombre: string;
+  total: number;
+  cantidad: number;
+}
+
+export interface DesgloseProducto {
+  nombre: string;
+  total: number;
+  unidades: number;
+}
+
+export interface ComparativaMeses {
+  mesActualTotal: number;
+  mesAnteriorTotal: number;
+  diferencia: number;
+  porcentajeVariacion: number;
+  nombreMesActual: string;
+  nombreMesAnterior: string;
+}
+
+/** Obtiene métricas gerenciales para el dashboard de administración. */
+export async function obtenerEstadisticasAdmin(
+  gymId: string,
+  desde: string,
+  hasta: string
+): Promise<{
+  comparativa: ComparativaMeses;
+  planes: DesglosePlan[];
+  productos: DesgloseProducto[];
+}> {
+  const hoy = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const y = hoy.getFullYear();
+  const m = hoy.getMonth();
+
+  const inicioMesAct = `${y}-${pad(m + 1)}-01`;
+  const finMesAct = `${y}-${pad(m + 1)}-${pad(hoy.getDate())}`;
+
+  const yAnt = m === 0 ? y - 1 : y;
+  const mAnt = m === 0 ? 11 : m - 1;
+  const inicioMesAnt = `${yAnt}-${pad(mAnt + 1)}-01`;
+  const ultimoDiaAnt = new Date(y, m, 0).getDate();
+  const finMesAnt = `${yAnt}-${pad(mAnt + 1)}-${pad(ultimoDiaAnt)}`;
+
+  const [resAct, resAnt, { data: movsPlanes }, { data: ventasProd }] = await Promise.all([
+    resumenPeriodo(inicioMesAct, finMesAct).catch(() => []),
+    resumenPeriodo(inicioMesAnt, finMesAnt).catch(() => []),
+    supabase
+      .from('movimientos_caja')
+      .select('concepto, monto')
+      .eq('gym_id', gymId)
+      .eq('tipo', 'INGRESO')
+      .eq('categoria', 'MEMBRESIA')
+      .eq('estado', 'ACTIVO')
+      .gte('fecha_hora', `${desde}T00:00:00`)
+      .lte('fecha_hora', `${hasta}T23:59:59`),
+    supabase
+      .from('ventas_productos')
+      .select('descripcion, cantidad, total')
+      .eq('gym_id', gymId)
+      .eq('estado', 'ACTIVO')
+      .gte('created_at', `${desde}T00:00:00`)
+      .lte('created_at', `${hasta}T23:59:59`),
+  ]);
+
+  const totAct = resAct.reduce(
+    (acc, r) => (r.tipo === 'INGRESO' ? acc + Number(r.total || 0) : acc),
+    0
+  );
+  const totAnt = resAnt.reduce(
+    (acc, r) => (r.tipo === 'INGRESO' ? acc + Number(r.total || 0) : acc),
+    0
+  );
+  const dif = totAct - totAnt;
+  const pct =
+    totAnt > 0 ? Math.round(((totAct - totAnt) / totAnt) * 100) : totAct > 0 ? 100 : 0;
+
+  const mesesNombres = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Setiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
+  const comparativa: ComparativaMeses = {
+    mesActualTotal: totAct,
+    mesAnteriorTotal: totAnt,
+    diferencia: dif,
+    porcentajeVariacion: pct,
+    nombreMesActual: mesesNombres[m],
+    nombreMesAnterior: mesesNombres[mAnt],
+  };
+
+  const mapaPlanes = new Map<string, { total: number; cantidad: number }>();
+  for (const item of movsPlanes ?? []) {
+    const nombreLimpio = item.concepto.replace(/^Membresía\s+/i, '').trim();
+    const actual = mapaPlanes.get(nombreLimpio) ?? { total: 0, cantidad: 0 };
+    mapaPlanes.set(nombreLimpio, {
+      total: actual.total + (Number(item.monto) || 0),
+      cantidad: actual.cantidad + 1,
+    });
+  }
+  const planesDesglose: DesglosePlan[] = Array.from(mapaPlanes.entries())
+    .map(([nombre, d]) => ({ nombre, total: d.total, cantidad: d.cantidad }))
+    .sort((a, b) => b.total - a.total);
+
+  const mapaProds = new Map<string, { total: number; unidades: number }>();
+  for (const v of ventasProd ?? []) {
+    const actual = mapaProds.get(v.descripcion) ?? { total: 0, unidades: 0 };
+    mapaProds.set(v.descripcion, {
+      total: actual.total + (Number(v.total) || 0),
+      unidades: actual.unidades + (v.cantidad || 0),
+    });
+  }
+  const prodsDesglose: DesgloseProducto[] = Array.from(mapaProds.entries())
+    .map(([nombre, d]) => ({ nombre, total: d.total, unidades: d.unidades }))
+    .sort((a, b) => b.total - a.total);
+
+  return {
+    comparativa,
+    planes: planesDesglose,
+    productos: prodsDesglose,
+  };
+}
 export async function resumenPeriodo(desde: string, hasta: string): Promise<ResumenPeriodoFila[]> {
   const { data, error } = await supabase.rpc('resumen_periodo', {
     p_desde: desde,

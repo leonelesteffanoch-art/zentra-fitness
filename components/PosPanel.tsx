@@ -397,8 +397,14 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                               {soles(v.precio)}
                             </span>
 
-                            <div className="mt-1 flex items-center justify-between w-full text-[10px] text-muted">
-                              <span>Stock: {v.stock}</span>
+                            <div className="mt-1 flex items-center justify-between w-full text-[10px]">
+                              {sinStock ? (
+                                <span className="font-bold text-bad">Agotado</span>
+                              ) : !v.es_servicio && v.stock <= 5 ? (
+                                <span className="font-semibold text-warn">Quedan {v.stock}</span>
+                              ) : (
+                                <span className="text-muted">Stock: {v.stock}</span>
+                              )}
                               {cantVar > 0 && (
                                 <span className="font-bold text-bone bg-ink/70 px-1 rounded-2xs">
                                   +{cantVar}
@@ -432,8 +438,16 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                           <span className="text-base font-bold text-bone tabular-nums">
                             {soles(v.precio)}
                           </span>
-                          <span className="block text-[11px] text-muted tabular-nums">
-                            {v.es_servicio ? 'Servicio sin límite' : `Stock: ${v.stock}`}
+                          <span className="block text-[11px] tabular-nums">
+                            {v.es_servicio ? (
+                              <span className="text-muted">Servicio sin límite</span>
+                            ) : sinStock ? (
+                              <span className="font-bold text-bad">⚠️ Agotado</span>
+                            ) : v.stock <= 5 ? (
+                              <span className="font-semibold text-warn">⚠️ Stock bajo ({v.stock})</span>
+                            ) : (
+                              <span className="text-muted">Stock: {v.stock}</span>
+                            )}
                           </span>
                         </div>
                         <span className="btn btn-secondary !min-h-7 !px-2.5 !text-xs">

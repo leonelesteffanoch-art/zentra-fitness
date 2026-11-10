@@ -100,6 +100,7 @@ export interface Producto {
   nombre: string;
   categoria: string;
   precio: number;
+  costo?: number;
   stock: number;
   es_servicio: boolean;
   activo: boolean;

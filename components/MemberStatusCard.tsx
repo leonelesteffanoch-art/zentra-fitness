@@ -1,6 +1,13 @@
 'use client';
 
-import { AlertTriangle, CircleDollarSign, LogIn, RefreshCw } from 'lucide-react';
+import {
+  AlertTriangle,
+  CircleDollarSign,
+  Clock,
+  LogIn,
+  MessageCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
 import { hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, Semaforo, SocioEstado } from '@/types';
@@ -86,6 +93,33 @@ export function MemberStatusCard({
   const horaPrevioHoy = formatearHoraCorta(ingresoPrevioHoy?.hora);
   const yaAsistioHoy = Boolean(ingresoPrevioHoy || yaIngreso);
 
+  // Cálculo de días de atraso en deuda
+  const diasAtraso =
+    socio.saldo_pendiente > 0 && socio.fecha_inicio
+      ? Math.max(
+          0,
+          Math.floor(
+            (new Date(hoy).getTime() - new Date(socio.fecha_inicio).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        )
+      : 0;
+
+  // Detección de inactividad (7-10+ días sin venir estando activo)
+  const ultimaAsistencia = asistencias.length > 0 ? asistencias[0].fecha : null;
+  const fechaReferencia = ultimaAsistencia ?? socio.fecha_inicio;
+  const diasSinVenir =
+    puedeEntrar && fechaReferencia
+      ? Math.max(
+          0,
+          Math.floor(
+            (new Date(hoy).getTime() - new Date(fechaReferencia).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        )
+      : 0;
+  const estaInactivo = puedeEntrar && diasSinVenir >= 7;
+
   return (
     <article aria-live="polite" className={`space-y-5 bg-surface p-6 sm:p-8 ${est.acento}`}>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -118,6 +152,81 @@ export function MemberStatusCard({
 
       {/* Calendario semanal de asistencias (Lun a Dom) */}
       <WeeklyAttendanceCalendar asistencias={asistencias} planNombre={socio.plan} />
+
+      {/* Alerta de Moroso / Saldo Pendiente */}
+      {socio.saldo_pendiente > 0 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-bad bg-bad/15 p-4 rounded-xs">
+          <div>
+            <span className="inline-flex items-center gap-1.5 font-bold text-bad text-sm">
+              <AlertTriangle size={16} strokeWidth={2} />
+              SOCIO MOROSO · SALDO PENDIENTE
+            </span>
+            <p className="mt-1 text-xs text-bone leading-relaxed">
+              Debe <strong className="text-bad tabular-nums font-bold">{soles(socio.saldo_pendiente)}</strong> del plan {socio.plan}.
+              {diasAtraso > 0 && ` Atraso de ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} desde su inicio (${socio.fecha_inicio}).`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onCobrarSaldo}
+              className="btn btn-primary !min-h-8 !px-3 text-xs !bg-bad hover:!bg-bad/90"
+            >
+              <CircleDollarSign size={14} />
+              Cobrar deuda
+            </button>
+            {socio.telefono && (
+              <a
+                href={`https://wa.me/51${socio.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+                  `Hola ${socio.nombres}, te saludamos de Zentra Fitness. Te recordamos cordialmente que mantienes un saldo pendiente de ${soles(
+                    socio.saldo_pendiente
+                  )} de tu membresía. Puedes cancelarlo en tu próximo ingreso o vía Yape/Plin. ¡Muchas gracias!`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-secondary !min-h-8 !px-2.5 text-xs text-ok hover:text-ok"
+                title="Enviar recordatorio por WhatsApp"
+              >
+                <MessageCircle size={14} />
+                Recordar
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Alerta de Socio Inactivo (7+ días sin venir con membresía activa) */}
+      {estaInactivo && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-warn bg-warn/15 p-4 rounded-xs">
+          <div>
+            <span className="inline-flex items-center gap-1.5 font-bold text-warn text-sm">
+              <Clock size={16} strokeWidth={2} />
+              ALERTA DE ABANDONO · {diasSinVenir} DÍAS SIN ENTRENAR
+            </span>
+            <p className="mt-1 text-xs text-bone leading-relaxed">
+              {ultimaAsistencia
+                ? `Su última visita registrada fue el ${ultimaAsistencia}.`
+                : `Inició su membresía el ${socio.fecha_inicio} pero aún no registra check-in.`}
+              {' '}Contáctalo para motivarlo antes de que pierda la constancia y no renueve.
+            </p>
+          </div>
+          {socio.telefono && (
+            <a
+              href={`https://wa.me/51${socio.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+                `¡Hola ${socio.nombres}! Te extrañamos en Zentra Fitness 💪 Notamos que llevas ${diasSinVenir} días sin venir a entrenar. Recuerda que tu membresía ${
+                  socio.plan ? `(${socio.plan})` : ''
+                } sigue activa y la constancia es la clave para tus resultados. ¿Tienes algún horario disponible esta semana para retomar? ¡Te esperamos en la sala!`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-secondary !min-h-8 !px-3 text-xs shrink-0"
+            >
+              <MessageCircle size={14} className="text-ok" />
+              Motivar por WhatsApp
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Aviso si ya ingresó hoy */}
       {puedeEntrar && ingresoPrevioHoy && (

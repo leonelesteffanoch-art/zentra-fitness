@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export type EstadoLead = 'NUEVO' | 'CONTACTADO' | 'AGENDADO' | 'INSCRITO' | 'DESCARTADO';
+
 export interface LeadInteresado {
   id: string;
   nombre: string;
@@ -10,6 +12,8 @@ export interface LeadInteresado {
   creado_at: string;
   contactado: boolean;
   contactado_at?: string | null;
+  estado?: EstadoLead;
+  notas?: string;
 }
 
 const VENTANA_MS = 60_000;
@@ -188,6 +192,8 @@ export async function PATCH(req: NextRequest) {
       id?: string;
       contactado?: boolean;
       eliminar?: boolean;
+      estado?: EstadoLead;
+      notas?: string;
     };
 
     const targetId = (body.id ?? '').trim();
@@ -211,15 +217,23 @@ export async function PATCH(req: NextRequest) {
 
     const leadsActualizados = body.eliminar
       ? leadsPrevios.filter((l) => l.id !== targetId)
-      : leadsPrevios.map((l) =>
-          l.id === targetId
-            ? {
-                ...l,
-                contactado: Boolean(body.contactado),
-                contactado_at: body.contactado ? new Date().toISOString() : null,
-              }
-            : l
-        );
+      : leadsPrevios.map((l) => {
+          if (l.id !== targetId) return l;
+
+          const nuevoEstado = body.estado ?? l.estado ?? (l.contactado ? 'CONTACTADO' : 'NUEVO');
+          const esContactado =
+            typeof body.contactado === 'boolean'
+              ? body.contactado
+              : nuevoEstado !== 'NUEVO';
+
+          return {
+            ...l,
+            contactado: esContactado,
+            contactado_at: esContactado ? (l.contactado_at || new Date().toISOString()) : null,
+            estado: nuevoEstado,
+            notas: typeof body.notas === 'string' ? body.notas.trim() : (l.notas ?? ''),
+          };
+        });
 
     const { error: updErr } = await client
       .from('gyms')

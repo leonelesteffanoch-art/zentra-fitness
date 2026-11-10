@@ -17,7 +17,7 @@ function sanitizar(term: string): string {
   return term.replace(/[%_,()*\\]/g, ' ').trim();
 }
 
-export type FiltroEstadoSocio = 'todos' | 'activos' | 'por_vencer' | 'vencidos';
+export type FiltroEstadoSocio = 'todos' | 'activos' | 'por_vencer' | 'vencidos' | 'morosos';
 
 /**
  * Busca socios por DNI (solo dígitos) o por nombre/apellido.
@@ -40,6 +40,7 @@ export async function buscarSocios(
   if (filtro === 'activos') query = query.eq('semaforo', 'VERDE');
   else if (filtro === 'por_vencer') query = query.gte('dias_restantes', 0).lte('dias_restantes', 3);
   else if (filtro === 'vencidos') query = query.eq('semaforo', 'ROJO');
+  else if (filtro === 'morosos') query = query.gt('saldo_pendiente', 0);
 
   if (/^\d+$/.test(t)) {
     query = query.like('dni', `${t}%`);
@@ -68,6 +69,7 @@ export async function listarSociosEstado(
   if (filtro === 'activos') query = query.eq('semaforo', 'VERDE');
   else if (filtro === 'por_vencer') query = query.gte('dias_restantes', 0).lte('dias_restantes', 3);
   else if (filtro === 'vencidos') query = query.eq('semaforo', 'ROJO');
+  else if (filtro === 'morosos') query = query.gt('saldo_pendiente', 0);
 
   const { data, error } = await query
     .order('apellidos')
@@ -142,6 +144,22 @@ export async function crearPlan(gymId: string, plan: DatosPlan) {
 export async function actualizarPlan(planId: string, cambios: Partial<DatosPlan>) {
   const { error } = await supabase.from('planes').update(cambios).eq('id', planId);
   if (error) throw new Error(error.message);
+}
+
+/** Elimina un plan. Si tiene membresías históricas asociadas, se archiva (activo = false) para no romper integridad. */
+export async function eliminarPlan(
+  planId: string
+): Promise<{ eliminado: boolean; archivado: boolean }> {
+  const { error } = await supabase.from('planes').delete().eq('id', planId);
+  if (!error) {
+    return { eliminado: true, archivado: false };
+  }
+  const { error: updErr } = await supabase
+    .from('planes')
+    .update({ activo: false, visible_landing: false })
+    .eq('id', planId);
+  if (updErr) throw new Error(updErr.message);
+  return { eliminado: false, archivado: true };
 }
 
 /** Historial de membresías de un socio (con pagado y saldo). */

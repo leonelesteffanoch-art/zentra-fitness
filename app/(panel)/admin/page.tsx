@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Download, Loader2 } from 'lucide-react';
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  CheckCircle2,
+  Download,
+  Dumbbell,
+  Loader2,
+  ShoppingBag,
+  TrendingUp,
+} from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { CatalogManager } from '@/components/CatalogManager';
@@ -12,7 +21,11 @@ import { StaffManager } from '@/components/StaffManager';
 import {
   listarProductos,
   movimientosParaExport,
+  obtenerEstadisticasAdmin,
   resumenPeriodo,
+  type ComparativaMeses,
+  type DesglosePlan,
+  type DesgloseProducto,
 } from '@/services/cajaService';
 import { listarPlanes } from '@/services/sociosService';
 import { hoyLima, soles, sumarDias } from '@/lib/formato';
@@ -39,6 +52,9 @@ export default function AdminPage() {
   const [resumen, setResumen] = useState<ResumenPeriodoFila[]>([]);
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [comparativa, setComparativa] = useState<ComparativaMeses | null>(null);
+  const [desglosePlanes, setDesglosePlanes] = useState<DesglosePlan[]>([]);
+  const [desgloseProds, setDesgloseProds] = useState<DesgloseProducto[]>([]);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   useEffect(() => {
@@ -57,21 +73,30 @@ export default function AdminPage() {
     setProductos(prods);
   }, [gymId]);
 
-  const consultarPeriodo = useCallback(async (fDesde: string, fHasta: string) => {
-    if (!fDesde || !fHasta || fDesde > fHasta) return;
-    setCargando(true);
-    try {
-      const filas = await resumenPeriodo(fDesde, fHasta);
-      setResumen(filas);
-    } catch (e) {
-      setAviso({
-        tipo: 'error',
-        texto: e instanceof Error ? e.message : 'Error al consultar finanzas',
-      });
-    } finally {
-      setCargando(false);
-    }
-  }, []);
+  const consultarPeriodo = useCallback(
+    async (fDesde: string, fHasta: string) => {
+      if (!fDesde || !fHasta || fDesde > fHasta || !gymId) return;
+      setCargando(true);
+      try {
+        const [filas, stats] = await Promise.all([
+          resumenPeriodo(fDesde, fHasta),
+          obtenerEstadisticasAdmin(gymId, fDesde, fHasta),
+        ]);
+        setResumen(filas);
+        setComparativa(stats.comparativa);
+        setDesglosePlanes(stats.planes);
+        setDesgloseProds(stats.productos);
+      } catch (e) {
+        setAviso({
+          tipo: 'error',
+          texto: e instanceof Error ? e.message : 'Error al consultar finanzas',
+        });
+      } finally {
+        setCargando(false);
+      }
+    },
+    [gymId]
+  );
 
   useEffect(() => {
     if (!gymId || perfil?.rol !== 'admin') return;
@@ -80,12 +105,16 @@ export default function AdminPage() {
       resumenPeriodo(desde, hasta),
       listarPlanes(gymId, true),
       listarProductos(gymId, true),
+      obtenerEstadisticasAdmin(gymId, desde, hasta),
     ])
-      .then(([filas, pls, prods]) => {
+      .then(([filas, pls, prods, stats]) => {
         if (cancelado) return;
         setResumen(filas);
         setPlanes(pls);
         setProductos(prods);
+        setComparativa(stats.comparativa);
+        setDesglosePlanes(stats.planes);
+        setDesgloseProds(stats.productos);
       })
       .catch((e: unknown) => {
         if (!cancelado) {
@@ -304,6 +333,150 @@ export default function AdminPage() {
           </dl>
         </div>
       </section>
+
+      {/* 1.2 Comparativa Mensual: Mes actual vs Mes anterior */}
+      {comparativa && (
+        <section aria-label="Comparativa mensual" className="border border-line/70 bg-surface p-5">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+                <TrendingUp size={15} className="text-brand" />
+                Rendimiento Comercial Mensual
+              </span>
+              <div className="mt-2 flex flex-wrap items-baseline gap-3">
+                <div>
+                  <span className="block text-xs text-muted">{comparativa.nombreMesActual} (al día de hoy):</span>
+                  <span className="text-2xl font-bold text-bone tabular-nums">
+                    {soles(comparativa.mesActualTotal)}
+                  </span>
+                </div>
+                <span className="self-center text-sm text-muted">vs.</span>
+                <div>
+                  <span className="block text-xs text-muted">{comparativa.nombreMesAnterior} (mes cerrado):</span>
+                  <span className="text-lg font-semibold text-muted tabular-nums">
+                    {soles(comparativa.mesAnteriorTotal)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xs bg-surface-2 px-3 py-2">
+              {comparativa.porcentajeVariacion >= 0 ? (
+                <div className="flex items-center gap-1.5 text-sm font-bold text-ok">
+                  <ArrowUpRight size={18} strokeWidth={2.5} />
+                  <span>+{comparativa.porcentajeVariacion}%</span>
+                  <span className="text-xs font-normal text-muted">crecimiento</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-sm font-bold text-bad">
+                  <ArrowDownRight size={18} strokeWidth={2.5} />
+                  <span>{comparativa.porcentajeVariacion}%</span>
+                  <span className="text-xs font-normal text-muted">vs mes anterior</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 1.4 Desglose de ingresos por Plan y por Producto */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Desglose por Plan */}
+        <section
+          aria-label="Ingresos por Plan"
+          className="space-y-3 border border-line/70 bg-surface p-5"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="section-title flex items-center gap-2 text-base">
+              <Dumbbell size={16} className="text-brand" />
+              Ingresos por Plan de Entrenamiento
+            </h3>
+            <span className="text-xs text-muted">Período seleccionado</span>
+          </div>
+
+          {desglosePlanes.length === 0 ? (
+            <p className="py-4 text-xs text-muted">No hay cobros de membresías en este rango de fechas.</p>
+          ) : (
+            (() => {
+              const maxTotal = Math.max(...desglosePlanes.map((p) => p.total), 1);
+              return (
+                <ul className="space-y-3 text-xs">
+                  {desglosePlanes.map((plan) => {
+                    const pct = Math.round((plan.total / maxTotal) * 100);
+                    return (
+                      <li key={plan.nombre} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-bone">{plan.nombre}</span>
+                          <span className="font-bold tabular-nums text-bone">
+                            {soles(plan.total)}{' '}
+                            <span className="text-[11px] font-normal text-muted">
+                              ({plan.cantidad} cobros)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                          <div
+                            className="h-full rounded-full bg-brand transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()
+          )}
+        </section>
+
+        {/* Desglose por Producto POS */}
+        <section
+          aria-label="Ingresos por Producto"
+          className="space-y-3 border border-line/70 bg-surface p-5"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="section-title flex items-center gap-2 text-base">
+              <ShoppingBag size={16} className="text-brand" />
+              Ingresos por Producto del POS
+            </h3>
+            <span className="text-xs text-muted">Período seleccionado</span>
+          </div>
+
+          {desgloseProds.length === 0 ? (
+            <p className="py-4 text-xs text-muted">No hay ventas registradas en mostrador en este rango.</p>
+          ) : (
+            (() => {
+              const maxTotal = Math.max(...desgloseProds.map((p) => p.total), 1);
+              return (
+                <ul className="space-y-3 text-xs">
+                  {desgloseProds.map((prod) => {
+                    const pct = Math.round((prod.total / maxTotal) * 100);
+                    return (
+                      <li key={prod.nombre} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-bone">{prod.nombre}</span>
+                          <span className="font-bold tabular-nums text-bone">
+                            {soles(prod.total)}{' '}
+                            <span className="text-[11px] font-normal text-muted">
+                              ({prod.unidades} un.)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                          <div
+                            className="h-full rounded-full bg-ok transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()
+          )}
+        </section>
+      </div>
 
       {/* 1.5 Estadísticas operativas + Interesados desde la web */}
       {gymId && <GymStatsSection gymId={gymId} />}

@@ -1,15 +1,28 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Edit3, Loader2, Plus } from 'lucide-react';
+import {
+  AlertTriangle,
+  Boxes,
+  Edit3,
+  Loader2,
+  PackagePlus,
+  Percent,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import {
   actualizarPlan,
   crearPlan,
+  eliminarPlan,
   type DatosPlan,
 } from '@/services/sociosService';
 import {
   actualizarProducto,
   crearProducto,
+  eliminarProducto,
+  reponerStock,
   type DatosProducto,
 } from '@/services/cajaService';
 import { soles } from '@/lib/formato';
@@ -47,10 +60,22 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
   const [prNombre, setPrNombre] = useState('');
   const [prCat, setPrCat] = useState('Bebidas');
   const [prPrecio, setPrPrecio] = useState('2.00');
+  const [prCosto, setPrCosto] = useState('1.00');
   const [prStock, setPrStock] = useState('20');
   const [prServicio, setPrServicio] = useState(false);
   const [prActivo, setPrActivo] = useState(true);
   const [guardandoProd, setGuardandoProd] = useState(false);
+
+  // --- Modales de Confirmación de Eliminación ---
+  const [planEliminar, setPlanEliminar] = useState<Plan | null>(null);
+  const [prodEliminar, setProdEliminar] = useState<Producto | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+
+  // --- Modal de Reposición Rápida de Stock ---
+  const [prodReponer, setProdReponer] = useState<Producto | null>(null);
+  const [cantReponer, setCantReponer] = useState('12');
+  const [costoReponer, setCostoReponer] = useState('');
+  const [reponiendo, setReponiendo] = useState(false);
 
   function abrirNuevoPlan() {
     setPlanEditId(null);
@@ -72,6 +97,67 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
     setPVisible(p.visible_landing);
     setPActivo(p.activo);
     setMostrarFormPlan(true);
+  }
+
+  async function handleEliminarPlan() {
+    if (!planEliminar) return;
+    setEliminando(true);
+    try {
+      const res = await eliminarPlan(planEliminar.id);
+      setPlanEliminar(null);
+      await onUpdated(
+        res.eliminado
+          ? `Plan "${planEliminar.nombre}" eliminado permanentemente`
+          : `Plan "${planEliminar.nombre}" archivado y ocultado (posee historial de membresías)`
+      );
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'No se pudo eliminar el plan');
+    } finally {
+      setEliminando(false);
+    }
+  }
+
+  async function handleEliminarProd() {
+    if (!prodEliminar) return;
+    setEliminando(true);
+    try {
+      const res = await eliminarProducto(prodEliminar.id);
+      setProdEliminar(null);
+      await onUpdated(
+        res.eliminado
+          ? `Producto "${prodEliminar.nombre}" eliminado permanentemente`
+          : `Producto "${prodEliminar.nombre}" archivado y ocultado (posee historial de ventas)`
+      );
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'No se pudo eliminar el producto');
+    } finally {
+      setEliminando(false);
+    }
+  }
+
+  async function handleReponerStock(e: FormEvent) {
+    e.preventDefault();
+    if (!prodReponer) return;
+    const cant = Number(cantReponer);
+    if (Number.isNaN(cant) || cant <= 0) {
+      onError('Ingresa una cantidad válida mayor a 0');
+      return;
+    }
+    const nuevoCosto = costoReponer.trim() !== '' ? Number(costoReponer) : undefined;
+    setReponiendo(true);
+    try {
+      const nuevoTotal = await reponerStock(prodReponer.id, cant, nuevoCosto);
+      setProdReponer(null);
+      setCantReponer('12');
+      setCostoReponer('');
+      await onUpdated(
+        `Stock repuesto: "${prodReponer.nombre}" ahora tiene ${nuevoTotal} unidades`
+      );
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Error al reponer stock');
+    } finally {
+      setReponiendo(false);
+    }
   }
 
   async function guardarPlan(e: FormEvent) {
@@ -116,6 +202,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
     setPrNombre('');
     setPrCat('Bebidas');
     setPrPrecio('2.00');
+    setPrCosto('1.00');
     setPrStock('20');
     setPrServicio(false);
     setPrActivo(true);
@@ -127,6 +214,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
     setPrNombre(p.nombre);
     setPrCat(p.categoria);
     setPrPrecio(String(p.precio));
+    setPrCosto(p.costo !== undefined && p.costo !== null ? String(p.costo) : '0');
     setPrStock(String(p.stock));
     setPrServicio(p.es_servicio);
     setPrActivo(p.activo);
@@ -136,6 +224,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
   async function guardarProd(e: FormEvent) {
     e.preventDefault();
     const precio = Number(prPrecio);
+    const costo = Number(prCosto) || 0;
     const stock = prServicio ? 0 : Number(prStock);
     if (!prNombre.trim() || Number.isNaN(precio) || precio < 0) {
       onError('Completa el nombre y un precio válido');
@@ -145,6 +234,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
       nombre: prNombre.trim(),
       categoria: prCat,
       precio,
+      costo: costo >= 0 ? costo : 0,
       stock: Number.isNaN(stock) ? 0 : stock,
       es_servicio: prServicio,
       activo: prActivo,
@@ -309,8 +399,8 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   {!p.activo && ' · Inactivo'}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-bone tabular-nums">
+              <div className="flex items-center gap-1.5">
+                <span className="text-base font-semibold text-bone tabular-nums mr-2">
                   {soles(p.precio)}
                 </span>
                 <button
@@ -322,6 +412,15 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                 >
                   <Edit3 size={15} strokeWidth={1.5} />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPlanEliminar(p)}
+                  className="rounded-xs p-2 text-muted transition-colors hover:bg-bad/20 hover:text-bad"
+                  aria-label={`Eliminar ${p.nombre}`}
+                  title={`Eliminar ${p.nombre}`}
+                >
+                  <Trash2 size={15} strokeWidth={1.5} />
+                </button>
               </div>
             </li>
           ))}
@@ -331,7 +430,15 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
       {/* 2. PRODUCTOS DEL POS */}
       <section aria-label="Productos de mostrador" className="bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="section-title text-base">Catálogo POS</h3>
+          <div>
+            <h3 className="section-title text-base flex items-center gap-1.5">
+              <Boxes size={16} className="text-brand" />
+              Catálogo POS y Almacén
+            </h3>
+            <p className="text-[11px] text-muted">
+              Precios, costo de compra, márgenes de ganancia y reposición
+            </p>
+          </div>
           <button
             type="button"
             onClick={abrirNuevoProd}
@@ -358,7 +465,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   value={prNombre}
                   onChange={(e) => setPrNombre(e.target.value)}
                   className="field !min-h-9"
-                  placeholder="Ej: Agua Cielo (Helada)"
+                  placeholder="Ej: Agua Cielo"
                 />
               </div>
               <div>
@@ -378,10 +485,10 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div>
                 <label htmlFor="prod-precio" className="label">
-                  Precio unitario (S/)
+                  Precio venta (S/)
                 </label>
                 <input
                   id="prod-precio"
@@ -392,6 +499,21 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   value={prPrecio}
                   onChange={(e) => setPrPrecio(e.target.value)}
                   className="field !min-h-9 tabular-nums"
+                />
+              </div>
+              <div>
+                <label htmlFor="prod-costo" className="label">
+                  Costo de compra (S/)
+                </label>
+                <input
+                  id="prod-costo"
+                  type="number"
+                  step="0.10"
+                  min="0"
+                  value={prCosto}
+                  onChange={(e) => setPrCosto(e.target.value)}
+                  className="field !min-h-9 tabular-nums"
+                  placeholder="0.00"
                 />
               </div>
               {!prServicio && (
@@ -411,6 +533,24 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                 </div>
               )}
             </div>
+
+            {/* Estimador de margen en tiempo real */}
+            {(() => {
+              const pv = Number(prPrecio) || 0;
+              const pc = Number(prCosto) || 0;
+              const gan = pv - pc;
+              const pct = pc > 0 ? Math.round((gan / pc) * 100) : 100;
+              return (
+                <div className="rounded-xs bg-surface p-2.5 text-xs flex items-center justify-between border border-line/50">
+                  <span className="text-muted flex items-center gap-1">
+                    <Percent size={13} className="text-brand" /> Margen unitario proyectado:
+                  </span>
+                  <span className={`font-semibold tabular-nums ${gan >= 0 ? 'text-ok' : 'text-bad'}`}>
+                    {soles(gan)} ({pct >= 0 ? `+${pct}%` : `${pct}%`})
+                  </span>
+                </div>
+              );
+            })()}
 
             <div className="flex flex-wrap items-center gap-4 pt-1 text-xs">
               <label className="inline-flex items-center gap-2">
@@ -452,41 +592,257 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
         )}
 
         <ul className="divide-y divide-line/70 border-t border-line/70">
-          {productos.map((p) => (
-            <li
-              key={p.id}
-              className={`flex items-center justify-between py-3 text-sm ${
-                !p.activo ? 'opacity-50' : ''
-              }`}
-            >
-              <div>
-                <p className="font-medium text-bone">
-                  {p.nombre}{' '}
-                  <span className="text-xs font-normal text-muted">· {p.categoria}</span>
-                </p>
-                <p className="text-xs text-muted tabular-nums">
-                  {p.es_servicio ? 'Servicio sin stock' : `Stock: ${p.stock}`}
-                  {!p.activo && ' · Inactivo'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-bone tabular-nums">
-                  {soles(p.precio)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => abrirEditarProd(p)}
-                  className="rounded-xs p-2 text-muted transition-colors hover:bg-surface-2 hover:text-bone"
-                  aria-label={`Editar ${p.nombre}`}
-                  title={`Editar ${p.nombre}`}
-                >
-                  <Edit3 size={15} strokeWidth={1.5} />
-                </button>
-              </div>
-            </li>
-          ))}
+          {productos.map((p) => {
+            const esBajo = !p.es_servicio && p.stock <= 5;
+            const esAgotado = !p.es_servicio && p.stock === 0;
+            const costo = Number(p.costo) || 0;
+            const margen = p.precio - costo;
+            const margenPct = costo > 0 ? Math.round((margen / costo) * 100) : 0;
+
+            return (
+              <li
+                key={p.id}
+                className={`flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between ${
+                  !p.activo ? 'opacity-50' : ''
+                }`}
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-bone">{p.nombre}</p>
+                    <span className="text-xs text-muted">· {p.categoria}</span>
+                    {esAgotado ? (
+                      <span className="inline-flex items-center gap-1 rounded-2xs bg-bad/15 px-1.5 py-0.5 text-[10px] font-bold text-bad">
+                        <AlertTriangle size={11} strokeWidth={2} /> Agotado
+                      </span>
+                    ) : esBajo ? (
+                      <span className="inline-flex items-center gap-1 rounded-2xs bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
+                        <AlertTriangle size={11} strokeWidth={2} /> Stock bajo ({p.stock})
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="text-xs text-muted tabular-nums">
+                    {p.es_servicio ? (
+                      'Servicio sin stock'
+                    ) : (
+                      <>
+                        Stock: <strong className="text-bone">{p.stock}</strong> un.
+                      </>
+                    )}
+                    {costo > 0 && (
+                      <span className="ml-2 border-l border-line/60 pl-2 text-muted">
+                        Costo: {soles(costo)} · Margen:{' '}
+                        <span className="text-ok font-semibold">+{margenPct}%</span>
+                      </span>
+                    )}
+                    {!p.activo && ' · Inactivo'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 self-end sm:self-center">
+                  <span className="text-base font-semibold text-bone tabular-nums mr-2">
+                    {soles(p.precio)}
+                  </span>
+
+                  {!p.es_servicio && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProdReponer(p);
+                        setCantReponer('12');
+                        setCostoReponer(p.costo ? String(p.costo) : '');
+                      }}
+                      className="btn btn-secondary !min-h-8 !px-2.5 !text-xs flex items-center gap-1"
+                      title="Reponer existencias"
+                    >
+                      <PackagePlus size={13} strokeWidth={1.5} />
+                      + Stock
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => abrirEditarProd(p)}
+                    className="rounded-xs p-2 text-muted transition-colors hover:bg-surface-2 hover:text-bone"
+                    aria-label={`Editar ${p.nombre}`}
+                    title={`Editar ${p.nombre}`}
+                  >
+                    <Edit3 size={15} strokeWidth={1.5} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setProdEliminar(p)}
+                    className="rounded-xs p-2 text-muted transition-colors hover:bg-bad/20 hover:text-bad"
+                    aria-label={`Eliminar ${p.nombre}`}
+                    title={`Eliminar ${p.nombre}`}
+                  >
+                    <Trash2 size={15} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
+
+      {/* MODAL: Confirmar eliminación de Plan */}
+      {planEliminar && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <div className="w-full max-w-sm border border-line bg-surface p-6 shadow-xl">
+            <h3 className="text-base font-bold text-bone">¿Eliminar plan de membresía?</h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Vas a eliminar el plan <strong className="text-bone">&ldquo;{planEliminar.nombre}&rdquo;</strong>. Si
+              el plan tiene socios o ventas registradas en el pasado, se archivará y ocultará de la
+              web automáticamente para proteger el historial financiero.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPlanEliminar(null)}
+                className="btn btn-ghost !min-h-8 !text-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={eliminando}
+                onClick={handleEliminarPlan}
+                className="btn btn-primary !min-h-8 !bg-bad !text-white hover:!bg-bad/90 !text-xs"
+              >
+                {eliminando && <Loader2 size={13} className="animate-spin" />}
+                Confirmar eliminación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Confirmar eliminación de Producto */}
+      {prodEliminar && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <div className="w-full max-w-sm border border-line bg-surface p-6 shadow-xl">
+            <h3 className="text-base font-bold text-bone">¿Eliminar producto del catálogo?</h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Vas a eliminar <strong className="text-bone">&ldquo;{prodEliminar.nombre}&rdquo;</strong>. Si tiene
+              ventas históricas registradas en caja, se archivará y ocultará del POS automáticamente
+              para no alterar los arqueos pasados.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setProdEliminar(null)}
+                className="btn btn-ghost !min-h-8 !text-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={eliminando}
+                onClick={handleEliminarProd}
+                className="btn btn-primary !min-h-8 !bg-bad !text-white hover:!bg-bad/90 !text-xs"
+              >
+                {eliminando && <Loader2 size={13} className="animate-spin" />}
+                Confirmar eliminación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Reposición Rápida de Stock */}
+      {prodReponer && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <div className="w-full max-w-sm border border-line bg-surface p-6 shadow-xl">
+            <div className="flex items-center justify-between border-b border-line/60 pb-3">
+              <div className="flex items-center gap-2">
+                <PackagePlus size={16} className="text-brand" />
+                <h3 className="text-base font-bold text-bone">Reponer existencias</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProdReponer(null)}
+                className="text-muted hover:text-bone"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <form onSubmit={handleReponerStock} className="mt-4 space-y-3 text-xs">
+              <div>
+                <span className="text-muted block">Producto</span>
+                <span className="font-semibold text-bone text-sm">{prodReponer.nombre}</span>
+                <span className="text-muted block mt-0.5">
+                  Stock actual: <strong className="text-bone">{prodReponer.stock}</strong> unidades
+                </span>
+              </div>
+
+              <div>
+                <label htmlFor="cant-reponer" className="label !text-xs">
+                  Cantidad que ingresa al almacén *
+                </label>
+                <input
+                  id="cant-reponer"
+                  type="number"
+                  min="1"
+                  required
+                  autoFocus
+                  value={cantReponer}
+                  onChange={(e) => setCantReponer(e.target.value)}
+                  className="field !min-h-9 tabular-nums text-sm"
+                  placeholder="Ej: 24"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="costo-reponer" className="label !text-xs">
+                  Nuevo costo unitario de compra (S/) - opcional
+                </label>
+                <input
+                  id="costo-reponer"
+                  type="number"
+                  step="0.10"
+                  min="0"
+                  value={costoReponer}
+                  onChange={(e) => setCostoReponer(e.target.value)}
+                  className="field !min-h-9 tabular-nums text-sm"
+                  placeholder={prodReponer.costo ? String(prodReponer.costo) : '0.00'}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-line/60">
+                <button
+                  type="button"
+                  onClick={() => setProdReponer(null)}
+                  className="btn btn-ghost !min-h-8 !text-xs"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={reponiendo}
+                  className="btn btn-primary !min-h-8 !text-xs"
+                >
+                  {reponiendo && <Loader2 size={13} className="animate-spin" />}
+                  Confirmar ingreso
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
