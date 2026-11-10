@@ -193,7 +193,7 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
       </div>
 
       {/* Pases tipo ticket */}
-      <div className="rounded-2xl border border-line/80 bg-surface/50 p-5 sm:p-7">
+      <div className="rounded-2xl border border-line/80 bg-surface/50 p-4 sm:p-7">
         <div className="grid gap-4 sm:grid-cols-2">
           <Ticket
             nombre="Por día"
@@ -217,15 +217,15 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
           >
             Pedir pase en recepción
           </a>
-          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
-            <span className="text-xs text-muted shrink-0 mr-0.5">Paga con</span>
-            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-1 sm:gap-2 flex-nowrap py-0.5">
+            <span className="text-[11px] sm:text-xs text-muted shrink-0 mr-0.5">Paga con</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
               {PAGOS.map(({ icono: Icono, texto }) => (
                 <span
                   key={texto}
-                  className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-bone shrink-0"
+                  className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10.5px] sm:text-xs font-medium text-bone shrink-0"
                 >
-                  <Icono aria-hidden="true" size={12} strokeWidth={1.5} className="text-muted" />
+                  <Icono aria-hidden="true" size={11} strokeWidth={1.5} className="text-muted" />
                   {texto}
                 </span>
               ))}
