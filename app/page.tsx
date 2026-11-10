@@ -380,7 +380,13 @@ export default async function HomePage() {
             </SectionHeading>
 
             <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
-              <div className="space-y-6 lg:col-span-5">
+              {/* Formulario de inscripción (primero en móvil para visualización directa, derecha en desktop) */}
+              <div id="inscripcion" className="scroll-mt-28 order-1 lg:col-span-7 lg:order-2">
+                <LeadContactForm planes={planes} />
+              </div>
+
+              {/* Canales directos y Ubicación (debajo del formulario en móvil, izquierda en desktop) */}
+              <div id="ubicacion" className="scroll-mt-28 space-y-6 order-2 lg:col-span-5 lg:order-1">
                 {/* Mapa a COLOR (llamativo, real y enmarcado con estilo premium) */}
                 <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl relative">
                   <div className="relative aspect-[16/10] w-full">
@@ -473,10 +479,6 @@ export default async function HomePage() {
                     </dd>
                   </div>
                 </div>
-              </div>
-
-              <div className="lg:col-span-7">
-                <LeadContactForm planes={planes} />
               </div>
             </div>
           </RevealOnScroll>

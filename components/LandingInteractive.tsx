@@ -23,17 +23,17 @@ export function irASeccion(e: MouseEvent<HTMLAnchorElement>, href: string, after
   window.history.pushState(null, '', href);
 }
 
-/** Selecciona un plan en el formulario de inscripción y desplaza suavemente hacia #contacto. */
+/** Selecciona un plan en el formulario de inscripción y desplaza suavemente directo al formulario. */
 export function elegirPlanEIrAContacto(planLabel: string) {
   window.dispatchEvent(new CustomEvent('zentra:select-plan', { detail: planLabel }));
-  const destino = document.getElementById('contacto');
+  const destino = document.getElementById('inscripcion') || document.getElementById('contacto');
   if (destino) {
     destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    window.history.pushState(null, '', '#contacto');
+    window.history.pushState(null, '', '#inscripcion');
     window.setTimeout(() => {
       const inputNombre = document.getElementById('lead-nombre') as HTMLInputElement | null;
       inputNombre?.focus({ preventScroll: true });
-    }, 450);
+    }, 500);
   }
 }
 
@@ -43,7 +43,7 @@ const LINKS_NAV = [
   { href: '#disciplinas', label: 'Zonas' },
   { href: '#planes', label: 'Planes' },
   { href: '#horarios', label: 'Horarios' },
-  { href: '#contacto', label: 'Ubicación' },
+  { href: '#ubicacion', label: 'Ubicación' },
 ];
 
 export function LandingHeader() {
@@ -107,8 +107,8 @@ export function LandingHeader() {
               Mi DNI
             </Link>
             <a
-              href="#contacto"
-              onClick={(e) => irASeccion(e, '#contacto')}
+              href="#inscripcion"
+              onClick={(e) => irASeccion(e, '#inscripcion')}
               className="btn btn-primary !px-5"
             >
               Inscríbete hoy
@@ -179,8 +179,8 @@ export function LandingHeader() {
               Mi DNI
             </Link>
             <a
-              href="#contacto"
-              onClick={(e) => irASeccion(e, '#contacto', () => setMenuAbierto(false))}
+              href="#inscripcion"
+              onClick={(e) => irASeccion(e, '#inscripcion', () => setMenuAbierto(false))}
               className="btn btn-primary w-full"
             >
               Inscríbete hoy
@@ -380,6 +380,7 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recienSeleccionado, setRecienSeleccionado] = useState(false);
 
   useEffect(() => {
     const onSelectPlan = (ev: Event) => {
@@ -387,6 +388,8 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
       if (typeof custom.detail === 'string' && custom.detail) {
         setObjetivo(custom.detail);
         setExito(false);
+        setRecienSeleccionado(true);
+        window.setTimeout(() => setRecienSeleccionado(false), 3500);
       }
     };
     window.addEventListener('zentra:select-plan', onSelectPlan);
@@ -452,9 +455,26 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-line bg-surface p-6 sm:p-9 shadow-2xl">
+    <div
+      id="lead-form"
+      className={`relative overflow-hidden rounded-3xl border bg-surface p-6 sm:p-9 shadow-2xl transition-all duration-500 ${
+        recienSeleccionado
+          ? 'border-brand ring-2 ring-brand/80 shadow-[0_0_50px_-10px_rgba(255,194,26,0.35)]'
+          : 'border-line'
+      }`}
+    >
       {/* Resplandor decorativo de fondo */}
       <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-brand/10 blur-3xl" />
+
+      {recienSeleccionado && (
+        <div className="mb-5 flex items-center justify-between gap-2 rounded-2xl border border-brand/60 bg-brand/10 p-3.5 text-xs font-semibold text-brand animate-swap">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-brand shrink-0" />
+            <span>Plan seleccionado: <strong className="text-bone">{objetivo}</strong></span>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-wider text-brand/80 shrink-0">Listo</span>
+        </div>
+      )}
 
       <div className="mb-6 border-b border-line/70 pb-5">
         <span className="text-xs font-semibold uppercase tracking-wider text-brand">

@@ -211,8 +211,8 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
 
         <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-line/70 pt-5 sm:flex-row sm:items-center">
           <a
-            href="#contacto"
-            onClick={(e) => irASeccion(e, '#contacto')}
+            href="#inscripcion"
+            onClick={(e) => irASeccion(e, '#inscripcion')}
             className="btn btn-secondary w-full sm:w-auto text-xs sm:text-sm font-semibold"
           >
             Pedir pase en recepción
