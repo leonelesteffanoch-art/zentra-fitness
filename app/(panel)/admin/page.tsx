@@ -16,7 +16,6 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { CatalogManager } from '@/components/CatalogManager';
 import { GymStatsSection } from '@/components/GymStatsSection';
-import { LeadsPanel } from '@/components/LeadsPanel';
 import { StaffManager } from '@/components/StaffManager';
 import {
   listarProductos,
@@ -478,9 +477,8 @@ export default function AdminPage() {
         </section>
       </div>
 
-      {/* 1.5 Estadísticas operativas + Interesados desde la web */}
+      {/* 1.5 Estadísticas operativas */}
       {gymId && <GymStatsSection gymId={gymId} />}
-      <LeadsPanel />
 
       {/* 2. Gestión de precios y catálogo */}
       {gymId && (

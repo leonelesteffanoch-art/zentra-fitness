@@ -14,6 +14,7 @@ export interface LeadInteresado {
   contactado_at?: string | null;
   estado?: EstadoLead;
   notas?: string;
+  origen?: string;
 }
 
 const VENTANA_MS = 60_000;
@@ -60,8 +61,104 @@ async function verificarStaff(req: NextRequest) {
   return { client, perfil };
 }
 
-/** POST /api/leads -> Guarda un cliente interesado desde el formulario de la Landing. */
+const ESTADOS_VALIDOS: EstadoLead[] = ['NUEVO', 'CONTACTADO', 'AGENDADO', 'INSCRITO', 'DESCARTADO'];
+
+/** POST /api/leads -> Guarda un prospecto desde la Landing (público) o manualmente por el personal (panel). */
 export async function POST(req: NextRequest) {
+  const staff = await verificarStaff(req);
+
+  let body: {
+    nombre?: unknown;
+    telefono?: unknown;
+    objetivo?: unknown;
+    horario?: unknown;
+    empresa?: unknown;
+    origen?: unknown;
+    estado?: unknown;
+    notas?: unknown;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+  }
+
+  // Registro manual desde el panel interno por staff autenticado
+  if (staff) {
+    const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : '';
+    const telefono = typeof body.telefono === 'string' ? body.telefono.trim() : '';
+    const objetivo = typeof body.objetivo === 'string' && body.objetivo.trim() ? body.objetivo.trim() : 'Consulta general';
+    const horario = typeof body.horario === 'string' && body.horario.trim() ? body.horario.trim() : 'Por definir';
+    const origen = typeof body.origen === 'string' && body.origen.trim() ? body.origen.trim() : 'Presencial';
+    const estadoReq = typeof body.estado === 'string' ? body.estado.trim() : 'NUEVO';
+    const estado: EstadoLead = ESTADOS_VALIDOS.includes(estadoReq as EstadoLead)
+      ? (estadoReq as EstadoLead)
+      : 'NUEVO';
+    const notas = typeof body.notas === 'string' ? body.notas.trim() : '';
+
+    if (nombre.length < 2 || telefono.length < 6) {
+      return NextResponse.json(
+        { error: 'Ingresa nombre (mín. 2 letras) y teléfono válido (mín. 6 dígitos).' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const { client, perfil } = staff;
+      const { data: gym } = await client
+        .from('gyms')
+        .select('redes')
+        .eq('id', perfil.gym_id)
+        .maybeSingle();
+
+      const redesObj =
+        gym?.redes && typeof gym.redes === 'object' && !Array.isArray(gym.redes)
+          ? (gym.redes as Record<string, unknown>)
+          : {};
+      const leadsPrevios = Array.isArray(redesObj.leads)
+        ? (redesObj.leads as LeadInteresado[])
+        : [];
+
+      const esContactado = estado !== 'NUEVO';
+      const ahora = new Date().toISOString();
+      const nuevoLead: LeadInteresado = {
+        id: crypto.randomUUID(),
+        nombre,
+        telefono,
+        objetivo,
+        horario,
+        origen,
+        estado,
+        notas,
+        creado_at: ahora,
+        contactado: esContactado,
+        contactado_at: esContactado ? ahora : null,
+      };
+
+      const leadsActualizados = [nuevoLead, ...leadsPrevios].slice(0, 200);
+      const { error: updErr } = await client
+        .from('gyms')
+        .update({
+          redes: {
+            ...redesObj,
+            leads: leadsActualizados,
+          },
+        })
+        .eq('id', perfil.gym_id);
+
+      if (updErr) {
+        return NextResponse.json({ error: updErr.message }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true, leads: leadsActualizados });
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : 'No se pudo registrar el prospecto' },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Registro público desde Landing Page (con rate limit y honeypot)
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers.get('x-real-ip') ||
@@ -72,19 +169,6 @@ export async function POST(req: NextRequest) {
       { error: 'Demasiados envíos seguidos. Intenta en un minuto.' },
       { status: 429 }
     );
-  }
-
-  let body: {
-    nombre?: unknown;
-    telefono?: unknown;
-    objetivo?: unknown;
-    horario?: unknown;
-    empresa?: unknown;
-  };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
   }
 
   if (typeof body.empresa === 'string' && body.empresa.trim() !== '') {
@@ -119,6 +203,8 @@ export async function POST(req: NextRequest) {
         telefono,
         objetivo,
         horario,
+        origen: 'Web',
+        estado: 'NUEVO',
         creado_at: new Date().toISOString(),
         contactado: false,
         contactado_at: null,

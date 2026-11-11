@@ -7,7 +7,6 @@ import { SearchBar } from '@/components/SearchBar';
 import { MemberStatusCard } from '@/components/MemberStatusCard';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
-import { LeadsPanel } from '@/components/LeadsPanel';
 import { buscarSocios } from '@/services/sociosService';
 import { registrarAsistencia, ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
@@ -210,11 +209,6 @@ export default function RecepcionPage() {
           </button>
         </div>
       )}
-
-      {/* Apartado de clientes interesados inscritos desde el formulario de la Landing */}
-      <div className="border-t border-line/70 pt-6">
-        <LeadsPanel />
-      </div>
 
       {modalNuevoSocio && gymId && perfil && (
         <MemberFormModal

@@ -9,15 +9,31 @@ interface Props {
   gymId: string;
   userId: string;
   socioEditar?: SocioEstado | null;
+  valoresIniciales?: {
+    nombres?: string;
+    apellidos?: string;
+    telefono?: string;
+  };
   onClose: () => void;
   onSaved: (dni: string, esNuevo: boolean) => void;
 }
 
-export function MemberFormModal({ gymId, userId, socioEditar, onClose, onSaved }: Props) {
+export function MemberFormModal({
+  gymId,
+  userId,
+  socioEditar,
+  valoresIniciales,
+  onClose,
+  onSaved,
+}: Props) {
   const [dni, setDni] = useState(socioEditar?.dni ?? '');
-  const [nombres, setNombres] = useState(socioEditar?.nombres ?? '');
-  const [apellidos, setApellidos] = useState(socioEditar?.apellidos ?? '');
-  const [telefono, setTelefono] = useState(socioEditar?.telefono ?? '');
+  const [nombres, setNombres] = useState(socioEditar?.nombres ?? valoresIniciales?.nombres ?? '');
+  const [apellidos, setApellidos] = useState(
+    socioEditar?.apellidos ?? valoresIniciales?.apellidos ?? ''
+  );
+  const [telefono, setTelefono] = useState(
+    socioEditar?.telefono ?? valoresIniciales?.telefono ?? ''
+  );
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, Loader2, LogOut, ScanLine, Users, Wallet } from 'lucide-react';
+import { BarChart3, Loader2, LogOut, ScanLine, Target, Users, Wallet } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/components/AuthProvider';
 import type { Rol } from '@/types';
@@ -32,6 +32,12 @@ const NAV: ItemNav[] = [
     href: '/socios',
     etiqueta: 'Socios',
     icono: <Users size={16} strokeWidth={1.5} />,
+    roles: ['admin', 'recepcionista'],
+  },
+  {
+    href: '/prospectos',
+    etiqueta: 'Prospectos',
+    icono: <Target size={16} strokeWidth={1.5} />,
     roles: ['admin', 'recepcionista'],
   },
   {
