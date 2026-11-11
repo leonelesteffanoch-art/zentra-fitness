@@ -15,6 +15,7 @@ import {
   Loader2,
   MessageCircle,
   RefreshCw,
+  Upload,
   UserPlus,
   Users,
   X,
@@ -23,6 +24,7 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { SearchBar } from '@/components/SearchBar';
 import { MemberFormModal } from '@/components/MemberFormModal';
+import { ImportSociosModal } from '@/components/ImportSociosModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
 import {
@@ -72,6 +74,7 @@ export default function SociosPage() {
   // Modales
   const [modalSocio, setModalSocio] = useState<'nuevo' | 'editar' | null>(null);
   const [modoCobro, setModoCobro] = useState<ModoCobro | null>(null);
+  const [modalImportar, setModalImportar] = useState(false);
 
   // Acción sobre una membresía (anular — solo admin)
   const [anulandoId, setAnulandoId] = useState<string | null>(null);
@@ -268,6 +271,14 @@ export default function SociosPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-4xl sm:text-5xl">Socios</h1>
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setModalImportar(true)}
+            className="btn btn-ghost !min-h-10"
+          >
+            <Upload size={15} strokeWidth={1.5} />
+            Importar Excel
+          </button>
           <button
             type="button"
             disabled={exportando}
@@ -744,6 +755,20 @@ export default function SociosPage() {
             setModoCobro(null);
             setAviso({ tipo: 'ok', texto: msg });
             await refrescarSeleccionado(seleccionado.dni);
+          }}
+        />
+      )}
+
+      {/* Modal Importar Excel de Socios Antiguos */}
+      {modalImportar && gymId && (
+        <ImportSociosModal
+          gymId={gymId}
+          onClose={() => setModalImportar(false)}
+          onDone={async (msg) => {
+            setModalImportar(false);
+            setAviso({ tipo: 'ok', texto: msg });
+            setPagina(0);
+            await cargarListado(termino, 0, filtro);
           }}
         />
       )}
