@@ -22,7 +22,7 @@ const ENTRENADORES: EntrenadorData[] = [
     horario: '6:00 am – 11:00 am y 4:00 pm – 10:30 pm',
     bloquesHorario: [
       { turno: 'Mañana', rango: '6:00 am – 11:00 am' },
-      { turno: 'Tarde / Noche', rango: '4:00 pm – 10:30 pm' },
+      { turno: 'Tarde', rango: '4:00 pm – 10:30 pm' },
     ],
     rol: 'Entrenador principal & coach biomecánico',
     experiencia:
@@ -37,11 +37,11 @@ const ENTRENADORES: EntrenadorData[] = [
     horario: '7:00 am – 11:00 am y 4:00 pm – 10:00 pm',
     bloquesHorario: [
       { turno: 'Mañana', rango: '7:00 am – 11:00 am' },
-      { turno: 'Tarde / Noche', rango: '4:00 pm – 10:00 pm' },
+      { turno: 'Tarde', rango: '4:00 pm – 10:00 pm' },
     ],
-    rol: 'Entrenador de fin de semana & acondicionamiento',
+    rol: 'Entrenador de sábados & acondicionamiento',
     experiencia:
-      'Especialista en acondicionamiento físico, dinámicas funcionales y motivación deportiva. Supervisa tu ritmo y técnica en los entrenamientos intensos de fin de semana.',
+      'Especialista en acondicionamiento físico, dinámicas funcionales y motivación deportiva. Supervisa tu ritmo y técnica en los entrenamientos intensos de cada sábado.',
     especialidades: ['Acondicionamiento físico', 'Circuitos funcionales', 'Motivación & técnica'],
     // fotoUrl: '/brand/entrenadores/juan.jpg', // listo para añadir foto real en el futuro
     fondoDegradado: 'from-zinc-800/50 via-zinc-900 to-ink',
@@ -187,20 +187,20 @@ export function EntrenadoresSection() {
 
                   {/* Horarios de atención */}
                   <div className="rounded-xl border border-line/80 bg-surface-2/70 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5 mb-2">
                       <Clock size={13} className="text-brand" />
                       <span>Horarios en planta</span>
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
                       {coach.bloquesHorario.map((b) => (
                         <div
                           key={b.rango}
-                          className="flex items-center justify-between rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-bone"
+                          className="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs text-bone"
                         >
-                          <span className="text-muted font-medium">{b.turno}</span>
-                          <span className="font-semibold tabular-nums text-bone flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
-                            {b.rango}
+                          <span className="text-muted font-medium whitespace-nowrap">{b.turno}</span>
+                          <span className="font-semibold tabular-nums text-bone flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e] shrink-0" />
+                            <span>{b.rango}</span>
                           </span>
                         </div>
                       ))}
