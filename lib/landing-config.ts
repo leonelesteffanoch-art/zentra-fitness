@@ -29,7 +29,7 @@ export const REDES = [
 
 // ---------- Horarios (fuente única) ----------
 
-export type TipoBloque = 'entrenador' | 'libre' | 'pase';
+export type TipoBloque = 'entrenador' | 'libre';
 
 export interface BloqueHorario {
   /** Minutos desde las 00:00 */
@@ -39,7 +39,7 @@ export interface BloqueHorario {
 }
 
 export interface DiaHorario {
-  id: 'lv' | 'sab' | 'dom';
+  id: 'lv' | 'sab';
   etiqueta: string;
   etiquetaLarga: string;
   /** Días JS: 0 = domingo … 6 = sábado */
@@ -75,20 +75,11 @@ export const HORARIOS: DiaHorario[] = [
       { desde: h(16), hasta: h(22), tipo: 'entrenador' },
     ],
   },
-  {
-    id: 'dom',
-    etiqueta: 'Domingos',
-    etiquetaLarga: 'Domingos',
-    dias: [0],
-    schemaDays: ['Sunday'],
-    bloques: [{ desde: h(9), hasta: h(14), tipo: 'pase' }],
-  },
 ];
 
 export const ETIQUETA_TIPO: Record<TipoBloque, string> = {
   entrenador: 'Con entrenador',
   libre: 'Sala libre',
-  pase: 'Solo pase por día (S/ 10)',
 };
 
 /** Eje visual de la línea de tiempo: 6:00 am – 10:30 pm */
@@ -129,12 +120,7 @@ export function calcularEstado(diaSemana: number, minuto: number): EstadoApertur
   const bloque = hoy?.bloques.find((b) => minuto >= b.desde && minuto < b.hasta);
 
   if (hoy && bloque) {
-    const tipoTexto =
-      bloque.tipo === 'entrenador'
-        ? 'Con entrenador'
-        : bloque.tipo === 'libre'
-          ? 'Sala libre'
-          : 'Solo pase por día';
+    const tipoTexto = ETIQUETA_TIPO[bloque.tipo];
     return {
       abierto: true,
       texto: `Abierto ahora · ${tipoTexto} · hasta ${formatoHora(bloque.hasta)}`,

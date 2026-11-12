@@ -564,7 +564,7 @@ export function LeadContactForm({ planes }: { planes: PlanLandingItem[] }) {
               <option value="Mañana (6:00 am - 11:00 am)">Mañana (6:00 am - 11:00 am)</option>
               <option value="Mediodía (11:00 am - 4:00 pm)">Mediodía (11:00 am - 4:00 pm)</option>
               <option value="Tarde / Noche (4:00 pm - 10:30 pm)">Tarde / Noche (4:00 pm - 10:30 pm)</option>
-              <option value="Fin de semana">Fin de semana</option>
+              <option value="Sábados">Sábados (7:00 am - 10:00 pm)</option>
             </select>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { Check, CalendarDays, AlertTriangle } from 'lucide-react';
 import { hoyLima, sumarDias } from '@/lib/formato';
 import type { Asistencia } from '@/types';
 
-const NOMBRES_DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const NOMBRES_DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 function obtenerLunesSemanaActual(fechaHoyStr: string): string {
   const [y, m, d] = fechaHoyStr.split('-').map(Number);
@@ -37,7 +37,7 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
   const ayer = sumarDias(hoy, -1);
   const lunes = obtenerLunesSemanaActual(hoy);
 
-  // Construir los 7 días (Lunes a Domingo) de la semana en curso
+  // Construir los 6 días (Lunes a Sábado) de la semana en curso
   const diasSemana = NOMBRES_DIAS.map((etiqueta, idx) => {
     const fecha = sumarDias(lunes, idx);
     const registrosDia = asistencias.filter((a) => a.fecha === fecha);
@@ -74,13 +74,13 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
             </span>
           )}
           <span className="font-mono text-xs font-semibold text-bone">
-            {totalDiasSemana} / {esInterdiario ? '3' : '7'} días esta sem.
+            {totalDiasSemana} / {esInterdiario ? '3' : '6'} días esta sem.
           </span>
         </div>
       </div>
 
-      {/* Grilla semanal Lun -> Dom */}
-      <div className="grid grid-cols-7 gap-1.5 text-center">
+      {/* Grilla semanal Lun -> Sáb */}
+      <div className="grid grid-cols-6 gap-1.5 text-center">
         {diasSemana.map((d) => (
           <div
             key={d.fecha}

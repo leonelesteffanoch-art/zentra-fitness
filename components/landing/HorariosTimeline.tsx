@@ -16,13 +16,11 @@ import {
 const COLOR: Record<TipoBloque, string> = {
   entrenador: 'bg-emerald-500',
   libre: 'bg-zinc-600',
-  pase: 'bg-amber-500',
 };
 
 const PUNTO: Record<TipoBloque, string> = {
   entrenador: 'bg-emerald-400',
   libre: 'bg-zinc-400',
-  pase: 'bg-amber-400',
 };
 
 const SPAN = EJE_FIN - EJE_INICIO;
@@ -75,7 +73,7 @@ export function HorariosTimeline() {
           )}
         </div>
 
-        {/* Leyenda limpia de 3 colores */}
+        {/* Leyenda limpia de Lunes a Sábado */}
         <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
           <span className="inline-flex items-center gap-1.5 text-bone">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -85,14 +83,14 @@ export function HorariosTimeline() {
             <span className="h-2 w-2 rounded-full bg-zinc-500" />
             <span>Sala libre</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 text-amber-400">
-            <span className="h-2 w-2 rounded-full bg-amber-400" />
-            <span>Pase por día (S/ 10)</span>
+          <span className="inline-flex items-center gap-1.5 text-muted/80">
+            <span className="h-2 w-2 rounded-full border border-line bg-ink" />
+            <span>Domingos cerrado</span>
           </span>
         </div>
       </div>
 
-      {/* 3 filas minimalistas y claras */}
+      {/* 2 filas minimalistas y claras (Lunes a Sábado) */}
       <div className="space-y-4">
         {HORARIOS.map((dia) => {
           const esHoy = dia.id === hoyId;

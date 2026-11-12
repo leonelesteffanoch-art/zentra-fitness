@@ -105,7 +105,7 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
           ) : (
             <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2 text-sm font-semibold text-bone/95 shadow-md">
               <span className="h-2 w-2 rounded-full bg-ok" />
-              <span>Lunes a sábado · Todos los días</span>
+              <span>Lunes a sábado · 6 días</span>
             </div>
           )}
         </div>
@@ -204,7 +204,7 @@ export function PlanesSection({ planes }: { planes: PlanLandingItem[] }) {
           <Ticket
             nombre="Semanal"
             precio={pSemana}
-            detalle="7 días seguidos"
+            detalle="6 días (Lun a Sáb)"
             icono={<CalendarDays aria-hidden="true" size={18} strokeWidth={1.5} />}
           />
         </div>

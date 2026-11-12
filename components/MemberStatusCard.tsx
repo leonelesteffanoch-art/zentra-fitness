@@ -150,7 +150,7 @@ export function MemberStatusCard({
         </div>
       </div>
 
-      {/* Calendario semanal de asistencias (Lun a Dom) */}
+      {/* Calendario semanal de asistencias (Lun a Sáb) */}
       <WeeklyAttendanceCalendar asistencias={asistencias} planNombre={socio.plan} />
 
       {/* Alerta de Moroso / Saldo Pendiente */}

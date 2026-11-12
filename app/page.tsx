@@ -256,19 +256,17 @@ export default async function HomePage() {
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,194,26,0.08),_transparent_55%)]"
           />
 
-          <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-10 sm:px-8 sm:py-20 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-24">
+          <div className="relative mx-auto grid max-w-6xl gap-8 px-5 pb-12 pt-7 sm:gap-10 sm:px-8 sm:py-20 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-24">
             <div className="flex flex-col justify-between lg:col-span-7">
               <div>
-                <h1 className="font-display text-[3.35rem] leading-[0.9] tracking-tight sm:text-7xl lg:text-8xl">
-                  Hierro real.
+                <h1 className="font-display text-[clamp(2.1rem,8.4vw,4.5rem)] leading-[0.95] tracking-tight lg:text-[4.15rem] xl:text-[4.75rem]">
+                  Fortalecidos
                   <br />
-                  Tu propio ritmo.
-                  <br />
-                  <span className="text-brand">Fuerza pura.</span>
+                  <span className="text-brand">para vencer</span>
                 </h1>
               </div>
 
-              <div className="mt-8 flex flex-col gap-3.5 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
+              <div className="mt-7 flex flex-col gap-3.5 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
                 <a href="#planes" className="btn btn-primary w-full !min-h-12 !px-8 sm:w-auto shadow-lg">
                   Ver planes
                 </a>
@@ -326,7 +324,7 @@ export default async function HomePage() {
           <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading num="03" destacado="Horarios" />
 
-            {/* Línea de tiempo interactiva con Lunes a Viernes, Sábados, Domingos */}
+            {/* Línea de tiempo interactiva con Lunes a Viernes y Sábados */}
             <HorariosTimeline />
 
             {/* Tabla semántica accesible de respaldo (sr-only) */}
