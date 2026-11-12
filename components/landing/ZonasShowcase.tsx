@@ -49,11 +49,15 @@ function MedidorIntensidad({ nivel, texto }: { nivel: number; texto: string }) {
         {[1, 2, 3, 4, 5].map((i) => (
           <span
             key={i}
-            className={`h-2 w-6 rounded-[1px] sm:w-7 ${i <= nivel ? 'bg-bone' : 'bg-line'}`}
+            className={`h-2.5 w-6 rounded-[2px] sm:w-7 transition-colors ${
+              i <= nivel
+                ? 'bg-brand shadow-[0_0_10px_rgba(255,194,26,0.35)]'
+                : 'bg-line/80'
+            }`}
           />
         ))}
       </div>
-      <span className="text-sm font-medium text-bone">{texto}</span>
+      <span className="text-sm font-semibold text-brand">{texto}</span>
     </div>
   );
 }
@@ -64,9 +68,9 @@ function Chips({ items }: { items: string[] }) {
       {items.map((eq) => (
         <li
           key={eq}
-          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-ink/60 px-3 py-1.5 text-xs text-bone"
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-ink/80 px-3 py-1.5 text-xs font-medium text-bone transition-colors hover:border-brand/40"
         >
-          <Check size={12} strokeWidth={2} className="shrink-0 text-muted" aria-hidden="true" />
+          <Check size={12} strokeWidth={2.5} className="shrink-0 text-brand" aria-hidden="true" />
           {eq}
         </li>
       ))}
@@ -170,7 +174,7 @@ export function ZonasShowcase({ items }: { items: ZonaItem[] }) {
             const abierta = activa === idx;
             const Icono = ICONOS[d.icono];
             return (
-              <li key={d.num}>
+              <li key={d.num} className="relative">
                 <button
                   type="button"
                   onClick={() => seleccionar(idx)}
@@ -178,13 +182,15 @@ export function ZonasShowcase({ items }: { items: ZonaItem[] }) {
                     if (window.matchMedia('(min-width: 1024px)').matches) seleccionar(idx);
                   }}
                   aria-expanded={abierta}
-                  className={`group flex min-h-14 w-full items-center justify-between gap-4 px-3 py-4 text-left transition-colors ${
-                    abierta ? 'bg-surface' : 'hover:bg-surface/50'
+                  className={`group relative flex min-h-14 w-full items-center justify-between gap-4 border-l-2 px-4 py-4 text-left transition-all ${
+                    abierta
+                      ? 'border-l-brand bg-gradient-to-r from-brand/10 via-surface to-surface'
+                      : 'border-l-transparent hover:bg-surface/50'
                   }`}
                 >
                   <span className="flex items-baseline gap-4">
                     <span
-                      className={`font-mono text-xs transition-colors ${
+                      className={`font-mono text-xs font-bold transition-colors ${
                         abierta ? 'text-brand' : 'text-muted'
                       }`}
                     >
@@ -201,19 +207,27 @@ export function ZonasShowcase({ items }: { items: ZonaItem[] }) {
                   <Icono
                     aria-hidden="true"
                     size={18}
-                    strokeWidth={1.5}
+                    strokeWidth={1.75}
                     className={`hidden shrink-0 transition-opacity lg:block ${
-                      abierta ? 'text-bone opacity-100' : 'opacity-0'
+                      abierta ? 'text-brand opacity-100' : 'opacity-0'
                     }`}
                   />
                   <ChevronDown
                     aria-hidden="true"
                     size={16}
                     strokeWidth={1.5}
-                    className={`shrink-0 text-muted transition-transform lg:hidden ${
-                      abierta ? 'rotate-180 text-bone' : ''
+                    className={`shrink-0 transition-transform lg:hidden ${
+                      abierta ? 'rotate-180 text-brand' : 'text-muted'
                     }`}
                   />
+                  {abierta && autoActivo && (
+                    <span
+                      key={`prog-${d.num}`}
+                      aria-hidden="true"
+                      className="anim-progress hidden lg:block absolute inset-x-0 bottom-0 h-[2px] bg-brand/70"
+                      style={{ animationDuration: `${AVANCE_MS}ms` }}
+                    />
+                  )}
                 </button>
 
                 {/* Móvil: acordeón bajo la fila */}
@@ -221,6 +235,9 @@ export function ZonasShowcase({ items }: { items: ZonaItem[] }) {
                   <div className="anim-swap overflow-hidden border-t border-line/60 bg-surface lg:hidden">
                     <AreaVisual zona={d} />
                     <div className="space-y-5 p-5">
+                      <span className="inline-flex items-center rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold text-brand">
+                        {d.enfoque}
+                      </span>
                       <p className="text-sm leading-relaxed text-bone/90">{d.detalle}</p>
                       <MedidorIntensidad nivel={d.nivel} texto={d.intensidad} />
                       <Chips items={d.equipamiento} />
@@ -235,18 +252,20 @@ export function ZonasShowcase({ items }: { items: ZonaItem[] }) {
 
       {/* Desktop: panel derecho con cross-fade */}
       <aside
-        className="relative hidden overflow-hidden border border-line/80 bg-surface lg:col-span-7 lg:block"
+        className="relative hidden overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-2xl lg:col-span-7 lg:block"
       >
         <div key={actual.num} className="anim-swap">
           <AreaVisual zona={actual} />
           <div className="space-y-6 p-8">
             <div>
-              <span className="text-xs font-medium text-muted">{actual.enfoque}</span>
-              <h3 className="section-title mt-1.5 text-2xl">{actual.nombre}</h3>
-              <p className="mt-3 text-base leading-relaxed text-muted">{actual.detalle}</p>
+              <span className="inline-flex items-center rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+                {actual.enfoque}
+              </span>
+              <h3 className="section-title mt-2.5 text-2xl">{actual.nombre}</h3>
+              <p className="mt-2.5 text-base leading-relaxed text-bone/80">{actual.detalle}</p>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line/60 py-4">
-              <span className="text-xs text-muted">Intensidad</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-muted">Nivel de exigencia</span>
               <MedidorIntensidad nivel={actual.nivel} texto={actual.intensidad} />
             </div>
             <Chips items={actual.equipamiento} />

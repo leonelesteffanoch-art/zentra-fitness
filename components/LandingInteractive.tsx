@@ -231,54 +231,67 @@ export function HeroVisualCard() {
   }, [enPausa]);
 
   return (
-    <div
-      onMouseEnter={() => setEnPausa(true)}
-      onMouseLeave={() => setEnPausa(false)}
-      className="relative overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-2xl group"
-    >
-      <div className="relative aspect-[4/3] lg:aspect-[4/4.6] bg-ink">
-        {HERO_SLIDES.map((slide, idx) => (
-          <div
-            key={slide.src}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              idx === actual ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-            }`}
-          >
-            <Image
-              src={slide.src}
-              alt={slide.alt}
-              fill
-              priority={idx === 0}
-              sizes="(min-width: 1024px) 460px, 100vw"
-              className="object-cover saturate-[.92]"
-            />
-          </div>
-        ))}
-
-        {/* Gradiente sutil inferior */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-transparent z-10" />
-
-        {/* Badge descriptivo de la foto actual */}
-        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-full border border-line/80 bg-ink/85 px-3.5 py-1.5 text-xs font-semibold text-bone backdrop-blur-md shadow-lg pointer-events-none">
-          <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
-          <span>{HERO_SLIDES[actual].etiqueta}</span>
-        </div>
-
-        {/* Indicadores de diapositiva interactivos */}
-        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 rounded-full border border-line/80 bg-ink/85 px-3 py-1.5 backdrop-blur-md shadow-lg">
-          {HERO_SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setActual(idx)}
-              aria-label={`Ver foto ${idx + 1} del gimnasio`}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === actual
-                  ? 'w-6 bg-brand shadow-[0_0_8px_rgba(255,194,26,0.6)]'
-                  : 'w-2 bg-bone/35 hover:bg-bone/80'
+    <div className="relative">
+      {/* Halo atmosférico detrás de la tarjeta de foto */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-3 rounded-3xl bg-gradient-to-tr from-brand/20 via-brand/5 to-transparent blur-xl opacity-75"
+      />
+      <div
+        onMouseEnter={() => setEnPausa(true)}
+        onMouseLeave={() => setEnPausa(false)}
+        className="relative overflow-hidden rounded-2xl border border-brand/30 bg-surface shadow-2xl group"
+      >
+        <div className="relative aspect-[4/3] lg:aspect-[4/4.5] bg-ink">
+          {HERO_SLIDES.map((slide, idx) => (
+            <div
+              key={slide.src}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                idx === actual ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
-            />
+            >
+              <Image
+                src={slide.src}
+                alt={slide.alt}
+                fill
+                priority={idx === 0}
+                sizes="(min-width: 1024px) 460px, 100vw"
+                className="object-cover saturate-[.95]"
+              />
+            </div>
           ))}
+
+          {/* Gradiente superior e inferior para contraste de badges */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-ink/35 z-10" />
+
+          {/* Badge superior */}
+          <div className="absolute top-3.5 left-3.5 z-20 inline-flex items-center gap-2 rounded-full border border-brand/35 bg-ink/80 px-3 py-1 text-[11px] font-semibold text-bone backdrop-blur-md shadow-lg pointer-events-none">
+            <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
+            <span>Villa Estela · 6 zonas</span>
+          </div>
+
+          {/* Badge descriptivo de la foto actual */}
+          <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-full border border-line/80 bg-ink/85 px-3.5 py-1.5 text-xs font-semibold text-bone backdrop-blur-md shadow-lg pointer-events-none">
+            <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+            <span>{HERO_SLIDES[actual].etiqueta}</span>
+          </div>
+
+          {/* Indicadores de diapositiva interactivos */}
+          <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 rounded-full border border-line/80 bg-ink/85 px-3 py-1.5 backdrop-blur-md shadow-lg">
+            {HERO_SLIDES.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActual(idx)}
+                aria-label={`Ver foto ${idx + 1} del gimnasio`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === actual
+                    ? 'w-6 bg-brand shadow-[0_0_8px_rgba(255,194,26,0.6)]'
+                    : 'w-2 bg-bone/35 hover:bg-bone/80'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -323,31 +336,42 @@ export function FaqAccordion() {
         const activa = abierta === idx;
         const panelId = `faq-panel-${idx}`;
         return (
-          <div key={item.pregunta}>
+          <div
+            key={item.pregunta}
+            className={`transition-colors ${
+              activa ? 'bg-ink/40 border-l-2 border-l-brand' : 'hover:bg-ink/20'
+            }`}
+          >
             <h3>
               <button
                 type="button"
                 onClick={() => setAbierta(activa ? null : idx)}
                 aria-expanded={activa}
                 aria-controls={panelId}
-                className="flex min-h-16 w-full items-center justify-between gap-4 py-4 text-left"
+                className="flex min-h-16 w-full items-center justify-between gap-4 px-3 sm:px-4 py-4 text-left"
               >
                 <span className="flex items-baseline gap-4">
-                  <span className="font-mono text-xs text-muted">0{idx + 1}</span>
+                  <span
+                    className={`font-mono text-xs font-bold transition-colors ${
+                      activa ? 'text-brand' : 'text-muted'
+                    }`}
+                  >
+                    0{idx + 1}
+                  </span>
                   <span className="text-base font-semibold text-bone sm:text-lg">{item.pregunta}</span>
                 </span>
                 <ChevronDown
                   size={18}
-                  strokeWidth={1.5}
+                  strokeWidth={1.75}
                   aria-hidden="true"
-                  className={`shrink-0 text-muted transition-transform duration-200 ${
-                    activa ? 'rotate-180 text-bone' : ''
+                  className={`shrink-0 transition-transform duration-200 ${
+                    activa ? 'rotate-180 text-brand' : 'text-muted'
                   }`}
                 />
               </button>
             </h3>
             {activa && (
-              <div id={panelId} className="anim-swap pb-5 pl-9 pr-8 text-sm leading-relaxed text-muted">
+              <div id={panelId} className="anim-swap pb-5 pl-12 pr-8 text-sm leading-relaxed text-bone/80">
                 {item.respuesta}
               </div>
             )}

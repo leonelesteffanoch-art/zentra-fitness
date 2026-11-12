@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import { cacheLife } from 'next/cache';
-import { ArrowUpRight, Lock, MapPin, MessageCircle, UserCheck } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Dumbbell,
+  Lock,
+  MapPin,
+  MessageCircle,
+  ShieldCheck,
+  UserCheck,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
   DIRECCION,
@@ -251,35 +260,87 @@ export default async function HomePage() {
       <main className="overflow-x-hidden">
         {/* 1. HERO (bg-ink) */}
         <section className="relative overflow-hidden bg-ink">
+          {/* Arquitectura visual de fondo: rejilla técnica y halos cálidos */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,194,26,0.08),_transparent_55%)]"
+            className="bg-gridlines pointer-events-none absolute inset-0 opacity-65 [mask-image:radial-gradient(ellipse_at_50%_40%,black_30%,transparent_80%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-brand/[0.12] blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-1/4 h-80 w-80 rounded-full bg-brand/[0.07] blur-3xl"
           />
 
-          <div className="relative mx-auto grid max-w-6xl gap-8 px-5 pb-12 pt-7 sm:gap-10 sm:px-8 sm:py-20 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-24">
-            <div className="flex flex-col justify-between lg:col-span-7">
+          <div className="relative mx-auto grid max-w-6xl gap-9 px-5 pb-14 pt-8 sm:gap-10 sm:px-8 sm:py-20 lg:grid-cols-12 lg:items-center lg:gap-10 lg:py-24">
+            <div className="min-w-0 relative z-10 flex flex-col justify-between lg:col-span-7">
               <div>
-                <h1 className="font-display text-[clamp(2.1rem,8.4vw,4.5rem)] leading-[0.95] tracking-tight lg:text-[4.15rem] xl:text-[4.75rem]">
-                  Fortalecidos
-                  <br />
-                  <span className="text-brand">para vencer</span>
+                {/* Píldoras informativas superiores */}
+                <div className="mb-5 flex flex-wrap items-center gap-2.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/35 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand shadow-sm">
+                    <MapPin size={12} strokeWidth={2.2} aria-hidden="true" />
+                    <span>Villa Estela · Ancón</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2/90 px-3 py-1 text-xs font-medium text-bone/90">
+                    <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
+                    <span>Lunes a Sábado</span>
+                  </span>
+                </div>
+
+                {/* Titular principal calibrado para 0 desbordes */}
+                <h1
+                  className="font-display text-[clamp(1.95rem,7.8vw,2.9rem)] leading-[0.95] tracking-tight sm:text-[3.25rem] lg:text-[3.05rem] xl:text-[3.55rem]"
+                  style={{ fontStretch: '108%' }}
+                >
+                  <span className="block text-bone">Fortalecidos</span>
+                  <span className="mt-1 inline-block text-brand">
+                    para vencer
+                  </span>
                 </h1>
+
+                <div className="mt-4 h-1 w-20 rounded-full bg-gradient-to-r from-brand via-brand/70 to-transparent" />
+
+                <p className="mt-5 max-w-xl text-sm leading-relaxed text-bone/80 sm:text-base">
+                  Entrena a tu ritmo en nuestras <strong className="text-bone font-semibold">6 zonas equipadas</strong> con peso libre, máquinas de palanca y acompañamiento profesional en planta.
+                </p>
+
+                {/* Pilares visuales rápidos */}
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/85 px-3 py-1.5 text-xs font-medium text-bone">
+                    <Dumbbell size={14} className="text-brand shrink-0" aria-hidden="true" />
+                    <span>Peso libre y máquinas</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/85 px-3 py-1.5 text-xs font-medium text-bone">
+                    <ShieldCheck size={14} className="text-ok shrink-0" aria-hidden="true" />
+                    <span>Entrenadores en sala</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/85 px-3 py-1.5 text-xs font-medium text-bone">
+                    <CheckCircle2 size={14} className="text-brand shrink-0" aria-hidden="true" />
+                    <span>Sin matrícula</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="mt-7 flex flex-col gap-3.5 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
-                <a href="#planes" className="btn btn-primary w-full !min-h-12 !px-8 sm:w-auto shadow-lg">
-                  Ver planes
+              <div className="mt-8 flex flex-col gap-3.5 sm:mt-9 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+                <a
+                  href="#planes"
+                  className="btn btn-primary w-full !min-h-12 !px-8 sm:w-auto shadow-[0_0_30px_-6px_rgba(255,194,26,0.5)]"
+                >
+                  Ver planes y precios
                 </a>
                 <Link
                   href="/consulta"
-                  className="inline-flex min-h-11 items-center justify-center gap-1.5 py-2 text-sm font-medium text-muted transition-colors hover:text-bone sm:justify-start"
+                  className="btn btn-secondary w-full !min-h-12 !px-6 sm:w-auto hover:border-brand/60 gap-1.5"
                 >
-                  Soy socio · Consultar mis días <ArrowUpRight size={16} strokeWidth={1.5} />
+                  Soy socio · Consultar mis días{' '}
+                  <ArrowUpRight size={16} strokeWidth={1.75} className="text-brand" />
                 </Link>
               </div>
             </div>
 
-            <div className="lg:col-span-5">
+            <div className="relative z-10 lg:col-span-5">
               <HeroVisualCard />
             </div>
           </div>
@@ -289,8 +350,12 @@ export default async function HomePage() {
         <StatsStrip />
 
         {/* 3. ZONAS (bg-ink) */}
-        <section id="disciplinas" className="scroll-mt-20 bg-ink py-16 lg:py-28">
-          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
+        <section id="disciplinas" className="relative scroll-mt-20 overflow-hidden bg-ink py-16 lg:py-28">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-40 top-20 h-96 w-96 rounded-full bg-brand/[0.05] blur-3xl"
+          />
+          <RevealOnScroll className="relative mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading
               num="01"
               antes="Seis zonas, un solo"
@@ -308,9 +373,13 @@ export default async function HomePage() {
         {/* 4. PLANES (bg-surface) */}
         <section
           id="planes"
-          className="scroll-mt-20 border-y border-line/60 bg-surface py-16 lg:py-28"
+          className="relative scroll-mt-20 overflow-hidden border-y border-line/60 bg-surface bg-grain py-16 lg:py-28"
         >
-          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-0 h-80 w-[36rem] -translate-x-1/2 rounded-full bg-brand/[0.06] blur-3xl"
+          />
+          <RevealOnScroll className="relative mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading num="02" destacado="Planes" centrado>
               <p className="text-sm text-muted">Sin matrícula · Todas las zonas incluidas</p>
             </SectionHeading>
@@ -320,8 +389,12 @@ export default async function HomePage() {
         </section>
 
         {/* 5. HORARIOS Y ENTRENADORES (bg-ink) */}
-        <section id="horarios" className="scroll-mt-20 bg-ink py-16 lg:py-28">
-          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
+        <section id="horarios" className="relative scroll-mt-20 overflow-hidden bg-ink py-16 lg:py-28">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-32 bottom-24 h-80 w-80 rounded-full bg-ok/[0.05] blur-3xl"
+          />
+          <RevealOnScroll className="relative mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading num="03" destacado="Horarios" />
 
             {/* Línea de tiempo interactiva con Lunes a Viernes y Sábados */}
@@ -358,8 +431,8 @@ export default async function HomePage() {
         </section>
 
         {/* 6. FAQ CORTO (bg-surface) */}
-        <section id="preguntas" className="scroll-mt-20 border-t border-line/60 bg-surface py-16 lg:py-24">
-          <RevealOnScroll className="mx-auto max-w-3xl px-5 sm:px-8">
+        <section id="preguntas" className="relative scroll-mt-20 overflow-hidden border-t border-line/60 bg-surface bg-grain py-16 lg:py-24">
+          <RevealOnScroll className="relative mx-auto max-w-3xl px-5 sm:px-8">
             <SectionHeading num="04" antes="Preguntas" destacado="frecuentes" />
             <FaqAccordion />
           </RevealOnScroll>
@@ -368,9 +441,13 @@ export default async function HomePage() {
         {/* 7. UBICACIÓN Y CONTACTO (bg-ink) */}
         <section
           id="contacto"
-          className="scroll-mt-20 border-t border-line/60 bg-ink py-16 lg:py-28"
+          className="relative scroll-mt-20 overflow-hidden border-t border-line/60 bg-ink py-16 lg:py-28"
         >
-          <RevealOnScroll className="mx-auto max-w-6xl px-5 sm:px-8">
+          <div
+            aria-hidden="true"
+            className="bg-gridlines pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_bottom_right,black_20%,transparent_75%)]"
+          />
+          <RevealOnScroll className="relative mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading num="05" antes="Separa tu" destacado="inscripción">
               <p className="text-sm text-muted">
                 Visítanos en Av. Arquitectos o envíanos tu mensaje por WhatsApp para reservar tu plan sin matrícula.
@@ -386,7 +463,7 @@ export default async function HomePage() {
               {/* Canales directos y Ubicación (debajo del formulario en móvil, izquierda en desktop) */}
               <div id="ubicacion" className="scroll-mt-28 space-y-6 order-2 lg:col-span-5 lg:order-1">
                 {/* Mapa a COLOR (llamativo, real y enmarcado con estilo premium) */}
-                <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl relative">
+                <div className="overflow-hidden rounded-3xl border border-brand/25 bg-surface shadow-2xl relative">
                   <div className="relative aspect-[16/10] w-full">
                     <iframe
                       title="Ubicación de Zentra Fitness en Villa Estela, Ancón"
