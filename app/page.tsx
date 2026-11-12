@@ -285,7 +285,7 @@ export default async function HomePage() {
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2/90 px-3 py-1 text-xs font-medium text-bone/90">
                     <span className="h-1.5 w-1.5 rounded-full bg-ok shadow-[0_0_6px_#22c55e]" />
-                    <span>Lunes a Sábado</span>
+                    <span>Lunes a Domingos</span>
                   </span>
                 </div>
 
