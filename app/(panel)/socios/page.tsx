@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   AlertTriangle,
   Ban,
@@ -20,11 +21,9 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
 import { SearchBar } from '@/components/SearchBar';
 import { MemberFormModal } from '@/components/MemberFormModal';
-import { ImportSociosModal } from '@/components/ImportSociosModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
 import { ToastBanner } from '@/components/ToastBanner';
@@ -41,6 +40,12 @@ import { ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
 import { hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, MembresiaEstado, Semaforo, SocioEstado } from '@/types';
+
+// Se carga solo al abrir "Importar Excel" (arrastra la librería xlsx, que es pesada).
+const ImportSociosModal = dynamic(
+  () => import('@/components/ImportSociosModal').then((m) => m.ImportSociosModal),
+  { ssr: false }
+);
 
 const BADGE_SEMAFORO: Record<Semaforo, { cls: string; txt: string }> = {
   VERDE: { cls: 'bg-ok/15 text-ok ring-1 ring-ok/30', txt: 'Activo' },
@@ -87,26 +92,41 @@ export default function SociosPage() {
 
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
+  // Evita que una respuesta lenta (vieja) pise a una más reciente al escribir rápido.
+  const ultimaCarga = useRef(0);
+
+  /**
+   * Carga la lista. El resumen del padrón (descarga TODAS las filas) solo se
+   * recalcula cuando los datos cambiaron (cobro, edición, importación),
+   * no en cada búsqueda, filtro o cambio de página.
+   */
   const cargarListado = useCallback(
-    async (term: string, pag: number, fil: FiltroEstadoSocio) => {
+    async (term: string, pag: number, fil: FiltroEstadoSocio, conResumen = false) => {
       if (!gymId) return;
+      const id = ++ultimaCarga.current;
       setCargando(true);
       try {
-        const [lista, res] = await Promise.all([
-          term.length >= 2
-            ? buscarSocios(gymId, term, fil)
-            : listarSociosEstado(gymId, pag, fil),
-          obtenerResumenPadron(gymId).catch(() => null),
-        ]);
+        const listaPromesa =
+          term.length >= 2 ? buscarSocios(gymId, term, fil) : listarSociosEstado(gymId, pag, fil);
+        if (conResumen) {
+          // El resumen no bloquea la lista: se actualiza cuando llegue.
+          void obtenerResumenPadron(gymId)
+            .then((res) => {
+              if (res) setResumenPadron(res);
+            })
+            .catch(() => null);
+        }
+        const lista = await listaPromesa;
+        if (id !== ultimaCarga.current) return;
         setSocios(lista);
-        if (res) setResumenPadron(res);
       } catch (e) {
+        if (id !== ultimaCarga.current) return;
         setAviso({
           tipo: 'error',
           texto: e instanceof Error ? e.message : 'Error al cargar socios',
         });
       } finally {
-        setCargando(false);
+        if (id === ultimaCarga.current) setCargando(false);
       }
     },
     [gymId]
@@ -181,7 +201,7 @@ export default function SociosPage() {
   async function refrescarSeleccionado(dniBuscar: string) {
     if (!gymId) return;
     const [actualizado] = await buscarSocios(gymId, dniBuscar, 'todos');
-    await cargarListado(termino, pagina, filtro);
+    await cargarListado(termino, pagina, filtro, true);
     if (actualizado) {
       await cargarFicha(actualizado);
     }
@@ -215,6 +235,7 @@ export default function SociosPage() {
     setExportando(true);
     setAviso(null);
     try {
+      const XLSX = await import('xlsx');
       const todos: SocioEstado[] = [];
       let pag = 0;
       while (pag < 20) {
@@ -952,7 +973,7 @@ export default function SociosPage() {
             setModalImportar(false);
             setAviso({ tipo: 'ok', texto: msg });
             setPagina(0);
-            await cargarListado(termino, 0, filtro);
+            await cargarListado(termino, 0, filtro, true);
           }}
         />
       )}
