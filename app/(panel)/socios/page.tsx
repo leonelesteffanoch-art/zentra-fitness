@@ -27,6 +27,7 @@ import { MemberFormModal } from '@/components/MemberFormModal';
 import { ImportSociosModal } from '@/components/ImportSociosModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
+import { ToastBanner } from '@/components/ToastBanner';
 import {
   anularMembresia,
   buscarSocios,
@@ -474,6 +475,8 @@ export default function SociosPage() {
           })}
         </div>
       </div>
+
+      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
       {aviso && (
         <p

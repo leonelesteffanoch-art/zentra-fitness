@@ -711,30 +711,33 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="space-y-1.5">
                 <input
                   type="number"
                   inputMode="decimal"
-                  placeholder="Monto entregado (S/)"
+                  placeholder="Monto entregado por el cliente (S/)"
                   value={pagaCon}
                   onChange={(e) => setPagaCon(e.target.value)}
-                  className="field !min-h-8 !text-xs !bg-surface flex-1"
+                  className="field !min-h-8 !w-full !bg-surface !text-xs"
                 />
 
                 {/* Atajos de billetes frecuentes en Perú */}
-                {[10, 20, 50, 100]
-                  .filter((b) => b >= total)
-                  .slice(0, 3)
-                  .map((billete) => (
-                    <button
-                      key={billete}
-                      type="button"
-                      onClick={() => setPagaCon(String(billete))}
-                      className="rounded-xs bg-surface px-2.5 py-1.5 text-[11px] font-semibold text-bone hover:bg-bone hover:text-ink transition-colors"
-                    >
-                      S/ {billete}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-muted">Billetes rápidos:</span>
+                  {[10, 20, 50, 100]
+                    .filter((b) => b >= total)
+                    .slice(0, 3)
+                    .map((billete) => (
+                      <button
+                        key={billete}
+                        type="button"
+                        onClick={() => setPagaCon(String(billete))}
+                        className="flex-1 rounded bg-surface px-2.5 py-1 font-mono text-[11px] font-semibold text-bone transition-colors hover:bg-brand hover:text-ink"
+                      >
+                        S/ {billete}
+                      </button>
+                    ))}
+                </div>
               </div>
             </div>
           )}

@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/components/AuthProvider';
 import { CashClosureTable, CashSummaryStrip } from '@/components/CashClosureTable';
 import { PosPanel } from '@/components/PosPanel';
+import { ToastBanner } from '@/components/ToastBanner';
 import {
   abrirTurno,
   anularMovimiento,
@@ -280,6 +281,8 @@ export default function CajaPage() {
           </div>
         )}
       </div>
+
+      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
       {aviso && (
         <p

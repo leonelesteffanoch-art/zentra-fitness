@@ -22,6 +22,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { CatalogManager } from '@/components/CatalogManager';
 import { GymStatsSection } from '@/components/GymStatsSection';
 import { StaffManager } from '@/components/StaffManager';
+import { ToastBanner } from '@/components/ToastBanner';
 import {
   listarProductos,
   movimientosParaExport,
@@ -374,6 +375,8 @@ export default function AdminPage() {
           );
         })}
       </div>
+
+      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
       {aviso && (
         <p

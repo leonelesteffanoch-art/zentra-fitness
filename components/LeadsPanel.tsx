@@ -26,6 +26,7 @@ import { buscarSocios, listarPlanes } from '@/services/sociosService';
 import { turnoAbierto } from '@/services/cajaService';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { QuickPaymentModal } from '@/components/QuickPaymentModal';
+import { ToastBanner } from '@/components/ToastBanner';
 import type { EstadoLead, LeadInteresado } from '@/app/api/leads/route';
 import type { Plan, SocioEstado } from '@/types';
 
@@ -530,6 +531,8 @@ export function LeadsPanel({ gymId, userId }: Props) {
           </div>
         )}
       </section>
+
+      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
       {aviso && (
         <p

@@ -161,12 +161,35 @@ export type DatosProducto = Pick<
 
 export async function crearProducto(gymId: string, prod: DatosProducto) {
   const { error } = await supabase.from('productos').insert({ ...prod, gym_id: gymId });
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes('costo')) {
+      const { costo: _ignorado, ...sinCosto } = prod;
+      void _ignorado;
+      const { error: retryErr } = await supabase
+        .from('productos')
+        .insert({ ...sinCosto, gym_id: gymId });
+      if (retryErr) throw new Error(retryErr.message);
+      return;
+    }
+    throw new Error(error.message);
+  }
 }
 
 export async function actualizarProducto(productoId: string, cambios: Partial<DatosProducto>) {
   const { error } = await supabase.from('productos').update(cambios).eq('id', productoId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes('costo')) {
+      const { costo: _ignorado, ...sinCosto } = cambios;
+      void _ignorado;
+      const { error: retryErr } = await supabase
+        .from('productos')
+        .update(sinCosto)
+        .eq('id', productoId);
+      if (retryErr) throw new Error(retryErr.message);
+      return;
+    }
+    throw new Error(error.message);
+  }
 }
 
 /** Elimina un producto. Si tiene ventas históricas asociadas, se archiva (activo = false) para no romper auditoría. */
@@ -193,19 +216,29 @@ export async function reponerStock(
 ): Promise<number> {
   const { data: prod, error: getErr } = await supabase
     .from('productos')
-    .select('stock, costo')
+    .select('*')
     .eq('id', productoId)
     .single();
   if (getErr || !prod) throw new Error('Producto no encontrado');
 
-  const nuevoStock = (prod.stock ?? 0) + cantidadAdicional;
+  const nuevoStock = ((prod as Producto).stock ?? 0) + cantidadAdicional;
   const updates: Record<string, unknown> = { stock: nuevoStock };
   if (typeof nuevoCosto === 'number' && nuevoCosto >= 0) {
     updates.costo = nuevoCosto;
   }
 
   const { error } = await supabase.from('productos').update(updates).eq('id', productoId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes('costo')) {
+      const { error: retryErr } = await supabase
+        .from('productos')
+        .update({ stock: nuevoStock })
+        .eq('id', productoId);
+      if (retryErr) throw new Error(retryErr.message);
+      return nuevoStock;
+    }
+    throw new Error(error.message);
+  }
   return nuevoStock;
 }
 

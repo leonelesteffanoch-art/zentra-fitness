@@ -475,7 +475,14 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                 <select
                   id="prod-cat"
                   value={prCat}
-                  onChange={(e) => setPrCat(e.target.value)}
+                  onChange={(e) => {
+                    const nuevaCat = e.target.value;
+                    setPrCat(nuevaCat);
+                    if (nuevaCat === 'Pases') {
+                      setPrServicio(true);
+                      setPrCosto('0');
+                    }
+                  }}
                   className="field !min-h-9"
                 >
                   {CATEGORIAS_PROD.map((c) => (

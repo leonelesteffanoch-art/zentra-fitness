@@ -17,6 +17,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { MemberStatusCard } from '@/components/MemberStatusCard';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
+import { ToastBanner } from '@/components/ToastBanner';
 import { buscarSocios, obtenerSocioEstadoPorId } from '@/services/sociosService';
 import {
   asistenciasDeHoyDetalladas,
@@ -353,6 +354,8 @@ export default function RecepcionPage() {
         autoFocus
         placeholder="Dictar DNI o nombre del socio..."
       />
+
+      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
       {aviso && (
         <p
