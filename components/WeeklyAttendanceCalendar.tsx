@@ -66,7 +66,7 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-medium text-bone">
           <CalendarDays size={15} strokeWidth={1.75} className="text-brand" />
-          <span>Constancia semanal (Lun – Sáb)</span>
+          <span>Constancia semanal (Lunes – Sábado)</span>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
