@@ -140,6 +140,29 @@ export async function anularMovimiento(movimientoId: string, motivo: string) {
 
 // ---------- POS ----------
 
+const COSTOS_LOCAL_KEY = 'zentra_costos_productos';
+
+function leerCostosLocales(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(COSTOS_LOCAL_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function guardarCostoLocal(clave: string, costo: number) {
+  if (typeof window === 'undefined' || !clave) return;
+  try {
+    const mapa = leerCostosLocales();
+    mapa[clave] = costo;
+    window.localStorage.setItem(COSTOS_LOCAL_KEY, JSON.stringify(mapa));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export async function listarProductos(gymId: string, incluirInactivos = false): Promise<Producto[]> {
   let query = supabase
     .from('productos')
@@ -151,7 +174,14 @@ export async function listarProductos(gymId: string, incluirInactivos = false): 
   if (!incluirInactivos) query = query.eq('activo', true);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as Producto[];
+  const costosLocal = leerCostosLocales();
+  return ((data ?? []) as unknown as Producto[]).map((p) => ({
+    ...p,
+    costo:
+      typeof p.costo === 'number' && p.costo > 0
+        ? p.costo
+        : costosLocal[p.id] ?? costosLocal[p.nombre] ?? p.costo ?? 0,
+  }));
 }
 
 export type DatosProducto = Pick<
@@ -160,6 +190,9 @@ export type DatosProducto = Pick<
 > & { costo?: number };
 
 export async function crearProducto(gymId: string, prod: DatosProducto) {
+  if (typeof prod.costo === 'number') {
+    guardarCostoLocal(prod.nombre, prod.costo);
+  }
   const { error } = await supabase.from('productos').insert({ ...prod, gym_id: gymId });
   if (error) {
     if (error.message.includes('costo')) {
@@ -176,6 +209,10 @@ export async function crearProducto(gymId: string, prod: DatosProducto) {
 }
 
 export async function actualizarProducto(productoId: string, cambios: Partial<DatosProducto>) {
+  if (typeof cambios.costo === 'number') {
+    guardarCostoLocal(productoId, cambios.costo);
+    if (cambios.nombre) guardarCostoLocal(cambios.nombre, cambios.costo);
+  }
   const { error } = await supabase.from('productos').update(cambios).eq('id', productoId);
   if (error) {
     if (error.message.includes('costo')) {
@@ -225,6 +262,8 @@ export async function reponerStock(
   const updates: Record<string, unknown> = { stock: nuevoStock };
   if (typeof nuevoCosto === 'number' && nuevoCosto >= 0) {
     updates.costo = nuevoCosto;
+    guardarCostoLocal(productoId, nuevoCosto);
+    guardarCostoLocal((prod as Producto).nombre, nuevoCosto);
   }
 
   const { error } = await supabase.from('productos').update(updates).eq('id', productoId);

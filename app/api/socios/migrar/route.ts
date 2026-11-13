@@ -1,14 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-function crearServiceClient() {
+function crearServiceClient(token?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    throw new Error('Falta configurar SUPABASE_SERVICE_ROLE_KEY en el servidor.');
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = serviceKey || anonKey;
+  if (!url || !key) {
+    throw new Error('Falta configurar las credenciales de Supabase en el servidor.');
   }
-  return createClient(url, serviceKey, {
+  return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    ...( !serviceKey && token
+      ? { global: { headers: { Authorization: `Bearer ${token}` } } }
+      : {} ),
   });
 }
 
@@ -17,7 +22,7 @@ async function verificarStaff(req: NextRequest) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
   if (!token) return { error: 'No autenticado', status: 401 as const };
 
-  const client = crearServiceClient();
+  const client = crearServiceClient(token);
   const { data: userRes, error: authErr } = await client.auth.getUser(token);
   if (authErr || !userRes?.user) {
     return { error: 'Sesión inválida o expirada', status: 401 as const };
