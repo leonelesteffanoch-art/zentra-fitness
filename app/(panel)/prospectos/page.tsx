@@ -7,7 +7,7 @@ export default function ProspectosPage() {
   const { perfil } = useAuth();
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="panel-fade-in">
       <LeadsPanel gymId={perfil?.gym_id} userId={perfil?.id} />
     </div>
   );

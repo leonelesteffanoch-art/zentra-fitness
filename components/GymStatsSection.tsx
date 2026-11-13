@@ -133,6 +133,8 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
     1,
     ...stats.franjasPico.map((f) => f.cantidad)
   );
+  const pctRetencion =
+    stats.totalSocios > 0 ? Math.round((stats.sociosActivos / stats.totalSocios) * 100) : 0;
 
   return (
     <section aria-label="Estadísticas operativas" className="space-y-3">
@@ -142,40 +144,61 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* 1. Socios nuevos, activos y bajas */}
-        <article className="bg-surface p-5">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted">
-            <Users size={15} strokeWidth={1.5} />
-            <span>Padrón de socios y bajas</span>
-          </div>
+        <article className="panel-card flex flex-col justify-between p-5">
+          <div>
+            <div className="flex items-center justify-between text-xs font-medium text-muted">
+              <span className="flex items-center gap-2">
+                <Users size={15} strokeWidth={1.75} className="text-brand" />
+                Padrón de socios y retención
+              </span>
+              <span className="font-mono font-bold text-ok">{pctRetencion}% activos</span>
+            </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-4 tabular-nums">
-            <div className="bg-surface-2 p-3.5">
-              <dt className="text-xs text-muted">Socios activos</dt>
-              <dd className="mt-1 text-2xl font-bold text-ok">{stats.sociosActivos}</dd>
+            <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
+              <div className="bar-fill h-full bg-ok" style={{ width: `${pctRetencion}%` }} />
+              <div
+                className="bar-fill h-full bg-bad"
+                style={{ width: `${Math.max(0, 100 - pctRetencion)}%` }}
+              />
             </div>
-            <div className="bg-surface-2 p-3.5">
-              <dt className="text-xs text-muted">Vencidos / Bajas</dt>
-              <dd className="mt-1 text-2xl font-bold text-bad">{stats.sociosVencidos}</dd>
-            </div>
-            <div className="bg-surface-2 p-3.5">
-              <dt className="text-xs text-muted">Nuevos este mes</dt>
-              <dd className="mt-1 text-2xl font-bold text-bone">+{stats.nuevosMes}</dd>
-            </div>
-            <div className="bg-surface-2 p-3.5">
-              <dt className="text-xs text-muted">Total inscritos</dt>
-              <dd className="mt-1 text-2xl font-bold text-bone">{stats.totalSocios}</dd>
-            </div>
-          </dl>
+
+            <dl className="mt-4 grid grid-cols-2 gap-3 tabular-nums">
+              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
+                <dt className="text-[11px] text-muted">Socios activos</dt>
+                <dd className="mt-0.5 font-mono text-2xl font-bold text-ok">
+                  {stats.sociosActivos}
+                </dd>
+              </div>
+              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
+                <dt className="text-[11px] text-muted">Vencidos / Bajas</dt>
+                <dd className="mt-0.5 font-mono text-2xl font-bold text-bad">
+                  {stats.sociosVencidos}
+                </dd>
+              </div>
+              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
+                <dt className="text-[11px] text-muted">Nuevos este mes</dt>
+                <dd className="mt-0.5 font-mono text-2xl font-bold text-brand">
+                  +{stats.nuevosMes}
+                </dd>
+              </div>
+              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
+                <dt className="text-[11px] text-muted">Total inscritos</dt>
+                <dd className="mt-0.5 font-mono text-2xl font-bold text-bone">
+                  {stats.totalSocios}
+                </dd>
+              </div>
+            </dl>
+          </div>
         </article>
 
         {/* 2. Horas pico de asistencia */}
-        <article className="bg-surface p-5">
+        <article className="panel-card p-5">
           <div className="flex items-center gap-2 text-xs font-medium text-muted">
-            <Clock size={15} strokeWidth={1.5} />
+            <Clock size={15} strokeWidth={1.75} className="text-brand" />
             <span>Horas pico (últimos 30 días)</span>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-3.5">
             {stats.franjasPico.map((f) => {
               const pct = Math.round((f.cantidad / maxAsistenciasFranja) * 100);
               return (
@@ -185,13 +208,13 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
                       {f.etiqueta}{' '}
                       <span className="font-mono text-[11px] text-muted">({f.rango})</span>
                     </span>
-                    <span className="font-mono font-semibold text-bone tabular-nums">
+                    <span className="font-mono font-bold text-bone tabular-nums">
                       {f.cantidad} ing.
                     </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden bg-surface-2">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
                     <div
-                      className="h-full bg-bone transition-all"
+                      className="bar-fill h-full rounded-full bg-gradient-to-r from-brand/70 to-brand"
                       style={{ width: `${f.cantidad > 0 ? Math.max(8, pct) : 0}%` }}
                     />
                   </div>
@@ -202,10 +225,10 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
         </article>
 
         {/* 3. Productos más vendidos del POS */}
-        <article className="bg-surface p-5">
+        <article className="panel-card p-5">
           <div className="flex items-center gap-2 text-xs font-medium text-muted">
-            <Package size={15} strokeWidth={1.5} />
-            <span>Productos más vendidos (30 días)</span>
+            <Package size={15} strokeWidth={1.75} className="text-brand" />
+            <span>Top 5 productos POS (30 días)</span>
           </div>
 
           {stats.topProductos.length === 0 ? (
@@ -213,20 +236,38 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
               Aún no se registran ventas de productos en los últimos 30 días.
             </p>
           ) : (
-            <ul className="mt-4 divide-y divide-line/60 text-xs">
-              {stats.topProductos.map((p, i) => (
-                <li key={p.nombre} className="flex items-center justify-between py-2.5">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-mono text-muted">0{i + 1}</span>
-                    <span className="font-medium text-bone">{p.nombre}</span>
-                  </div>
-                  <div className="text-right tabular-nums">
-                    <span className="font-semibold text-bone">{p.unidades} und.</span>
-                    <span className="ml-2 text-muted">({soles(p.ingresos)})</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            (() => {
+              const maxUnid = Math.max(1, ...stats.topProductos.map((p) => p.unidades));
+              return (
+                <ul className="mt-4 space-y-3 text-xs">
+                  {stats.topProductos.map((p, i) => {
+                    const pct = Math.round((p.unidades / maxUnid) * 100);
+                    return (
+                      <li key={p.nombre} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-baseline gap-2">
+                            <span className="rounded bg-surface-2 px-1.5 py-0.2 font-mono text-[10px] font-bold text-brand">
+                              #{i + 1}
+                            </span>
+                            <span className="font-medium text-bone">{p.nombre}</span>
+                          </div>
+                          <div className="text-right font-mono tabular-nums">
+                            <span className="font-bold text-bone">{p.unidades}u</span>
+                            <span className="ml-1.5 text-muted">({soles(p.ingresos)})</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                          <div
+                            className="bar-fill h-full rounded-full bg-ok"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()
           )}
         </article>
       </div>

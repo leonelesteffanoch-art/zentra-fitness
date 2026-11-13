@@ -232,17 +232,28 @@ export default function CajaPage() {
       : null;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-10">
+    <div className="panel-fade-in space-y-8">
       {/* Cabecera */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-5">
-        <div className="flex flex-wrap items-center gap-4">
-          <h1 className="font-display text-4xl sm:text-5xl">Caja y POS</h1>
-          {turno && (
-            <span className="inline-flex items-center gap-1.5 rounded-xs bg-ok/15 px-2.5 py-1 text-xs font-semibold text-ok">
-              <Unlock size={13} strokeWidth={1.5} />
-              Turno {turno.turno} abierto
-            </span>
-          )}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-4xl tracking-wide sm:text-5xl">CAJA Y POS</h1>
+            {turno ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ok/30 bg-ok/15 px-3 py-1 text-xs font-semibold text-ok">
+                <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
+                <Unlock size={13} strokeWidth={1.75} />
+                Turno {turno.turno} abierto
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-warn/30 bg-warn/15 px-3 py-1 text-xs font-semibold text-warn">
+                <Lock size={13} strokeWidth={1.75} />
+                Turno cerrado
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            Punto de venta rápido, control de efectivo en tiempo real y arqueo de turno.
+          </p>
         </div>
 
         {turno && (
@@ -250,9 +261,9 @@ export default function CajaPage() {
             <button
               type="button"
               onClick={() => setMostrarEgreso(true)}
-              className="btn btn-secondary"
+              className="btn btn-secondary !min-h-10"
             >
-              <ArrowDownCircle size={16} strokeWidth={1.5} />
+              <ArrowDownCircle size={16} strokeWidth={1.75} />
               Registrar egreso
             </button>
             <button
@@ -261,9 +272,9 @@ export default function CajaPage() {
                 setMostrarCierre(true);
                 if (resumen) setEfectivoReal(resumen.efectivo_esperado.toFixed(2));
               }}
-              className="btn btn-ghost"
+              className="btn btn-ghost !min-h-10"
             >
-              <Lock size={16} strokeWidth={1.5} />
+              <Lock size={16} strokeWidth={1.75} />
               Cerrar turno
             </button>
           </div>
@@ -273,36 +284,36 @@ export default function CajaPage() {
       {aviso && (
         <p
           role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`flex items-center gap-2 border-l-2 px-3 py-2 text-sm ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/10 text-ok' : 'border-bad bg-bad/10 text-bad'
+          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
+            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
           }`}
         >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.5} />}
+          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
           {aviso.texto}
         </p>
       )}
 
       {/* Resumen del último cierre recién ejecutado */}
       {ultimoCierre && !turno && (
-        <section className="bg-surface p-6">
+        <section className="panel-card panel-fade-in p-6">
           <h2 className="section-title text-lg">Arqueo final del último turno cerrado</h2>
           <dl className="mt-4 grid grid-cols-2 gap-4 tabular-nums sm:grid-cols-4">
-            <div>
+            <div className="rounded-md bg-ink/50 p-3">
               <dt className="text-xs text-muted">Efectivo esperado</dt>
-              <dd className="mt-0.5 text-xl font-bold text-bone">
+              <dd className="mt-0.5 font-mono text-xl font-bold text-bone">
                 {soles(ultimoCierre.efectivo_esperado)}
               </dd>
             </div>
-            <div>
+            <div className="rounded-md bg-ink/50 p-3">
               <dt className="text-xs text-muted">Efectivo real contado</dt>
-              <dd className="mt-0.5 text-xl font-bold text-bone">
+              <dd className="mt-0.5 font-mono text-xl font-bold text-bone">
                 {soles(ultimoCierre.efectivo_real)}
               </dd>
             </div>
-            <div>
+            <div className="rounded-md bg-ink/50 p-3">
               <dt className="text-xs text-muted">Diferencia</dt>
               <dd
-                className={`mt-0.5 text-xl font-bold ${
+                className={`mt-0.5 font-mono text-xl font-bold ${
                   ultimoCierre.diferencia === 0
                     ? 'text-ok'
                     : ultimoCierre.diferencia > 0
@@ -314,9 +325,9 @@ export default function CajaPage() {
                 {soles(ultimoCierre.diferencia)}
               </dd>
             </div>
-            <div>
+            <div className="rounded-md bg-ink/50 p-3">
               <dt className="text-xs text-muted">Total ingresos turno</dt>
-              <dd className="mt-0.5 text-xl font-bold text-bone">
+              <dd className="mt-0.5 font-mono text-xl font-bold text-bone">
                 {soles(ultimoCierre.total_ingresos)}
               </dd>
             </div>
@@ -326,7 +337,7 @@ export default function CajaPage() {
 
       {/* ESTADO 1: No hay turno abierto -> Formulario de Apertura */}
       {!turno && (
-        <section className="mx-auto max-w-md bg-surface p-6 sm:p-8">
+        <section className="panel-card mx-auto max-w-md p-6 sm:p-8">
           <h2 className="section-title text-xl">Abrir turno de caja</h2>
           <p className="mt-1 mb-6 text-sm text-muted">
             Declara el sencillo o fondo inicial en efectivo con el que arranca la recepción.
@@ -334,7 +345,7 @@ export default function CajaPage() {
 
           <form onSubmit={handleAbrirTurno} className="space-y-5">
             <fieldset>
-              <legend className="label">Turno</legend>
+              <legend className="label">Turno operativo</legend>
               <div className="grid grid-cols-2 gap-2">
                 {(['Mañana', 'Tarde'] as TurnoNombre[]).map((t) => (
                   <button
@@ -342,13 +353,13 @@ export default function CajaPage() {
                     type="button"
                     onClick={() => setTurnoNombre(t)}
                     aria-pressed={turnoNombre === t}
-                    className={`rounded-xs py-2.5 text-sm font-semibold transition-colors ${
+                    className={`rounded-md py-2.5 text-sm font-semibold transition-all ${
                       turnoNombre === t
-                        ? 'bg-bone text-ink'
-                        : 'bg-surface-2 text-muted hover:text-bone'
+                        ? 'bg-brand text-ink shadow-xs'
+                        : 'border border-line bg-surface-2 text-muted hover:text-bone'
                     }`}
                   >
-                    {t}
+                    Turno {t}
                   </button>
                 ))}
               </div>
@@ -367,23 +378,35 @@ export default function CajaPage() {
                 required
                 value={fondoInicial}
                 onChange={(e) => setFondoInicial(e.target.value)}
-                className="field !bg-surface-2 text-lg tabular-nums"
+                className="field !bg-surface-2 font-mono text-lg tabular-nums"
               />
+              <div className="mt-2 flex gap-1.5">
+                {[0, 20, 50, 100].map((monto) => (
+                  <button
+                    key={monto}
+                    type="button"
+                    onClick={() => setFondoInicial(String(monto))}
+                    className="rounded border border-line bg-ink/60 px-2.5 py-1 font-mono text-xs text-muted hover:border-brand/50 hover:text-bone"
+                  >
+                    S/ {monto}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button type="submit" disabled={abriendo} className="btn btn-primary w-full !min-h-11">
-              {abriendo && <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />}
-              <Unlock size={16} strokeWidth={1.5} />
+              {abriendo && <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />}
+              <Unlock size={16} strokeWidth={1.75} />
               Abrir turno {turnoNombre}
             </button>
           </form>
         </section>
       )}
 
-      {/* ESTADO 2: Turno abierto -> POS protagonista (~65%) + Arqueo en vivo (~35%) */}
+      {/* ESTADO 2: Turno abierto -> POS protagonista + Arqueo en vivo */}
       {turno && resumen && (
         <>
-          <div className="grid items-start gap-8 lg:grid-cols-[1.85fr_1fr]">
+          <div className="grid items-start gap-6 lg:grid-cols-[1.95fr_1fr]">
             <PosPanel
               productos={productos}
               onVentaCompletada={async (msg) => {
@@ -392,7 +415,9 @@ export default function CajaPage() {
               }}
             />
 
-            <CashSummaryStrip turno={turno} resumen={resumen} />
+            <div className="lg:sticky lg:top-20">
+              <CashSummaryStrip turno={turno} resumen={resumen} />
+            </div>
           </div>
 
           <CashClosureTable movimientos={movimientos} onAnular={handleAnular} />
@@ -401,12 +426,12 @@ export default function CajaPage() {
 
       {/* Drawer / Modal: Registrar Egreso */}
       {mostrarEgreso && turno && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="egreso-modal-titulo"
-            className="w-full max-w-md border border-line bg-surface p-6"
+            className="panel-card modal-animate w-full max-w-md p-6"
           >
             <div className="mb-5 flex items-start justify-between">
               <div>

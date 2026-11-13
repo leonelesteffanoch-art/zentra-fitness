@@ -37,6 +37,19 @@ export async function ultimasAsistencias(socioId: string): Promise<Asistencia[]>
   return (data ?? []) as unknown as Asistencia[];
 }
 
+export interface AsistenciaHoyDetalle {
+  id: string;
+  socio_id: string;
+  fecha: string;
+  hora: string;
+  semaforo: 'VERDE' | 'AMBAR' | 'ROJO';
+  socios: {
+    dni: string;
+    nombres: string;
+    apellidos: string;
+  } | null;
+}
+
 /** Asistencias de hoy del gimnasio (máx. 50), para el panel de recepción. */
 export async function asistenciasDeHoy(gymId: string): Promise<Asistencia[]> {
   const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
@@ -49,4 +62,18 @@ export async function asistenciasDeHoy(gymId: string): Promise<Asistencia[]> {
     .limit(50);
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as Asistencia[];
+}
+
+/** Asistencias de hoy con datos del socio para el feed en vivo de recepción. */
+export async function asistenciasDeHoyDetalladas(gymId: string): Promise<AsistenciaHoyDetalle[]> {
+  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+  const { data, error } = await supabase
+    .from('asistencias')
+    .select('id, socio_id, fecha, hora, semaforo, socios(dni, nombres, apellidos)')
+    .eq('gym_id', gymId)
+    .eq('fecha', hoy)
+    .order('hora', { ascending: false })
+    .limit(40);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as AsistenciaHoyDetalle[];
 }

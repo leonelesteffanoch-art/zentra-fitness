@@ -311,6 +311,13 @@ export function LeadsPanel({ gymId, userId }: Props) {
     const activos = nuevos + contactados + agendados;
     const validos = leads.length - descartados;
     const conversion = validos > 0 ? Math.round((inscritos / validos) * 100) : 0;
+
+    const porOrigen: Record<string, number> = {};
+    for (const l of leads) {
+      const o = l.origen ?? 'Web';
+      porOrigen[o] = (porOrigen[o] ?? 0) + 1;
+    }
+
     return {
       nuevos,
       contactados,
@@ -321,6 +328,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
       descartados,
       validos,
       conversion,
+      porOrigen,
     };
   }, [leads]);
 
@@ -354,21 +362,27 @@ export function LeadsPanel({ gymId, userId }: Props) {
     return filtrados;
   }, [leads, filtro, busqueda]);
 
+  const totalEmbudo = Math.max(1, conteos.validos);
+  const pctNuevos = Math.round((conteos.nuevos / totalEmbudo) * 100);
+  const pctContactados = Math.round((conteos.contactados / totalEmbudo) * 100);
+  const pctAgendados = Math.round((conteos.agendados / totalEmbudo) * 100);
+  const pctInscritos = Math.max(0, 100 - pctNuevos - pctContactados - pctAgendados);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl sm:text-5xl">Prospectos</h1>
-          <p className="mt-1 text-xs text-muted">
-            Embudo de interesados desde la web, redes sociales y mostrador.
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+            CRM y Embudo comercial
           </p>
+          <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">PROSPECTOS</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {leads.length > 0 && (
             <button type="button" onClick={exportarExcel} className="btn btn-ghost !min-h-10">
-              <Download size={15} strokeWidth={1.5} />
+              <Download size={15} strokeWidth={1.75} />
               Exportar Excel
             </button>
           )}
@@ -380,69 +394,141 @@ export function LeadsPanel({ gymId, userId }: Props) {
             }}
             className="btn btn-primary !min-h-10"
           >
-            <Plus size={16} strokeWidth={1.5} />
+            <Plus size={16} strokeWidth={1.75} />
             Registrar prospecto
           </button>
         </div>
       </div>
 
-      {/* KPIs del embudo */}
-      <section aria-label="Resumen de embudo" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button
-          type="button"
-          onClick={() => setFiltro('nuevos')}
-          className={`border p-4 text-left transition-colors ${
-            conteos.nuevos > 0
-              ? 'border-warn/40 bg-warn/5 hover:bg-warn/10'
-              : 'border-line bg-surface hover:bg-surface-2'
-          }`}
-        >
-          <p className="flex items-center justify-between text-xs uppercase tracking-wider text-muted">
-            Por atender (Nuevos)
-            <Clock size={14} className={conteos.nuevos > 0 ? 'text-warn' : 'text-muted'} />
-          </p>
-          <p className="mt-1 font-display text-3xl text-bone tabular-nums">{conteos.nuevos}</p>
-          <p className="mt-0.5 text-[11px] text-muted">Clic para ver pendientes de primer contacto</p>
-        </button>
+      {/* KPIs del embudo + Barra gráfica */}
+      <section aria-label="Resumen de embudo" className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <button
+            type="button"
+            onClick={() => setFiltro('nuevos')}
+            className={`panel-card panel-card-interactive p-4 text-left ${
+              filtro === 'nuevos'
+                ? '!border-warn ring-1 ring-warn/30'
+                : conteos.nuevos > 0
+                ? '!border-warn/40 bg-warn/5'
+                : ''
+            }`}
+          >
+            <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Por atender (Nuevos)
+              <Clock size={15} className={conteos.nuevos > 0 ? 'text-warn' : 'text-muted'} />
+            </p>
+            <p className="mt-1 font-mono text-3xl font-bold text-bone tabular-nums">
+              {conteos.nuevos}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted">Pendientes de primer contacto</p>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setFiltro('activos')}
-          className="border border-line bg-surface p-4 text-left transition-colors hover:bg-surface-2"
-        >
-          <p className="flex items-center justify-between text-xs uppercase tracking-wider text-muted">
-            En seguimiento
-            <Calendar size={14} className="text-purple-400" />
-          </p>
-          <p className="mt-1 font-display text-3xl text-bone tabular-nums">{conteos.seguimiento}</p>
-          <p className="mt-0.5 text-[11px] text-muted">
-            {conteos.contactados} contactados · {conteos.agendados} con visita agendada
-          </p>
-        </button>
+          <button
+            type="button"
+            onClick={() => setFiltro('activos')}
+            className={`panel-card panel-card-interactive p-4 text-left ${
+              filtro === 'activos' ? '!border-purple-400 ring-1 ring-purple-400/30' : ''
+            }`}
+          >
+            <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
+              En seguimiento
+              <Calendar size={15} className="text-purple-400" />
+            </p>
+            <p className="mt-1 font-mono text-3xl font-bold text-bone tabular-nums">
+              {conteos.seguimiento}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted">
+              {conteos.contactados} contactados · {conteos.agendados} agendados
+            </p>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setFiltro('inscritos')}
-          className="border border-line bg-surface p-4 text-left transition-colors hover:bg-surface-2"
-        >
-          <p className="flex items-center justify-between text-xs uppercase tracking-wider text-muted">
-            Inscritos
-            <Trophy size={14} className="text-ok" />
-          </p>
-          <p className="mt-1 font-display text-3xl text-ok tabular-nums">{conteos.inscritos}</p>
-          <p className="mt-0.5 text-[11px] text-muted">Prospectos cerrados como socios</p>
-        </button>
+          <button
+            type="button"
+            onClick={() => setFiltro('inscritos')}
+            className={`panel-card panel-card-interactive p-4 text-left ${
+              filtro === 'inscritos' ? '!border-ok ring-1 ring-ok/30' : ''
+            }`}
+          >
+            <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Inscritos (Cerrados)
+              <Trophy size={15} className="text-ok" />
+            </p>
+            <p className="mt-1 font-mono text-3xl font-bold text-ok tabular-nums">
+              {conteos.inscritos}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted">Convertidos en socios activos</p>
+          </button>
 
-        <div className="border border-line bg-surface p-4">
-          <p className="flex items-center justify-between text-xs uppercase tracking-wider text-muted">
-            Conversión
-            <UserCheck size={14} className="text-brand" />
-          </p>
-          <p className="mt-1 font-display text-3xl text-brand tabular-nums">{conteos.conversion}%</p>
-          <p className="mt-0.5 text-[11px] text-muted">
-            {conteos.inscritos} de {conteos.validos} prospectos activos/cerrados
-          </p>
+          <div className="panel-card p-4">
+            <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Tasa de Conversión
+              <UserCheck size={15} className="text-brand" />
+            </p>
+            <p className="mt-1 font-mono text-3xl font-bold text-brand tabular-nums">
+              {conteos.conversion}%
+            </p>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+              <div
+                className="bar-fill h-full rounded-full bg-brand"
+                style={{ width: `${Math.min(100, conteos.conversion)}%` }}
+              />
+            </div>
+          </div>
         </div>
+
+        {/* Barra gráfica multi-segmento del embudo + canales de origen */}
+        {leads.length > 0 && (
+          <div className="panel-card flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-1 items-center gap-3">
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Pipeline:
+              </span>
+              <div className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
+                {pctNuevos > 0 && (
+                  <div
+                    className="bar-fill h-full bg-warn"
+                    style={{ width: `${pctNuevos}%` }}
+                    title={`Nuevos: ${conteos.nuevos}`}
+                  />
+                )}
+                {pctContactados > 0 && (
+                  <div
+                    className="bar-fill h-full bg-blue-500"
+                    style={{ width: `${pctContactados}%` }}
+                    title={`Contactados: ${conteos.contactados}`}
+                  />
+                )}
+                {pctAgendados > 0 && (
+                  <div
+                    className="bar-fill h-full bg-purple-500"
+                    style={{ width: `${pctAgendados}%` }}
+                    title={`Agendados: ${conteos.agendados}`}
+                  />
+                )}
+                {pctInscritos > 0 && (
+                  <div
+                    className="bar-fill h-full bg-ok"
+                    style={{ width: `${pctInscritos}%` }}
+                    title={`Inscritos: ${conteos.inscritos}`}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-muted">Canales:</span>
+              {Object.entries(conteos.porOrigen).map(([orig, cant]) => (
+                <span
+                  key={orig}
+                  className="rounded border border-line/70 bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-bone"
+                >
+                  {orig}: <strong>{cant}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {aviso && (
@@ -504,7 +590,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
       </div>
 
       {/* Lista de prospectos */}
-      <div className="border border-line bg-surface">
+      <div className="panel-card overflow-hidden">
         {cargando ? (
           <div className="flex justify-center py-12 text-muted">
             <Loader2 size={20} strokeWidth={1.5} className="animate-spin" />

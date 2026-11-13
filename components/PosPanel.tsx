@@ -320,153 +320,202 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
         })}
       </div>
 
-      {/* Catálogo de Productos Agrupados */}
-      {productosFiltrados.length === 0 ? (
-        <div className="bg-surface px-4 py-10 text-center text-sm text-muted">
-          No se encontraron productos que coincidan con la búsqueda.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-          {productosFiltrados.map((grupo) => {
-            const tieneVariantes = grupo.variantes.length > 1;
-            const cantTotal = grupo.variantes.reduce((sum, v) => sum + (carrito[v.id] ?? 0), 0);
+      {/* Catálogo + Ticket lateral (sticky en escritorio cuando hay items) */}
+      <div
+        className={`grid items-start gap-4 ${
+          itemsSeleccionados.length > 0 ? 'xl:grid-cols-[1fr_340px]' : 'grid-cols-1'
+        }`}
+      >
+        <div>
+          {productosFiltrados.length === 0 ? (
+            <div className="panel-card px-4 py-10 text-center text-sm text-muted">
+              No se encontraron productos que coincidan con la búsqueda.
+            </div>
+          ) : (
+            <div
+              className={`grid grid-cols-1 gap-2.5 sm:grid-cols-2 ${
+                itemsSeleccionados.length > 0 ? '2xl:grid-cols-3' : 'xl:grid-cols-3'
+              }`}
+            >
+              {productosFiltrados.map((grupo) => {
+                const tieneVariantes = grupo.variantes.length > 1;
+                const cantTotal = grupo.variantes.reduce((sum, v) => sum + (carrito[v.id] ?? 0), 0);
 
-            return (
-              <div
-                key={grupo.nombreBase}
-                className={`relative flex flex-col justify-between rounded-xs border p-3.5 transition-all ${
-                  cantTotal > 0
-                    ? 'border-brand/60 bg-surface-2 shadow-xs'
-                    : 'border-line/70 bg-surface hover:border-line hover:bg-surface-2/60'
-                }`}
-              >
-                {/* Cabecera de la tarjeta con nombre base y categoría */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted font-mono">
-                      {iconoCategoria(grupo.categoria)}
-                      {grupo.categoria}
-                    </span>
-                    <h3 className="truncate font-semibold leading-snug text-bone text-sm mt-0.5">
-                      {grupo.nombreBase}
-                    </h3>
-                  </div>
+                return (
+                  <div
+                    key={grupo.nombreBase}
+                    className={`panel-card relative flex flex-col justify-between p-3.5 transition-all ${
+                      cantTotal > 0
+                        ? '!border-brand/70 bg-surface-2 shadow-[0_0_20px_-6px_rgba(250,204,21,0.28)]'
+                        : 'hover:border-line hover:bg-surface-2/60'
+                    }`}
+                  >
+                    {/* Cabecera de la tarjeta con nombre base y categoría */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted">
+                          {iconoCategoria(grupo.categoria)}
+                          {grupo.categoria}
+                        </span>
+                        <h3 className="mt-0.5 truncate text-sm font-semibold leading-snug text-bone">
+                          {grupo.nombreBase}
+                        </h3>
+                      </div>
 
-                  {cantTotal > 0 && (
-                    <span className="inline-flex items-center justify-center rounded-xs bg-brand px-1.5 py-0.5 text-xs font-bold text-ink tabular-nums">
-                      {cantTotal} en carro
-                    </span>
-                  )}
-                </div>
+                      {cantTotal > 0 && (
+                        <span className="inline-flex items-center justify-center rounded bg-brand px-1.5 py-0.5 font-mono text-xs font-bold text-ink tabular-nums">
+                          {cantTotal}×
+                        </span>
+                      )}
+                    </div>
 
-                {/* Si tiene opción de Helada / Al tiempo */}
-                {tieneVariantes ? (
-                  <div className="mt-3.5 space-y-1.5">
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {grupo.variantes.map((v) => {
+                    {/* Si tiene opción de Helada / Al tiempo */}
+                    {tieneVariantes ? (
+                      <div className="mt-3 space-y-1.5">
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {grupo.variantes.map((v) => {
+                            const cantVar = carrito[v.id] ?? 0;
+                            const sinStock = !v.es_servicio && v.stock <= 0;
+                            const esHelada = v.tipo === 'helada';
+                            const pctStock = v.es_servicio
+                              ? 100
+                              : Math.min(100, Math.round((v.stock / 40) * 100));
+
+                            return (
+                              <button
+                                key={v.id}
+                                type="button"
+                                disabled={sinStock}
+                                onClick={() => sumar(v.productoOriginal, 1)}
+                                className={`group relative flex flex-col items-center justify-center rounded-md p-2 text-center transition-all ${
+                                  cantVar > 0
+                                    ? esHelada
+                                      ? 'border border-cyan-400/80 bg-cyan-950/70 text-cyan-200'
+                                      : 'border border-brand bg-surface text-bone'
+                                    : esHelada
+                                    ? 'border border-cyan-900/50 bg-surface-2/80 text-bone hover:border-cyan-500/60 hover:bg-cyan-950/40'
+                                    : 'border border-line/70 bg-surface-2/80 text-bone hover:border-bone/30 hover:bg-surface'
+                                } disabled:cursor-not-allowed disabled:opacity-40`}
+                              >
+                                <span className="flex items-center gap-1 text-[11px] font-medium">
+                                  {esHelada ? (
+                                    <Snowflake size={12} className="shrink-0 text-cyan-400" strokeWidth={2} />
+                                  ) : (
+                                    <Sun size={12} className="shrink-0 text-amber-400" strokeWidth={2} />
+                                  )}
+                                  <span>{esHelada ? 'Helada' : 'Al tiempo'}</span>
+                                </span>
+
+                                <span className="mt-0.5 font-mono text-xs font-bold tabular-nums">
+                                  {soles(v.precio)}
+                                </span>
+
+                                <div className="mt-1.5 flex w-full items-center justify-between text-[10px]">
+                                  {sinStock ? (
+                                    <span className="font-bold text-bad">Agotado</span>
+                                  ) : !v.es_servicio && v.stock <= 5 ? (
+                                    <span className="font-semibold text-warn">Quedan {v.stock}</span>
+                                  ) : (
+                                    <span className="text-muted">Stock: {v.stock}</span>
+                                  )}
+                                  {cantVar > 0 && (
+                                    <span className="rounded bg-ink/80 px-1 font-mono font-bold text-brand">
+                                      +{cantVar}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {!v.es_servicio && (
+                                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-ink/70">
+                                    <div
+                                      className={`h-full rounded-full ${
+                                        sinStock
+                                          ? 'bg-bad'
+                                          : v.stock <= 5
+                                          ? 'bg-warn'
+                                          : esHelada
+                                          ? 'bg-cyan-400'
+                                          : 'bg-ok'
+                                      }`}
+                                      style={{ width: `${pctStock}%` }}
+                                    />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Producto sin variantes (Galleta, Suplemento, Pase) */
+                      (() => {
+                        const v = grupo.variantes[0];
                         const cantVar = carrito[v.id] ?? 0;
                         const sinStock = !v.es_servicio && v.stock <= 0;
-                        const esHelada = v.tipo === 'helada';
+                        const pctStock = v.es_servicio
+                          ? 100
+                          : Math.min(100, Math.round((v.stock / 30) * 100));
 
                         return (
                           <button
-                            key={v.id}
                             type="button"
                             disabled={sinStock}
                             onClick={() => sumar(v.productoOriginal, 1)}
-                            className={`group relative flex flex-col items-center justify-center rounded-xs p-2 text-center transition-all ${
+                            className={`mt-3 flex flex-col justify-between rounded-md p-2.5 text-left transition-colors ${
                               cantVar > 0
-                                ? esHelada
-                                  ? 'bg-cyan-950/70 border border-cyan-500/80 text-cyan-200'
-                                  : 'bg-surface border border-brand text-bone'
-                                : esHelada
-                                ? 'bg-surface-2/80 hover:bg-cyan-950/40 border border-cyan-900/40 text-bone hover:border-cyan-600/50'
-                                : 'bg-surface-2/80 hover:bg-surface border border-line/60 text-bone'
+                                ? 'border border-brand/60 bg-surface-2'
+                                : 'border border-line/70 bg-surface-2/80 hover:border-bone/30 hover:bg-surface'
                             } disabled:cursor-not-allowed disabled:opacity-40`}
                           >
-                            <span className="flex items-center gap-1 text-[11px] font-medium">
-                              {esHelada ? (
-                                <Snowflake size={12} className="text-cyan-400 shrink-0" strokeWidth={2} />
-                              ) : (
-                                <Sun size={12} className="text-amber-400 shrink-0" strokeWidth={2} />
-                              )}
-                              <span>{esHelada ? 'Helada' : 'Al tiempo'}</span>
-                            </span>
-
-                            <span className="mt-0.5 text-xs font-bold tabular-nums">
-                              {soles(v.precio)}
-                            </span>
-
-                            <div className="mt-1 flex items-center justify-between w-full text-[10px]">
-                              {sinStock ? (
-                                <span className="font-bold text-bad">Agotado</span>
-                              ) : !v.es_servicio && v.stock <= 5 ? (
-                                <span className="font-semibold text-warn">Quedan {v.stock}</span>
-                              ) : (
-                                <span className="text-muted">Stock: {v.stock}</span>
-                              )}
-                              {cantVar > 0 && (
-                                <span className="font-bold text-bone bg-ink/70 px-1 rounded-2xs">
-                                  +{cantVar}
+                            <div className="flex w-full items-center justify-between">
+                              <div>
+                                <span className="font-mono text-base font-bold text-bone tabular-nums">
+                                  {soles(v.precio)}
                                 </span>
-                              )}
+                                <span className="block text-[11px] tabular-nums">
+                                  {v.es_servicio ? (
+                                    <span className="text-emerald-400">Acceso inmediato</span>
+                                  ) : sinStock ? (
+                                    <span className="font-bold text-bad">⚠️ Agotado</span>
+                                  ) : v.stock <= 5 ? (
+                                    <span className="font-semibold text-warn">
+                                      ⚠️ Stock bajo ({v.stock})
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted">Stock: {v.stock}</span>
+                                  )}
+                                </span>
+                              </div>
+                              <span className="btn btn-secondary !min-h-7 !px-2.5 !text-xs">
+                                <Plus size={13} strokeWidth={2} />
+                                {cantVar > 0 ? `+1 (${cantVar})` : 'Agregar'}
+                              </span>
                             </div>
+
+                            {!v.es_servicio && (
+                              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-ink/70">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    sinStock ? 'bg-bad' : v.stock <= 5 ? 'bg-warn' : 'bg-ok'
+                                  }`}
+                                  style={{ width: `${pctStock}%` }}
+                                />
+                              </div>
+                            )}
                           </button>
                         );
-                      })}
-                    </div>
+                      })()
+                    )}
                   </div>
-                ) : (
-                  /* Producto sin variantes (Galleta, Suplemento, Pase) */
-                  (() => {
-                    const v = grupo.variantes[0];
-                    const cantVar = carrito[v.id] ?? 0;
-                    const sinStock = !v.es_servicio && v.stock <= 0;
-
-                    return (
-                      <button
-                        type="button"
-                        disabled={sinStock}
-                        onClick={() => sumar(v.productoOriginal, 1)}
-                        className={`mt-3.5 flex items-center justify-between rounded-xs p-2.5 transition-colors ${
-                          cantVar > 0
-                            ? 'bg-surface-2 border border-brand/50'
-                            : 'bg-surface-2/80 hover:bg-surface border border-line/60'
-                        } disabled:cursor-not-allowed disabled:opacity-40 text-left`}
-                      >
-                        <div>
-                          <span className="text-base font-bold text-bone tabular-nums">
-                            {soles(v.precio)}
-                          </span>
-                          <span className="block text-[11px] tabular-nums">
-                            {v.es_servicio ? (
-                              <span className="text-muted">Servicio sin límite</span>
-                            ) : sinStock ? (
-                              <span className="font-bold text-bad">⚠️ Agotado</span>
-                            ) : v.stock <= 5 ? (
-                              <span className="font-semibold text-warn">⚠️ Stock bajo ({v.stock})</span>
-                            ) : (
-                              <span className="text-muted">Stock: {v.stock}</span>
-                            )}
-                          </span>
-                        </div>
-                        <span className="btn btn-secondary !min-h-7 !px-2.5 !text-xs">
-                          <Plus size={13} strokeWidth={2} />
-                          Agregar
-                        </span>
-                      </button>
-                    );
-                  })()
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Carrito activo */}
-      {itemsSeleccionados.length > 0 && (
-        <div className="space-y-4 rounded-xs border border-line bg-surface p-5 shadow-lg">
+        {/* Carrito activo (Ticket lateral sticky en escritorio) */}
+        {itemsSeleccionados.length > 0 && (
+          <div className="panel-card panel-fade-in space-y-4 !border-brand/50 p-4 shadow-xl xl:sticky xl:top-20">
           <div className="flex items-center justify-between border-b border-line/70 pb-3">
             <div className="flex items-center gap-2">
               <ShoppingBag size={18} className="text-brand" strokeWidth={1.75} />
@@ -728,7 +777,8 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
             </div>
           </div>
         </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }

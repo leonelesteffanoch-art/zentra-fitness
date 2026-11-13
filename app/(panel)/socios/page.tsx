@@ -32,7 +32,9 @@ import {
   buscarSocios,
   listarSociosEstado,
   membresiasDeSocio,
+  obtenerResumenPadron,
   type FiltroEstadoSocio,
+  type ResumenPadronSocios,
 } from '@/services/sociosService';
 import { ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
@@ -40,9 +42,9 @@ import { hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, MembresiaEstado, Semaforo, SocioEstado } from '@/types';
 
 const BADGE_SEMAFORO: Record<Semaforo, { cls: string; txt: string }> = {
-  VERDE: { cls: 'bg-ok/15 text-ok', txt: 'Activo' },
-  AMBAR: { cls: 'bg-warn/15 text-warn', txt: 'Por vencer' },
-  ROJO: { cls: 'bg-bad/15 text-bad', txt: 'Vencido' },
+  VERDE: { cls: 'bg-ok/15 text-ok ring-1 ring-ok/30', txt: 'Activo' },
+  AMBAR: { cls: 'bg-warn/15 text-warn ring-1 ring-warn/30', txt: 'Por vencer' },
+  ROJO: { cls: 'bg-bad/15 text-bad ring-1 ring-bad/30', txt: 'Vencido' },
 };
 
 const FILTROS: { id: FiltroEstadoSocio; label: string }[] = [
@@ -59,6 +61,7 @@ export default function SociosPage() {
   const esAdmin = perfil?.rol === 'admin';
 
   const [socios, setSocios] = useState<SocioEstado[]>([]);
+  const [resumenPadron, setResumenPadron] = useState<ResumenPadronSocios | null>(null);
   const [pagina, setPagina] = useState(0);
   const [termino, setTermino] = useState('');
   const [filtro, setFiltro] = useState<FiltroEstadoSocio>('todos');
@@ -88,11 +91,14 @@ export default function SociosPage() {
       if (!gymId) return;
       setCargando(true);
       try {
-        const lista =
+        const [lista, res] = await Promise.all([
           term.length >= 2
-            ? await buscarSocios(gymId, term, fil)
-            : await listarSociosEstado(gymId, pag, fil);
+            ? buscarSocios(gymId, term, fil)
+            : listarSociosEstado(gymId, pag, fil),
+          obtenerResumenPadron(gymId).catch(() => null),
+        ]);
         setSocios(lista);
+        if (res) setResumenPadron(res);
       } catch (e) {
         setAviso({
           tipo: 'error',
@@ -108,11 +114,16 @@ export default function SociosPage() {
   useEffect(() => {
     if (!gymId) return;
     let cancelado = false;
-    Promise.all([listarSociosEstado(gymId, 0, 'todos'), turnoAbierto(gymId)])
-      .then(([lista, t]) => {
+    Promise.all([
+      listarSociosEstado(gymId, 0, 'todos'),
+      turnoAbierto(gymId),
+      obtenerResumenPadron(gymId).catch(() => null),
+    ])
+      .then(([lista, t, res]) => {
         if (cancelado) return;
         setSocios(lista);
         setHayTurno(t !== null);
+        if (res) setResumenPadron(res);
       })
       .catch((e: unknown) => {
         if (!cancelado) {
@@ -264,19 +275,28 @@ export default function SociosPage() {
   }
 
   const hayMasDeUnaPagina = termino.length < 2 && (pagina > 0 || socios.length === 20);
+  const totalPadron = Math.max(1, resumenPadron?.total ?? 1);
+  const pctActivos = resumenPadron ? Math.round((resumenPadron.activos / totalPadron) * 100) : 0;
+  const pctPorVencer = resumenPadron ? Math.round((resumenPadron.porVencer / totalPadron) * 100) : 0;
+  const pctVencidos = resumenPadron ? Math.max(0, 100 - pctActivos - pctPorVencer) : 0;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="panel-fade-in space-y-6">
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-4xl sm:text-5xl">Socios</h1>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+            Padrón e historial de membresías
+          </p>
+          <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">SOCIOS</h1>
+        </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={() => setModalImportar(true)}
             className="btn btn-ghost !min-h-10"
           >
-            <Upload size={15} strokeWidth={1.5} />
+            <Upload size={15} strokeWidth={1.75} />
             Importar Excel
           </button>
           <button
@@ -286,22 +306,142 @@ export default function SociosPage() {
             className="btn btn-ghost !min-h-10"
           >
             {exportando ? (
-              <Loader2 size={15} strokeWidth={1.5} className="animate-spin" />
+              <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
             ) : (
-              <Download size={15} strokeWidth={1.5} />
+              <Download size={15} strokeWidth={1.75} />
             )}
             Exportar Excel
           </button>
           <button
             type="button"
             onClick={() => setModalSocio('nuevo')}
-            className="btn btn-secondary !min-h-10"
+            className="btn btn-primary !min-h-10"
           >
-            <UserPlus size={16} strokeWidth={1.5} />
+            <UserPlus size={16} strokeWidth={1.75} />
             Nuevo socio
           </button>
         </div>
       </div>
+
+      {/* Cinta de KPIs interactivos + Barra de distribución del padrón */}
+      {resumenPadron && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <button
+              type="button"
+              onClick={() => cambiarFiltro('todos')}
+              className={`panel-card panel-card-interactive p-3.5 text-left ${
+                filtro === 'todos' ? '!border-brand ring-1 ring-brand/30' : ''
+              }`}
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Total padrón
+              </span>
+              <p className="mt-1 font-mono text-2xl font-bold text-bone tabular-nums">
+                {resumenPadron.total}
+              </p>
+              <span className="text-[11px] text-muted">100% registrados</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cambiarFiltro('activos')}
+              className={`panel-card panel-card-interactive p-3.5 text-left ${
+                filtro === 'activos' ? '!border-ok ring-1 ring-ok/30' : ''
+              }`}
+            >
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ok">
+                <span className="h-2 w-2 rounded-full bg-ok" /> Activos
+              </span>
+              <p className="mt-1 font-mono text-2xl font-bold text-ok tabular-nums">
+                {resumenPadron.activos}
+              </p>
+              <span className="text-[11px] text-muted">{pctActivos}% del total</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cambiarFiltro('por_vencer')}
+              className={`panel-card panel-card-interactive p-3.5 text-left ${
+                filtro === 'por_vencer' ? '!border-warn ring-1 ring-warn/30' : ''
+              }`}
+            >
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-warn">
+                <span className="h-2 w-2 rounded-full bg-warn" /> Por vencer (≤3d)
+              </span>
+              <p className="mt-1 font-mono text-2xl font-bold text-warn tabular-nums">
+                {resumenPadron.porVencer}
+              </p>
+              <span className="text-[11px] text-muted">Renovación próxima</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cambiarFiltro('vencidos')}
+              className={`panel-card panel-card-interactive p-3.5 text-left ${
+                filtro === 'vencidos' ? '!border-bad ring-1 ring-bad/30' : ''
+              }`}
+            >
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bad">
+                <span className="h-2 w-2 rounded-full bg-bad" /> Vencidos
+              </span>
+              <p className="mt-1 font-mono text-2xl font-bold text-bad tabular-nums">
+                {resumenPadron.vencidos}
+              </p>
+              <span className="text-[11px] text-muted">{pctVencidos}% por recuperar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cambiarFiltro('morosos')}
+              className={`panel-card panel-card-interactive col-span-2 p-3.5 text-left sm:col-span-1 ${
+                filtro === 'morosos' ? '!border-bad ring-1 ring-bad/40' : ''
+              }`}
+            >
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bad">
+                🔴 Morosos ({resumenPadron.morosos})
+              </span>
+              <p className="mt-1 font-mono text-xl font-bold text-bad tabular-nums">
+                {soles(resumenPadron.deudaTotal)}
+              </p>
+              <span className="text-[11px] text-muted">Saldo por cobrar</span>
+            </button>
+          </div>
+
+          {/* Barra gráfica de salud del padrón */}
+          <div className="panel-card flex items-center gap-3 px-4 py-2.5">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Distribución:
+            </span>
+            <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
+              {pctActivos > 0 && (
+                <div
+                  className="bar-fill h-full bg-ok"
+                  style={{ width: `${pctActivos}%` }}
+                  title={`Activos: ${pctActivos}%`}
+                />
+              )}
+              {pctPorVencer > 0 && (
+                <div
+                  className="bar-fill h-full bg-warn"
+                  style={{ width: `${pctPorVencer}%` }}
+                  title={`Por vencer: ${pctPorVencer}%`}
+                />
+              )}
+              {pctVencidos > 0 && (
+                <div
+                  className="bar-fill h-full bg-bad"
+                  style={{ width: `${pctVencidos}%` }}
+                  title={`Vencidos: ${pctVencidos}%`}
+                />
+              )}
+            </div>
+            <span className="hidden shrink-0 font-mono text-[11px] text-muted sm:inline">
+              {pctActivos}% activos
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Buscador + Chips de filtro rápido */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -309,7 +449,7 @@ export default function SociosPage() {
           <SearchBar
             onSearch={handleSearch}
             buscando={cargando}
-            placeholder="Buscar por DNI, nombres o apellidos..."
+            placeholder="Buscar por DNI, nombres o apellidos... (Presiona /)"
           />
         </div>
 
@@ -322,10 +462,10 @@ export default function SociosPage() {
                 type="button"
                 onClick={() => cambiarFiltro(f.id)}
                 aria-pressed={activo}
-                className={`rounded-xs px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
                   activo
-                    ? 'bg-bone text-ink'
-                    : 'bg-surface text-muted hover:bg-surface-2 hover:text-bone'
+                    ? 'bg-brand text-ink shadow-xs'
+                    : 'border border-line bg-surface text-muted hover:bg-surface-2 hover:text-bone'
                 }`}
               >
                 {f.label}
@@ -338,33 +478,33 @@ export default function SociosPage() {
       {aviso && (
         <p
           role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`flex items-center gap-2 border-l-2 px-3 py-2 text-sm ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/10 text-ok' : 'border-bad bg-bad/10 text-bad'
+          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
+            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
           }`}
         >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.5} />}
+          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
           {aviso.texto}
         </p>
       )}
 
       {/* Grilla: Listado a la izquierda + Ficha del socio a la derecha */}
-      <div className="grid items-start gap-8 lg:grid-cols-[1.2fr_1fr]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
         {/* Columna izquierda: Tabla de socios */}
         <section aria-label="Listado de socios" className="space-y-3">
-          <div className="overflow-x-auto border border-line bg-surface">
+          <div className="panel-card overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
-              <thead className="border-b border-line bg-surface-2 text-xs font-medium text-muted">
+              <thead className="border-b border-line bg-surface-2/80 text-xs font-semibold uppercase tracking-wider text-muted">
                 <tr>
-                  <th className="px-4 py-2.5">Socio</th>
-                  <th className="px-4 py-2.5">DNI</th>
-                  <th className="px-4 py-2.5">Plan / Vence</th>
-                  <th className="px-4 py-2.5 text-right">Estado</th>
+                  <th className="px-4 py-3">Socio</th>
+                  <th className="px-3 py-3">DNI</th>
+                  <th className="px-3 py-3">Plan / Ciclo</th>
+                  <th className="px-4 py-3 text-right">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-line/70">
                 {socios.length === 0 && !cargando ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-10 text-center text-muted">
+                    <td colSpan={4} className="px-4 py-12 text-center text-muted">
                       No hay socios con ese criterio.
                     </td>
                   </tr>
@@ -372,36 +512,71 @@ export default function SociosPage() {
                   socios.map((s) => {
                     const activo = seleccionado?.socio_id === s.socio_id;
                     const badge = BADGE_SEMAFORO[s.semaforo];
+                    const ini = `${s.nombres?.[0] ?? ''}${s.apellidos?.[0] ?? ''}`.toUpperCase();
                     return (
                       <tr
                         key={s.socio_id}
                         onClick={() => void cargarFicha(s)}
                         className={`cursor-pointer transition-colors ${
-                          activo ? 'bg-surface-2' : 'hover:bg-surface-2/60'
+                          activo
+                            ? 'bg-brand/10 shadow-[inset_3px_0_0_0_#facc15]'
+                            : 'hover:bg-surface-2/60'
                         }`}
                       >
-                        <td className="px-4 py-3 font-medium text-bone">
-                          {s.apellidos}, {s.nombres}
-                          {s.saldo_pendiente > 0 && (
-                            <span className="ml-2 rounded-2xs bg-bad/20 px-1.5 py-0.5 text-[11px] font-bold text-bad tabular-nums">
-                              Debe {soles(s.saldo_pendiente)}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded font-display text-xs font-bold tracking-wider ring-1 ${
+                                activo
+                                  ? 'bg-brand text-ink ring-brand'
+                                  : 'bg-surface-2 text-bone ring-line'
+                              }`}
+                            >
+                              {ini || 'S'}
                             </span>
-                          )}
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-bone">
+                                {s.apellidos}, {s.nombres}
+                              </p>
+                              {s.saldo_pendiente > 0 && (
+                                <span className="mt-0.5 inline-block rounded bg-bad/20 px-1.5 py-0.2 font-mono text-[10px] font-bold text-bad tabular-nums">
+                                  Debe {soles(s.saldo_pendiente)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-muted">{s.dni}</td>
-                        <td className="px-4 py-3 text-xs">
+                        <td className="px-3 py-3 font-mono text-xs text-muted">{s.dni}</td>
+                        <td className="px-3 py-3 text-xs">
                           {s.plan ? (
-                            <>
+                            <div>
                               <span className="font-medium text-bone">{s.plan}</span>
-                              <span className="block font-mono text-muted">{s.fecha_fin}</span>
-                            </>
+                              <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[11px] text-muted">
+                                <span>{s.fecha_fin}</span>
+                                {s.dias_restantes !== null && (
+                                  <span
+                                    className={`rounded px-1 py-0.2 text-[10px] font-semibold ${
+                                      s.dias_restantes < 0
+                                        ? 'bg-bad/15 text-bad'
+                                        : s.dias_restantes <= 3
+                                        ? 'bg-warn/15 text-warn'
+                                        : 'bg-surface-2 text-muted'
+                                    }`}
+                                  >
+                                    {s.dias_restantes < 0
+                                      ? `${s.dias_restantes}d`
+                                      : `${s.dias_restantes}d`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           ) : (
                             <span className="text-muted">Sin membresía</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span
-                            className={`inline-block rounded-xs px-2 py-0.5 text-xs font-semibold ${badge.cls}`}
+                            className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${badge.cls}`}
                           >
                             {badge.txt}
                           </span>
@@ -415,37 +590,43 @@ export default function SociosPage() {
           </div>
 
           {hayMasDeUnaPagina && (
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                disabled={pagina === 0 || cargando}
-                onClick={() => {
-                  const p = Math.max(0, pagina - 1);
-                  setPagina(p);
-                  void cargarListado('', p, filtro);
-                }}
-                className="btn btn-ghost !min-h-8 !px-3 text-xs"
-              >
-                <ChevronLeft size={14} strokeWidth={1.5} /> Anterior
-              </button>
-              <button
-                type="button"
-                disabled={socios.length < 20 || cargando}
-                onClick={() => {
-                  const p = pagina + 1;
-                  setPagina(p);
-                  void cargarListado('', p, filtro);
-                }}
-                className="btn btn-ghost !min-h-8 !px-3 text-xs"
-              >
-                Siguiente <ChevronRight size={14} strokeWidth={1.5} />
-              </button>
+            <div className="flex items-center justify-between rounded-md border border-line bg-surface px-4 py-2">
+              <span className="font-mono text-xs text-muted">Página {pagina + 1}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pagina === 0 || cargando}
+                  onClick={() => {
+                    const p = Math.max(0, pagina - 1);
+                    setPagina(p);
+                    void cargarListado('', p, filtro);
+                  }}
+                  className="btn btn-ghost !min-h-8 !px-3 text-xs"
+                >
+                  <ChevronLeft size={14} strokeWidth={1.75} /> Anterior
+                </button>
+                <button
+                  type="button"
+                  disabled={socios.length < 20 || cargando}
+                  onClick={() => {
+                    const p = pagina + 1;
+                    setPagina(p);
+                    void cargarListado('', p, filtro);
+                  }}
+                  className="btn btn-ghost !min-h-8 !px-3 text-xs"
+                >
+                  Siguiente <ChevronRight size={14} strokeWidth={1.75} />
+                </button>
+              </div>
             </div>
           )}
         </section>
 
-        {/* Columna derecha: EmptyState o Ficha ordenada */}
-        <section aria-label="Detalle del socio" className="bg-surface p-6">
+        {/* Columna derecha: EmptyState o Ficha ordenada (sticky en escritorio) */}
+        <section
+          aria-label="Detalle del socio"
+          className="panel-card p-6 lg:sticky lg:top-20"
+        >
           {!seleccionado ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Users size={32} strokeWidth={1.5} className="text-muted" />

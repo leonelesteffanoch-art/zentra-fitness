@@ -78,6 +78,70 @@ export async function listarSociosEstado(
   return (data ?? []) as unknown as SocioEstado[];
 }
 
+/** Obtiene el estado actual de un socio específico por su ID. */
+export async function obtenerSocioEstadoPorId(socioId: string): Promise<SocioEstado | null> {
+  const { data, error } = await supabase
+    .from('v_socio_estado')
+    .select(COLUMNAS_ESTADO)
+    .eq('socio_id', socioId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as unknown as SocioEstado) ?? null;
+}
+
+export interface ResumenPadronSocios {
+  total: number;
+  activos: number;
+  porVencer: number;
+  vencidos: number;
+  morosos: number;
+  deudaTotal: number;
+}
+
+/** Resumen global del padrón de socios para los indicadores gráficos de la vista Socios. */
+export async function obtenerResumenPadron(gymId: string): Promise<ResumenPadronSocios> {
+  const { data, error } = await supabase
+    .from('v_socio_estado')
+    .select('semaforo, dias_restantes, saldo_pendiente')
+    .eq('gym_id', gymId);
+  if (error) throw new Error(error.message);
+
+  const filas = (data ?? []) as Array<{
+    semaforo: 'VERDE' | 'AMBAR' | 'ROJO';
+    dias_restantes: number | null;
+    saldo_pendiente: number;
+  }>;
+
+  let activos = 0;
+  let porVencer = 0;
+  let vencidos = 0;
+  let morosos = 0;
+  let deudaTotal = 0;
+
+  for (const f of filas) {
+    if (f.semaforo === 'VERDE') activos += 1;
+    else if (f.semaforo === 'ROJO') vencidos += 1;
+
+    if (f.dias_restantes !== null && f.dias_restantes >= 0 && f.dias_restantes <= 3) {
+      porVencer += 1;
+    }
+    const saldo = Number(f.saldo_pendiente ?? 0);
+    if (saldo > 0) {
+      morosos += 1;
+      deudaTotal += saldo;
+    }
+  }
+
+  return {
+    total: filas.length,
+    activos,
+    porVencer,
+    vencidos,
+    morosos,
+    deudaTotal: Number(deudaTotal.toFixed(2)),
+  };
+}
+
 /** Listado paginado de socios (admin / pantalla Socios). */
 export async function listarSocios(gymId: string, pagina = 0): Promise<Socio[]> {
   const desde = pagina * LIMITE_LISTADO;
