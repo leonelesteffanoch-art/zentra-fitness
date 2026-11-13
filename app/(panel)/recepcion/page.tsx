@@ -35,15 +35,15 @@ const BADGE_ESTADO: Record<Semaforo, { cls: string; txt: string }> = {
 };
 
 const FRANJAS_HORARIAS = [
-  { h: 6, label: '6a' },
-  { h: 8, label: '8a' },
-  { h: 10, label: '10a' },
-  { h: 12, label: '12p' },
-  { h: 14, label: '2p' },
-  { h: 16, label: '4p' },
-  { h: 18, label: '6p' },
-  { h: 20, label: '8p' },
-  { h: 22, label: '10p' },
+  { h: 6, label: '6:00' },
+  { h: 8, label: '8:00' },
+  { h: 10, label: '10:00' },
+  { h: 12, label: '12:00' },
+  { h: 14, label: '14:00' },
+  { h: 16, label: '16:00' },
+  { h: 18, label: '18:00' },
+  { h: 20, label: '20:00' },
+  { h: 22, label: '22:00' },
 ];
 
 function formatearHoraCorta(isoHora: string): string {
@@ -351,7 +351,7 @@ export default function RecepcionPage() {
         buscando={buscando}
         size="lg"
         autoFocus
-        placeholder="Dictar DNI (8 dígitos) o nombre del socio... (Presiona / para enfocar)"
+        placeholder="Dictar DNI o nombre del socio..."
       />
 
       {aviso && (
@@ -518,7 +518,7 @@ export default function RecepcionPage() {
             )}
           </div>
           <p className="mt-3 border-t border-line/50 pt-2.5 text-[11px] text-muted">
-            Tip: Haz clic en cualquier socio de la lista para volver a abrir su ficha.
+            Haz clic en cualquier socio de la lista para volver a abrir su ficha.
           </p>
         </section>
 
