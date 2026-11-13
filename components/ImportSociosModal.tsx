@@ -362,114 +362,45 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
     const dnisVistos = new Set<string>();
 
     return filasCrudas.map((f) => {
-      if (!/^\d{7,12}$/.test(f.dni)) {
-        return {
-          filaNum: f.filaNum,
-          dni: f.dni || '—',
-          nombres: f.nombres,
-          apellidos: f.apellidos,
-          telefono: f.telefono || null,
-          plan: null,
-          fechaInicio: null,
-          fechaFin: null,
-          saldoPendiente: f.saldo,
-          error: f.dni.trim()
-            ? 'DNI inválido (7 a 12 dígitos)'
-            : 'Falta DNI real (pendiente)',
-        };
-      }
-
-      if (dnisVistos.has(f.dni)) {
-        return {
-          filaNum: f.filaNum,
-          dni: f.dni,
-          nombres: f.nombres,
-          apellidos: f.apellidos,
-          telefono: f.telefono || null,
-          plan: null,
-          fechaInicio: null,
-          fechaFin: null,
-          saldoPendiente: f.saldo,
-          error: 'DNI duplicado en el archivo',
-        };
-      }
-      dnisVistos.add(f.dni);
-
-      if (!f.nombres || !f.apellidos) {
-        return {
-          filaNum: f.filaNum,
-          dni: f.dni,
-          nombres: f.nombres,
-          apellidos: f.apellidos,
-          telefono: f.telefono || null,
-          plan: null,
-          fechaInicio: null,
-          fechaFin: null,
-          saldoPendiente: f.saldo,
-          error: 'Falta nombres o apellidos',
-        };
-      }
-
       const planEncontrado = f.planTexto.trim()
         ? buscarPlanPorTexto(f.planTexto, planes)
         : planFallback;
-      if (!planEncontrado) {
-        return {
-          filaNum: f.filaNum,
-          dni: f.dni,
-          nombres: f.nombres,
-          apellidos: f.apellidos,
-          telefono: f.telefono || null,
-          plan: null,
-          fechaInicio: null,
-          fechaFin: null,
-          saldoPendiente: f.saldo,
-          error: f.planTexto
-            ? `Plan "${f.planTexto}" no reconocido`
-            : 'Sin plan y sin plan por defecto',
-        };
-      }
 
       let ini = parsearFechaExcel(f.fechaInicioRaw);
       let fin = parsearFechaExcel(f.fechaFinRaw);
-
-      if (ini && !fin) {
-        fin = sumarDias(ini, planEncontrado.duracion_dias);
-      } else if (!ini && fin) {
-        ini = sumarDias(fin, -planEncontrado.duracion_dias);
-      } else if (!ini && !fin) {
-        return {
-          filaNum: f.filaNum,
-          dni: f.dni,
-          nombres: f.nombres,
-          apellidos: f.apellidos,
-          telefono: f.telefono || null,
-          plan: planEncontrado,
-          fechaInicio: null,
-          fechaFin: null,
-          saldoPendiente: f.saldo,
-          error: 'Falta fecha de inicio o fecha de vencimiento',
-        };
+      if (planEncontrado) {
+        if (ini && !fin) {
+          fin = sumarDias(ini, planEncontrado.duracion_dias);
+        } else if (!ini && fin) {
+          ini = sumarDias(fin, -planEncontrado.duracion_dias);
+        }
       }
 
-      if (!ini || !fin || fin < ini) {
-        return {
-          filaNum: f.filaNum,
-          dni: f.dni,
-          nombres: f.nombres,
-          apellidos: f.apellidos,
-          telefono: f.telefono || null,
-          plan: planEncontrado,
-          fechaInicio: ini,
-          fechaFin: fin,
-          saldoPendiente: f.saldo,
-          error: 'La fecha fin no puede ser menor al inicio',
-        };
+      let error: string | null = null;
+      if (!/^\d{7,12}$/.test(f.dni)) {
+        error = f.dni.trim()
+          ? 'DNI inválido (7 a 12 dígitos)'
+          : 'Falta DNI real (pendiente)';
+      } else if (dnisVistos.has(f.dni)) {
+        error = 'DNI duplicado en el archivo';
+      } else {
+        dnisVistos.add(f.dni);
+        if (!f.nombres || !f.apellidos) {
+          error = 'Falta nombres o apellidos';
+        } else if (!planEncontrado) {
+          error = f.planTexto
+            ? `Plan "${f.planTexto}" no reconocido`
+            : 'Sin plan y sin plan por defecto';
+        } else if (!ini && !fin) {
+          error = 'Falta fecha de inicio o fecha de vencimiento';
+        } else if (!ini || !fin || fin < ini) {
+          error = 'La fecha fin no puede ser menor al inicio';
+        }
       }
 
       return {
         filaNum: f.filaNum,
-        dni: f.dni,
+        dni: f.dni || '—',
         nombres: f.nombres,
         apellidos: f.apellidos,
         telefono: f.telefono || null,
@@ -477,7 +408,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
         fechaInicio: ini,
         fechaFin: fin,
         saldoPendiente: f.saldo,
-        error: null,
+        error,
       };
     });
   }, [filasCrudas, planes, planFallbackId]);
@@ -674,7 +605,12 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                 <table className="w-full text-left text-xs">
                   <thead className="sticky top-0 bg-surface-2 text-[11px] uppercase text-muted">
                     <tr>
-                      <th className="px-3 py-2">#</th>
+                      <th
+                        className="px-3 py-2"
+                        title="Número de fila en tu archivo Excel (la fila 1 son los encabezados)"
+                      >
+                        Fila
+                      </th>
                       <th className="px-3 py-2">DNI</th>
                       <th className="px-3 py-2">Socio</th>
                       <th className="px-3 py-2">Plan</th>
@@ -705,7 +641,14 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                           </td>
                           <td className="px-3 py-2">
                             {r.error ? (
-                              <span className="text-bad">{r.error}</span>
+                              <span className="inline-flex flex-wrap items-center gap-1.5">
+                                <span className="text-bad">{r.error}</span>
+                                {r.saldoPendiente > 0 && (
+                                  <span className="rounded-xs bg-bad/15 px-1.5 py-0.5 text-[10px] font-semibold text-bad">
+                                    Debe {soles(r.saldoPendiente)}
+                                  </span>
+                                )}
+                              </span>
                             ) : (
                               <span className="inline-flex flex-wrap items-center gap-1.5">
                                 <span
