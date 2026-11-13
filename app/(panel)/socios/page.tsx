@@ -33,6 +33,7 @@ import {
   listarSociosEstado,
   membresiasDeSocio,
   obtenerResumenPadron,
+  obtenerSocioEstadoPorId,
   type FiltroEstadoSocio,
   type ResumenPadronSocios,
 } from '@/services/sociosService';
@@ -200,8 +201,10 @@ export default function SociosPage() {
 
   async function refrescarSeleccionado(dniBuscar: string) {
     if (!gymId) return;
-    const [actualizado] = await buscarSocios(gymId, dniBuscar, 'todos');
-    await cargarListado(termino, pagina, filtro, true);
+    const [[actualizado]] = await Promise.all([
+      buscarSocios(gymId, dniBuscar, 'todos'),
+      cargarListado(termino, pagina, filtro, true),
+    ]);
     if (actualizado) {
       await cargarFicha(actualizado);
     }
@@ -935,6 +938,7 @@ export default function SociosPage() {
           socioEditar={modalSocio === 'editar' ? seleccionado : null}
           onClose={() => setModalSocio(null)}
           onSaved={async (dniGuardado, esNuevo) => {
+            const socioEditado = seleccionado;
             setModalSocio(null);
             setAviso({
               tipo: 'ok',
@@ -942,6 +946,22 @@ export default function SociosPage() {
                 ? 'Socio registrado. Ahora puedes asignarle su plan.'
                 : 'Datos del socio actualizados.',
             });
+            if (!esNuevo && socioEditado) {
+              // Editar datos personales no cambia membresías, pagos ni asistencias:
+              // basta traer esa única fila y parchearla (1 consulta en vez de ~6).
+              try {
+                const fresco = await obtenerSocioEstadoPorId(socioEditado.socio_id);
+                if (fresco) {
+                  setSeleccionado(fresco);
+                  setSocios((lista) =>
+                    lista.map((s) => (s.socio_id === fresco.socio_id ? fresco : s))
+                  );
+                }
+              } catch {
+                await refrescarSeleccionado(dniGuardado);
+              }
+              return;
+            }
             await refrescarSeleccionado(dniGuardado);
             if (esNuevo) setModoCobro('renovar');
           }}
