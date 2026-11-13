@@ -126,14 +126,8 @@ function buscarPlanPorTexto(texto: string, planes: Plan[]): Plan | null {
   const exacto = planes.find((p) => normalizarClave(p.nombre) === q);
   if (exacto) return exacto;
 
-  // 2. Inclusión directa
-  const incluido = planes.find(
-    (p) => normalizarClave(p.nombre).includes(q) || q.includes(normalizarClave(p.nombre))
-  );
-  if (incluido) return incluido;
-
-  // 3. Equivalencias comunes (respetando Diario vs Interdiario)
-  const esInterdiario = q.includes('interdiario');
+  // 2. Equivalencias comunes (respetando Diario vs Interdiario y abreviaturas "I" / "M")
+  const esInterdiario = /\b(interdiario|i)\b/.test(q);
   const porDuracion = (minD: number, maxD: number): Plan | null =>
     planes.find(
       (p) =>
@@ -148,10 +142,27 @@ function buscarPlanPorTexto(texto: string, planes: Plan[]): Plan | null {
   if (q.includes('bimestral') || q.includes('2 meses')) return porDuracion(55, 65);
   if (q.includes('semestral') || q.includes('6 meses')) return porDuracion(175, 190);
   if (q.includes('anual') || q.includes('1 ano') || q.includes('12 meses')) return porDuracion(360, 370);
-  if (q.includes('mensual') || q.includes('1 mes')) return porDuracion(28, 31);
-  if (q.includes('semanal')) return porDuracion(6, 8);
-  if ((q.includes('dia') || q.includes('diario')) && !q.includes('mensual') && !q.includes('mes') && !esInterdiario) {
+  if (q.includes('mensual') || q.includes('1 mes') || q === 'interdiario') return porDuracion(28, 31);
+  if (q.includes('semanal') || q.includes('1 semana')) return porDuracion(6, 8);
+  if (
+    q === 'diario' ||
+    q === 'dia' ||
+    q.includes('por dia') ||
+    q.includes('pase diario')
+  ) {
     return porDuracion(1, 1);
+  }
+
+  // 3. Inclusión directa respetando modalidad Diario vs Interdiario
+  const incluidos = planes.filter(
+    (p) => normalizarClave(p.nombre).includes(q) || q.includes(normalizarClave(p.nombre))
+  );
+  if (incluidos.length > 0) {
+    return (
+      incluidos.find(
+        (p) => normalizarClave(p.nombre).includes('interdiario') === esInterdiario
+      ) ?? incluidos[0]
+    );
   }
 
   return null;
@@ -178,6 +189,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
   const [planFallbackId, setPlanFallbackId] = useState<string>('');
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
   const [filasCrudas, setFilasCrudas] = useState<FilaCruda[]>([]);
+  const [soloValidas, setSoloValidas] = useState(false);
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null);
   const [importando, setImportando] = useState(false);
 
@@ -261,6 +273,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     setErrorArchivo(null);
+    setSoloValidas(false);
     setNombreArchivo(file.name);
 
     try {
@@ -346,6 +359,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
 
   const evaluadas = useMemo<FilaEvaluada[]>(() => {
     const planFallback = planes.find((p) => p.id === planFallbackId) ?? null;
+    const dnisVistos = new Set<string>();
 
     return filasCrudas.map((f) => {
       if (!/^\d{7,12}$/.test(f.dni)) {
@@ -359,9 +373,27 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
           fechaInicio: null,
           fechaFin: null,
           saldoPendiente: f.saldo,
-          error: 'DNI inválido (7 a 12 dígitos)',
+          error: f.dni.trim()
+            ? 'DNI inválido (7 a 12 dígitos)'
+            : 'Falta DNI real (pendiente)',
         };
       }
+
+      if (dnisVistos.has(f.dni)) {
+        return {
+          filaNum: f.filaNum,
+          dni: f.dni,
+          nombres: f.nombres,
+          apellidos: f.apellidos,
+          telefono: f.telefono || null,
+          plan: null,
+          fechaInicio: null,
+          fechaFin: null,
+          saldoPendiente: f.saldo,
+          error: 'DNI duplicado en el archivo',
+        };
+      }
+      dnisVistos.add(f.dni);
 
       if (!f.nombres || !f.apellidos) {
         return {
@@ -378,7 +410,9 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
         };
       }
 
-      const planEncontrado = buscarPlanPorTexto(f.planTexto, planes) ?? planFallback;
+      const planEncontrado = f.planTexto.trim()
+        ? buscarPlanPorTexto(f.planTexto, planes)
+        : planFallback;
       if (!planEncontrado) {
         return {
           filaNum: f.filaNum,
@@ -453,6 +487,8 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
     [evaluadas]
   );
   const invalidas = evaluadas.length - validas.length;
+  const mostrarSoloValidas = soloValidas && validas.length > 0;
+  const filasVisibles = mostrarSoloValidas ? validas : evaluadas;
 
   async function ejecutarImportacion() {
     if (validas.length === 0) return;
@@ -609,7 +645,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-wider text-bone">
                   3. Vista previa ({evaluadas.length} filas leídas)
                 </p>
-                <div className="flex items-center gap-3 text-xs">
+                <div className="flex flex-wrap items-center gap-3 text-xs">
                   <span className="inline-flex items-center gap-1 text-ok">
                     <CheckCircle2 size={14} /> {validas.length} listas para importar
                   </span>
@@ -617,6 +653,19 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                     <span className="inline-flex items-center gap-1 text-warn">
                       <AlertTriangle size={14} /> {invalidas} con observaciones (se omitirán)
                     </span>
+                  )}
+                  {invalidas > 0 && validas.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSoloValidas((v) => !v)}
+                      className={`rounded-xs border px-2 py-0.5 text-[11px] font-medium transition ${
+                        soloValidas
+                          ? 'border-gold bg-gold/15 text-gold'
+                          : 'border-line text-muted hover:border-bone/40 hover:text-bone'
+                      }`}
+                    >
+                      {soloValidas ? 'Ver todas' : 'Solo listas'}
+                    </button>
                   )}
                 </div>
               </div>
@@ -634,7 +683,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line/60">
-                    {evaluadas.slice(0, 100).map((r) => {
+                    {filasVisibles.slice(0, 300).map((r) => {
                       const diasRest = r.fechaFin ? diffDiasISO(r.fechaFin) : null;
                       return (
                         <tr
@@ -644,7 +693,9 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                           <td className="px-3 py-2 font-mono text-[11px] text-muted">{r.filaNum}</td>
                           <td className="px-3 py-2 font-mono text-bone">{r.dni}</td>
                           <td className="px-3 py-2">
-                            {r.apellidos}, {r.nombres}
+                            {r.apellidos && r.nombres
+                              ? `${r.apellidos}, ${r.nombres}`
+                              : r.apellidos || r.nombres || '—'}
                           </td>
                           <td className="px-3 py-2">{r.plan?.nombre ?? '—'}</td>
                           <td className="px-3 py-2 font-mono text-[11px]">
@@ -685,9 +736,9 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                     })}
                   </tbody>
                 </table>
-                {evaluadas.length > 100 && (
+                {filasVisibles.length > 300 && (
                   <p className="border-t border-line bg-surface-2/40 px-3 py-2 text-center text-[11px] text-muted">
-                    Mostrando las primeras 100 filas de {evaluadas.length}. Todas las filas válidas
+                    Mostrando las primeras 300 filas de {filasVisibles.length}. Todas las filas válidas
                     serán importadas.
                   </p>
                 )}

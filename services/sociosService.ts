@@ -45,8 +45,13 @@ export async function buscarSocios(
   if (/^\d+$/.test(t)) {
     query = query.like('dni', `${t}%`);
   } else {
-    const p = t.replace(/\s+/g, '%');
-    query = query.or(`nombres.ilike.%${p}%,apellidos.ilike.%${p}%`);
+    const palabras = t
+      .replace(/[,()]+/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+    for (const palabra of palabras) {
+      query = query.or(`nombres.ilike.%${palabra}%,apellidos.ilike.%${palabra}%`);
+    }
   }
 
   const { data, error } = await query.order('apellidos');
