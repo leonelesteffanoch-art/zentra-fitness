@@ -187,6 +187,21 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
     return Math.round((entregado - total) * 100) / 100;
   }, [pagaCon, total]);
 
+  const totalItems = useMemo(
+    () => itemsSeleccionados.reduce((acc, i) => acc + i.cantidad, 0),
+    [itemsSeleccionados]
+  );
+
+  const billetesSugeridos = useMemo(() => {
+    if (total <= 0) return [];
+    const denominaciones = [10, 20, 50, 100, 200].filter((b) => b >= total);
+    if (denominaciones.length > 0) return denominaciones.slice(0, 3);
+    const exacto = Math.round(total * 100) / 100;
+    const sig50 = Math.ceil((total + 0.01) / 50) * 50;
+    const sig100 = Math.ceil((total + 0.01) / 100) * 100;
+    return Array.from(new Set([exacto, sig50, sig100])).slice(0, 3);
+  }, [total]);
+
   function sumar(prod: Producto, delta: number) {
     setError(null);
     setCarrito((prev) => {
@@ -323,7 +338,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
       {/* Catálogo + Ticket lateral (sticky en escritorio cuando hay items) */}
       <div
         className={`grid items-start gap-4 ${
-          itemsSeleccionados.length > 0 ? 'xl:grid-cols-[1fr_340px]' : 'grid-cols-1'
+          itemsSeleccionados.length > 0 ? 'xl:grid-cols-[1fr_372px]' : 'grid-cols-1'
         }`}
       >
         <div>
@@ -515,271 +530,270 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
 
         {/* Carrito activo (Ticket lateral sticky en escritorio) */}
         {itemsSeleccionados.length > 0 && (
-          <div className="panel-card panel-fade-in space-y-4 !border-brand/50 p-4 shadow-xl xl:sticky xl:top-20">
-          <div className="flex items-center justify-between border-b border-line/70 pb-3">
-            <div className="flex items-center gap-2">
-              <ShoppingBag size={18} className="text-brand" strokeWidth={1.75} />
-              <h3 className="font-semibold text-bone text-base">Ticket de venta</h3>
-              <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted font-mono">
-                {itemsSeleccionados.reduce((acc, i) => acc + i.cantidad, 0)} items
-              </span>
-            </div>
+          <div className="panel-card space-y-3.5 !border-brand/50 p-4 shadow-xl xl:sticky xl:top-20">
+            <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <ShoppingBag size={17} className="shrink-0 text-brand" strokeWidth={1.75} />
+                <h3 className="whitespace-nowrap text-sm font-semibold text-bone sm:text-base">
+                  Ticket de venta
+                </h3>
+                <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] font-medium text-muted tabular-nums">
+                  {totalItems} {totalItems === 1 ? 'ítem' : 'ítems'}
+                </span>
+              </div>
 
-            <button
-              type="button"
-              onClick={limpiarCarrito}
-              className="text-xs text-muted hover:text-bad inline-flex items-center gap-1 transition-colors"
-            >
-              <Trash2 size={13} strokeWidth={1.5} />
-              Vaciar ticket
-            </button>
-          </div>
-
-          {/* Lista de productos seleccionados */}
-          <ul className="divide-y divide-line/70">
-            {itemsSeleccionados.map(({ producto, nombreBase, esHelada, cantidad }) => (
-              <li key={producto.id} className="flex items-center justify-between py-2.5 text-sm gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="truncate font-medium text-bone">{nombreBase}</p>
-                    {esHelada ? (
-                      <span className="inline-flex items-center gap-1 rounded-2xs bg-cyan-950/70 border border-cyan-500/50 px-1.5 py-0.2 text-[10px] font-semibold text-cyan-300">
-                        <Snowflake size={10} strokeWidth={2} /> Helada
-                      </span>
-                    ) : (
-                      producto.categoria.toLowerCase().includes('bebida') && (
-                        <span className="inline-flex items-center gap-1 rounded-2xs bg-amber-950/50 border border-amber-500/40 px-1.5 py-0.2 text-[10px] font-medium text-amber-200">
-                          <Sun size={10} strokeWidth={2} /> Al tiempo
-                        </span>
-                      )
-                    )}
-                  </div>
-                  <p className="text-xs text-muted tabular-nums mt-0.5">
-                    {soles(producto.precio)} × {cantidad} ={' '}
-                    <strong className="font-semibold text-bone">
-                      {soles(producto.precio * cantidad)}
-                    </strong>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => sumar(producto, -1)}
-                    className="btn btn-ghost !min-h-8 !px-2 hover:bg-bad/20 hover:text-bad"
-                    aria-label={`Restar ${producto.nombre}`}
-                  >
-                    <Minus size={14} strokeWidth={1.75} />
-                  </button>
-                  <span className="w-6 text-center font-bold tabular-nums text-bone">{cantidad}</span>
-                  <button
-                    type="button"
-                    onClick={() => sumar(producto, 1)}
-                    className="btn btn-ghost !min-h-8 !px-2 hover:bg-brand/20 hover:text-brand"
-                    aria-label={`Sumar ${producto.nombre}`}
-                  >
-                    <Plus size={14} strokeWidth={1.75} />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Nombre de cliente opcional */}
-          <div>
-            <label htmlFor="pos-cliente" className="label text-xs">
-              Cliente (Opcional)
-            </label>
-            <input
-              id="pos-cliente"
-              type="text"
-              placeholder="Ej: Juan Pérez"
-              value={cliente}
-              onChange={(e) => setCliente(e.target.value)}
-              className="field !min-h-9 !bg-surface-2"
-            />
-          </div>
-
-          {/* Método de pago */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="label !mb-0 text-xs">Método de pago</span>
               <button
                 type="button"
-                onClick={() => {
-                  setModoMixto((m) => !m);
-                  setLineas([{ metodo: 'Efectivo', monto: total.toFixed(2) }]);
-                }}
-                className="text-xs font-medium text-brand underline underline-offset-4 hover:text-bone"
+                onClick={limpiarCarrito}
+                title="Vaciar ticket completo"
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-bad/10 hover:text-bad"
               >
-                {modoMixto ? 'Cobro en 1 método' : 'Dividir pago (Mixto)'}
+                <Trash2 size={13} strokeWidth={1.6} />
+                Vaciar
               </button>
             </div>
 
-            {!modoMixto ? (
-              <div className="grid grid-cols-4 gap-1.5">
-                {METODOS.map((m) => {
-                  const activo = metodoRapido === m;
-                  return (
+            {/* Lista de productos seleccionados */}
+            <ul className="max-h-60 divide-y divide-line/70 overflow-y-auto pr-0.5">
+              {itemsSeleccionados.map(({ producto, nombreBase, esHelada, cantidad }) => (
+                <li key={producto.id} className="flex items-center justify-between gap-2 py-2.5 text-sm">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="truncate font-medium text-bone">{nombreBase}</p>
+                      {esHelada ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-2xs border border-cyan-500/50 bg-cyan-950/70 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-300">
+                          <Snowflake size={10} strokeWidth={2} /> Helada
+                        </span>
+                      ) : (
+                        producto.categoria.toLowerCase().includes('bebida') && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-2xs border border-amber-500/40 bg-amber-950/50 px-1.5 py-0.5 text-[10px] font-medium text-amber-200">
+                            <Sun size={10} strokeWidth={2} /> Al tiempo
+                          </span>
+                        )
+                      )}
+                    </div>
+                    <p className="mt-0.5 whitespace-nowrap text-xs text-muted tabular-nums">
+                      {soles(producto.precio)} × {cantidad} ={' '}
+                      <strong className="font-semibold text-bone">
+                        {soles(producto.precio * cantidad)}
+                      </strong>
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-1">
                     <button
-                      key={m}
+                      type="button"
+                      onClick={() => sumar(producto, -1)}
+                      className="btn btn-ghost !min-h-8 !px-2 hover:bg-bad/20 hover:text-bad"
+                      aria-label={`Restar ${producto.nombre}`}
+                    >
+                      <Minus size={14} strokeWidth={1.75} />
+                    </button>
+                    <span className="w-7 text-center font-mono text-sm font-bold text-bone tabular-nums">
+                      {cantidad}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => sumar(producto, 1)}
+                      className="btn btn-ghost !min-h-8 !px-2 hover:bg-brand/20 hover:text-brand"
+                      aria-label={`Sumar ${producto.nombre}`}
+                    >
+                      <Plus size={14} strokeWidth={1.75} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Nombre de cliente opcional */}
+            <div>
+              <label htmlFor="pos-cliente" className="label text-xs">
+                Cliente (Opcional)
+              </label>
+              <input
+                id="pos-cliente"
+                type="text"
+                placeholder="Ej: Juan Pérez"
+                value={cliente}
+                onChange={(e) => setCliente(e.target.value)}
+                className="field !min-h-9 !bg-surface-2"
+              />
+            </div>
+
+            {/* Método de pago */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="label !mb-0 text-xs">Método de pago</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModoMixto((m) => !m);
+                    setLineas([{ metodo: 'Efectivo', monto: total.toFixed(2) }]);
+                  }}
+                  className="whitespace-nowrap text-xs font-medium text-brand underline underline-offset-4 hover:text-bone"
+                >
+                  {modoMixto ? 'Cobro en 1 método' : 'Dividir pago (Mixto)'}
+                </button>
+              </div>
+
+              {!modoMixto ? (
+                <div className="grid grid-cols-4 gap-1.5">
+                  {METODOS.map((m) => {
+                    const activo = metodoRapido === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => {
+                          setMetodoRapido(m);
+                          if (m !== 'Efectivo') setPagaCon('');
+                        }}
+                        aria-pressed={activo}
+                        className={`rounded-xs py-2 text-xs font-semibold transition-all ${
+                          activo
+                            ? 'bg-bone text-ink shadow-xs ring-1 ring-bone'
+                            : 'bg-surface-2 text-muted hover:bg-surface-2/80 hover:text-bone'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {lineas.map((l, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <select
+                        aria-label={`Método ${idx + 1}`}
+                        value={l.metodo}
+                        onChange={(e) =>
+                          setLineas((ls) =>
+                            ls.map((item, i) =>
+                              i === idx ? { ...item, metodo: e.target.value as MetodoPago } : item
+                            )
+                          )
+                        }
+                        className="field !min-h-9 !w-32 !bg-surface-2 text-xs"
+                      >
+                        {METODOS.map((m) => (
+                          <option key={m}>{m}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        step="0.50"
+                        min="0"
+                        placeholder="0.00"
+                        value={l.monto}
+                        onChange={(e) =>
+                          setLineas((ls) =>
+                            ls.map((item, i) =>
+                              i === idx ? { ...item, monto: e.target.value } : item
+                            )
+                          )
+                        }
+                        className="field !min-h-9 flex-1 !bg-surface-2 text-sm tabular-nums"
+                      />
+                    </div>
+                  ))}
+                  {lineas.length < METODOS.length && (
+                    <button
                       type="button"
                       onClick={() => {
-                        setMetodoRapido(m);
-                        if (m !== 'Efectivo') setPagaCon('');
+                        const rest = Math.max(0, total - sumaMixto);
+                        setLineas((ls) => [
+                          ...ls,
+                          { metodo: 'Yape', monto: rest ? rest.toFixed(2) : '' },
+                        ]);
                       }}
-                      aria-pressed={activo}
-                      className={`rounded-xs py-2 text-xs font-semibold transition-all ${
-                        activo
-                          ? 'bg-bone text-ink shadow-xs ring-1 ring-bone'
-                          : 'bg-surface-2 text-muted hover:bg-surface-2/80 hover:text-bone'
-                      }`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-bone hover:underline"
                     >
-                      {m}
+                      <Plus size={12} strokeWidth={1.5} /> Añadir otro método
                     </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {lineas.map((l, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <select
-                      aria-label={`Método ${idx + 1}`}
-                      value={l.metodo}
-                      onChange={(e) =>
-                        setLineas((ls) =>
-                          ls.map((item, i) =>
-                            i === idx ? { ...item, metodo: e.target.value as MetodoPago } : item
-                          )
-                        )
-                      }
-                      className="field !min-h-9 !w-32 !bg-surface-2 text-xs"
-                    >
-                      {METODOS.map((m) => (
-                        <option key={m}>{m}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      step="0.50"
-                      min="0"
-                      placeholder="0.00"
-                      value={l.monto}
-                      onChange={(e) =>
-                        setLineas((ls) =>
-                          ls.map((item, i) =>
-                            i === idx ? { ...item, monto: e.target.value } : item
-                          )
-                        )
-                      }
-                      className="field !min-h-9 !bg-surface-2 tabular-nums text-sm flex-1"
-                    />
-                  </div>
-                ))}
-                {lineas.length < METODOS.length && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const rest = Math.max(0, total - sumaMixto);
-                      setLineas((ls) => [
-                        ...ls,
-                        { metodo: 'Yape', monto: rest ? rest.toFixed(2) : '' },
-                      ]);
-                    }}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-bone hover:underline"
-                  >
-                    <Plus size={12} strokeWidth={1.5} /> Añadir otro método
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* Calculadora rápida de vuelto para Efectivo */}
-          {metodoRapido === 'Efectivo' && !modoMixto && (
-            <div className="rounded-xs bg-surface-2/80 p-3 text-xs space-y-2 border border-line/40">
-              <div className="flex items-center justify-between">
-                <span className="text-muted flex items-center gap-1">
-                  <Banknote size={14} className="text-ok" />
-                  Calculadora de vuelto:
-                </span>
-                {vueltoCalculado !== null && (
-                  <span className="font-semibold text-ok tabular-nums">
-                    Vuelto: {soles(vueltoCalculado)}
+            {/* Calculadora rápida de vuelto para Efectivo */}
+            {metodoRapido === 'Efectivo' && !modoMixto && (
+              <div className="space-y-2 rounded-xs border border-line/40 bg-surface-2/80 p-3 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1 text-muted">
+                    <Banknote size={14} className="shrink-0 text-ok" />
+                    Calculadora de vuelto
                   </span>
-                )}
-              </div>
+                  {vueltoCalculado !== null && (
+                    <span className="whitespace-nowrap font-semibold text-ok tabular-nums">
+                      Vuelto: {soles(vueltoCalculado)}
+                    </span>
+                  )}
+                </div>
 
-              <div className="space-y-1.5">
                 <input
                   type="number"
                   inputMode="decimal"
                   placeholder="Monto entregado por el cliente (S/)"
                   value={pagaCon}
                   onChange={(e) => setPagaCon(e.target.value)}
-                  className="field !min-h-8 !w-full !bg-surface !text-xs"
+                  className="field !min-h-8 !w-full !bg-surface !text-xs tabular-nums"
                 />
 
-                {/* Atajos de billetes frecuentes en Perú */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-muted">Billetes rápidos:</span>
-                  {[10, 20, 50, 100]
-                    .filter((b) => b >= total)
-                    .slice(0, 3)
-                    .map((billete) => (
-                      <button
-                        key={billete}
-                        type="button"
-                        onClick={() => setPagaCon(String(billete))}
-                        className="flex-1 rounded bg-surface px-2.5 py-1 font-mono text-[11px] font-semibold text-bone transition-colors hover:bg-brand hover:text-ink"
-                      >
-                        S/ {billete}
-                      </button>
-                    ))}
-                </div>
+                {billetesSugeridos.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="shrink-0 text-[11px] text-muted">Atajos:</span>
+                    <div className="flex flex-1 gap-1.5">
+                      {billetesSugeridos.map((billete) => (
+                        <button
+                          key={billete}
+                          type="button"
+                          onClick={() => setPagaCon(String(billete))}
+                          className="flex-1 whitespace-nowrap rounded bg-surface px-2 py-1 font-mono text-[11px] font-semibold text-bone tabular-nums transition-colors hover:bg-brand hover:text-ink"
+                        >
+                          {billete === Math.round(total * 100) / 100 && total > 200
+                            ? 'Exacto'
+                            : `S/ ${billete}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {error && (
-            <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
+                {error}
+              </p>
+            )}
 
-          {/* Barra de total y botón de cobro */}
-          <div className="flex items-center justify-between border-t border-line/70 pt-3">
-            <div>
-              <span className="text-xs text-muted block">Total a cobrar</span>
-              <p className="text-2xl font-bold text-bone tabular-nums">{soles(total)}</p>
-            </div>
+            {/* Barra de total y botón de cobro de ancho completo */}
+            <div className="space-y-3 border-t border-line/70 pt-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="whitespace-nowrap text-xs font-medium text-muted">
+                  Total a cobrar
+                </span>
+                <p className="whitespace-nowrap font-mono text-2xl font-bold text-bone tabular-nums">
+                  {soles(total)}
+                </p>
+              </div>
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={limpiarCarrito}
-                className="btn btn-ghost !px-3"
-                title="Vaciar carrito"
-              >
-                <Trash2 size={16} strokeWidth={1.5} />
-              </button>
               <button
                 type="button"
                 disabled={enviando}
                 onClick={cobrar}
-                className="btn btn-primary !px-6 !min-h-11 tabular-nums font-bold"
+                className="btn btn-primary !min-h-11 w-full whitespace-nowrap font-bold tabular-nums"
               >
                 {enviando ? (
-                  <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />
+                  <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />
                 ) : (
-                  <Check size={16} strokeWidth={2} />
+                  <Check size={16} strokeWidth={2.25} />
                 )}
-                Cobrar {soles(total)}
+                <span>Cobrar {soles(total)}</span>
               </button>
             </div>
           </div>
-        </div>
         )}
       </div>
     </section>
