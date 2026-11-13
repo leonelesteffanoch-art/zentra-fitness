@@ -252,7 +252,7 @@ export default function CajaPage() {
             )}
           </div>
           <p className="mt-1 text-xs text-muted">
-            Punto de venta rápido, control de efectivo en tiempo real y arqueo de turno.
+            Punto de venta | Control de efectivo | Arqueo de turno
           </p>
         </div>
 

@@ -588,12 +588,12 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
           {/* Nombre de cliente opcional */}
           <div>
             <label htmlFor="pos-cliente" className="label text-xs">
-              Cliente mostrador (opcional, para pase diario o referencia)
+              Cliente (Opcional)
             </label>
             <input
               id="pos-cliente"
               type="text"
-              placeholder="Ej: Juan Pérez / Visitante"
+              placeholder="Ej: Juan Pérez"
               value={cliente}
               onChange={(e) => setCliente(e.target.value)}
               className="field !min-h-9 !bg-surface-2"
