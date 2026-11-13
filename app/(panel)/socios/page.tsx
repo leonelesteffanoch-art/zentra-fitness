@@ -71,6 +71,7 @@ export default function SociosPage() {
   const [resumenPadron, setResumenPadron] = useState<ResumenPadronSocios | null>(null);
   const [pagina, setPagina] = useState(0);
   const [termino, setTermino] = useState('');
+  const [searchReset, setSearchReset] = useState(0);
   const [filtro, setFiltro] = useState<FiltroEstadoSocio>('todos');
   const [cargando, setCargando] = useState(true);
   const [exportando, setExportando] = useState(false);
@@ -195,8 +196,10 @@ export default function SociosPage() {
 
   function cambiarFiltro(nuevo: FiltroEstadoSocio) {
     setFiltro(nuevo);
+    setTermino('');
     setPagina(0);
-    void cargarListado(termino, 0, nuevo);
+    setSearchReset((k) => k + 1);
+    void cargarListado('', 0, nuevo);
   }
 
   async function refrescarSeleccionado(dniBuscar: string) {
@@ -472,6 +475,7 @@ export default function SociosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:max-w-md">
           <SearchBar
+            key={searchReset}
             onSearch={handleSearch}
             buscando={cargando}
             placeholder="Buscar por DNI, nombres o apellidos... (Presiona /)"
@@ -992,8 +996,10 @@ export default function SociosPage() {
           onDone={async (msg) => {
             setModalImportar(false);
             setAviso({ tipo: 'ok', texto: msg });
+            setTermino('');
             setPagina(0);
-            await cargarListado(termino, 0, filtro, true);
+            setSearchReset((k) => k + 1);
+            await cargarListado('', 0, filtro, true);
           }}
         />
       )}

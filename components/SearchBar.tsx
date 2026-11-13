@@ -28,12 +28,14 @@ export function SearchBar({
   const ultimo = useRef('');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
 
   function disparar(termino: string) {
     const t = termino.trim();
     if (t === ultimo.current) return;
     ultimo.current = t;
-    onSearch(t);
+    onSearchRef.current(t);
   }
 
   useEffect(() => {
@@ -41,7 +43,6 @@ export function SearchBar({
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valor]);
 
   useEffect(() => {

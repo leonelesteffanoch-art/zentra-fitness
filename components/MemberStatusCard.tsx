@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CircleDollarSign,
   Clock,
+  Edit3,
   LogIn,
   MessageCircle,
   Phone,
@@ -11,7 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
-import { hoyLima, soles } from '@/lib/formato';
+import { estadoDatosSocio, hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, Semaforo, SocioEstado } from '@/types';
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
   onCheckIn: () => void;
   onRenovar: () => void;
   onCobrarSaldo: () => void;
+  onEditarDatos?: () => void;
   onLimpiar?: () => void;
 }
 
@@ -95,11 +97,13 @@ export function MemberStatusCard({
   onCheckIn,
   onRenovar,
   onCobrarSaldo,
+  onEditarDatos,
   onLimpiar,
 }: Props) {
   const est = BADGE_SEMAFORO[socio.semaforo];
   const { titular, detalles } = describir(socio);
   const puedeEntrar = socio.semaforo !== 'ROJO';
+  const datosPendientes = estadoDatosSocio(socio);
 
   const hoy = hoyLima();
   const ingresoPrevioHoy = asistencias.find((a) => a.fecha === hoy);
@@ -256,10 +260,25 @@ export function MemberStatusCard({
             </p>
             <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted sm:justify-end">
               <span className="font-mono font-semibold text-bone">DNI {socio.dni}</span>
-              {socio.telefono && (
+              {datosPendientes.dniProvisional && (
+                <span className="rounded bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn ring-1 ring-warn/30">
+                  Provisional
+                </span>
+              )}
+              {socio.telefono ? (
                 <span className="inline-flex items-center gap-1 font-mono">
                   · <Phone size={11} /> {socio.telefono}
                 </span>
+              ) : (
+                onEditarDatos && (
+                  <button
+                    type="button"
+                    onClick={onEditarDatos}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+                  >
+                    + Teléfono
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -289,6 +308,37 @@ export function MemberStatusCard({
 
       {/* Calendario semanal de asistencias (Lun a Sáb) */}
       <WeeklyAttendanceCalendar asistencias={asistencias} planNombre={socio.plan} />
+
+      {/* Atajo destacado cuando el socio tiene DNI provisional o nombre/apellido "(Pendiente)" */}
+      {onEditarDatos && datosPendientes.incompleto && (
+        <div className="flex flex-col items-start justify-between gap-3 rounded-xs border-l-4 border-warn bg-warn/15 p-4 sm:flex-row sm:items-center">
+          <div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-warn">
+              <AlertTriangle size={16} strokeWidth={2} />
+              DATOS PENDIENTES DE COMPLETAR
+            </span>
+            <p className="mt-1 text-xs leading-relaxed text-bone">
+              Falta:{' '}
+              {[
+                datosPendientes.dniProvisional ? 'DNI real' : null,
+                datosPendientes.nombrePendiente ? 'nombre o apellido completo' : null,
+                datosPendientes.sinTelefono ? 'teléfono' : null,
+              ]
+                .filter(Boolean)
+                .join(', ')}
+              . Pídelo ahora que ingresó y actualízalo aquí mismo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onEditarDatos}
+            className="btn btn-primary shrink-0 !min-h-9 !px-3.5 text-xs"
+          >
+            <Edit3 size={14} strokeWidth={1.75} />
+            Completar datos ahora
+          </button>
+        </div>
+      )}
 
       {/* Alerta de Moroso / Saldo Pendiente */}
       {socio.saldo_pendiente > 0 && (
@@ -403,6 +453,21 @@ export function MemberStatusCard({
           <button onClick={onCobrarSaldo} className="btn btn-ghost !min-h-11 tabular-nums">
             <CircleDollarSign size={17} strokeWidth={1.75} />
             Cobrar saldo ({soles(socio.saldo_pendiente)})
+          </button>
+        )}
+
+        {onEditarDatos && (
+          <button
+            type="button"
+            onClick={onEditarDatos}
+            className={`btn !min-h-11 ${
+              datosPendientes.incompleto
+                ? 'btn-secondary !border-warn/60 text-warn hover:!border-warn'
+                : 'btn-ghost'
+            }`}
+          >
+            <Edit3 size={16} strokeWidth={1.75} />
+            {datosPendientes.incompleto ? 'Completar datos' : 'Editar datos'}
           </button>
         )}
       </div>

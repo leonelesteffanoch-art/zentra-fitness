@@ -31,3 +31,22 @@ export function formatearFechaDMY(fecha: string): string {
 
 export const soles = (n: number) =>
   `S/ ${n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** Detecta DNI provisional (99...) o nombre/apellido marcado como "(Pendiente)" tras migración. */
+export function estadoDatosSocio(s: {
+  dni: string;
+  nombres: string;
+  apellidos: string;
+  telefono?: string | null;
+}) {
+  const dniProvisional = /^99\d{7,}$/.test(s.dni.trim());
+  const nombrePendiente =
+    s.nombres.includes('(Pendiente)') || s.apellidos.includes('(Pendiente)');
+  const sinTelefono = !s.telefono?.trim();
+  return {
+    dniProvisional,
+    nombrePendiente,
+    sinTelefono,
+    incompleto: dniProvisional || nombrePendiente,
+  };
+}

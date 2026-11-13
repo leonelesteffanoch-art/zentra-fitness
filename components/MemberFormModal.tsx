@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { Loader2, UserPlus, X } from 'lucide-react';
+import { AlertTriangle, Loader2, UserPlus, X } from 'lucide-react';
 import { Portal } from '@/components/Portal';
+import { estadoDatosSocio } from '@/lib/formato';
 import { crearSocio, actualizarSocio, type NuevoSocio } from '@/services/sociosService';
 import type { SocioEstado } from '@/types';
 
@@ -107,6 +108,25 @@ export function MemberFormModal({
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
+          {(() => {
+            const datos = estadoDatosSocio({ dni, nombres, apellidos, telefono });
+            if (!socioEditar || !datos.incompleto) return null;
+            const faltantes = [
+              datos.dniProvisional ? 'DNI real (actual es provisional 99...)' : null,
+              datos.nombrePendiente ? 'nombre o apellido "(Pendiente)"' : null,
+              datos.sinTelefono ? 'teléfono (opcional)' : null,
+            ].filter(Boolean);
+            return (
+              <div className="flex items-start gap-2 rounded-xs border-l-4 border-warn bg-warn/15 px-3 py-2.5 text-xs text-warn">
+                <AlertTriangle size={15} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold">Faltan datos por completar:</p>
+                  <p className="mt-0.5 text-bone/90">{faltantes.join(' · ')}.</p>
+                </div>
+              </div>
+            );
+          })()}
+
           <div>
             <label htmlFor="socio-dni" className="label">
               DNI / Documento *
@@ -120,6 +140,9 @@ export function MemberFormModal({
               maxLength={12}
               placeholder="Ej: 74859612"
               value={dni}
+              onFocus={(e) => {
+                if (/^99\d{7,}$/.test(e.target.value)) e.target.select();
+              }}
               onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
               className="field font-mono"
             />
@@ -135,6 +158,9 @@ export function MemberFormModal({
               required
               placeholder="Ej: Carlos Alberto"
               value={nombres}
+              onFocus={(e) => {
+                if (e.target.value.trim() === '(Pendiente)') e.target.select();
+              }}
               onChange={(e) => setNombres(e.target.value)}
               className="field"
             />
@@ -150,6 +176,9 @@ export function MemberFormModal({
               required
               placeholder="Ej: Mendoza Quispe"
               value={apellidos}
+              onFocus={(e) => {
+                if (e.target.value.trim() === '(Pendiente)') e.target.select();
+              }}
               onChange={(e) => setApellidos(e.target.value)}
               className="field"
             />

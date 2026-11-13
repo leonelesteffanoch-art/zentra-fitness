@@ -181,7 +181,10 @@ export async function actualizarSocio(
   cambios: Partial<Omit<Socio, 'id' | 'gym_id' | 'created_at' | 'created_by'>>
 ) {
   const { error } = await supabase.from('socios').update(cambios).eq('id', socioId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === '23505') throw new Error('Ya existe otro socio registrado con ese DNI');
+    throw new Error(error.message);
+  }
 }
 
 // ---------- Planes y membresías ----------

@@ -26,7 +26,7 @@ import {
   type AsistenciaHoyDetalle,
 } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import { soles } from '@/lib/formato';
+import { estadoDatosSocio, soles } from '@/lib/formato';
 import type { Asistencia, Semaforo, SocioEstado, TurnoCaja } from '@/types';
 
 const BADGE_ESTADO: Record<Semaforo, { cls: string; txt: string }> = {
@@ -87,7 +87,7 @@ export default function RecepcionPage() {
   const [yaIngreso, setYaIngreso] = useState(false);
   const [turnoActual, setTurnoActual] = useState<TurnoCaja | null | undefined>(undefined);
   const [cobro, setCobro] = useState<ModoCobro | null>(null);
-  const [modalNuevoSocio, setModalNuevoSocio] = useState(false);
+  const [modalSocio, setModalSocio] = useState<'nuevo' | 'editar' | null>(null);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   const cargarIngresosHoy = useCallback(async () => {
@@ -123,14 +123,14 @@ export default function RecepcionPage() {
 
   useEffect(() => {
     function handleEsc(e: globalThis.KeyboardEvent) {
-      if (e.key === 'Escape' && seleccionado && !cobro && !modalNuevoSocio) {
+      if (e.key === 'Escape' && seleccionado && !cobro && !modalSocio) {
         setSeleccionado(null);
         setAsistenciasSocio([]);
       }
     }
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [seleccionado, cobro, modalNuevoSocio]);
+  }, [seleccionado, cobro, modalSocio]);
 
   const buscar = useCallback(
     async (t: string) => {
@@ -249,7 +249,7 @@ export default function RecepcionPage() {
           </Link>
           <button
             type="button"
-            onClick={() => setModalNuevoSocio(true)}
+            onClick={() => setModalSocio('nuevo')}
             className="btn btn-primary !min-h-10"
           >
             <UserPlus size={16} strokeWidth={1.75} />
@@ -379,6 +379,7 @@ export default function RecepcionPage() {
           onCheckIn={checkIn}
           onRenovar={() => setCobro('renovar')}
           onCobrarSaldo={() => setCobro('abonar')}
+          onEditarDatos={() => setModalSocio('editar')}
           onLimpiar={() => {
             setSeleccionado(null);
             setAsistenciasSocio([]);
@@ -415,6 +416,11 @@ export default function RecepcionPage() {
                         </p>
                         <p className="mt-0.5 text-xs text-muted">
                           <span className="font-mono text-bone">DNI {s.dni}</span>
+                          {estadoDatosSocio(s).dniProvisional && (
+                            <span className="ml-1.5 rounded bg-warn/15 px-1.5 py-0.2 text-[10px] font-semibold text-warn">
+                              Provisional
+                            </span>
+                          )}
                           {s.plan && <span> · {s.plan}</span>}
                           {s.dias_restantes !== null && (
                             <span>
@@ -451,7 +457,7 @@ export default function RecepcionPage() {
           <p className="text-sm text-muted">No se encontró ningún socio con “{termino}”.</p>
           <button
             type="button"
-            onClick={() => setModalNuevoSocio(true)}
+            onClick={() => setModalSocio('nuevo')}
             className="btn btn-primary mt-4"
           >
             <UserPlus size={16} strokeWidth={1.75} />
@@ -572,14 +578,46 @@ export default function RecepcionPage() {
         </section>
       </div>
 
-      {modalNuevoSocio && gymId && perfil && (
+      {modalSocio && gymId && perfil && (
         <MemberFormModal
           gymId={gymId}
           userId={perfil.id}
-          onClose={() => setModalNuevoSocio(false)}
-          onSaved={async (dniCreado) => {
-            setModalNuevoSocio(false);
-            const r = await buscarSocios(gymId, dniCreado);
+          socioEditar={modalSocio === 'editar' ? seleccionado : null}
+          onClose={() => setModalSocio(null)}
+          onSaved={async (dniGuardado, esNuevo) => {
+            const editado = seleccionado;
+            setModalSocio(null);
+            if (!esNuevo && editado) {
+              setAviso({ tipo: 'ok', texto: 'Datos del socio actualizados.' });
+              try {
+                const fresco = await obtenerSocioEstadoPorId(editado.socio_id);
+                if (fresco) {
+                  setSeleccionado(fresco);
+                  setResultados((rs) =>
+                    rs.map((r) => (r.socio_id === fresco.socio_id ? fresco : r))
+                  );
+                  setIngresosHoy((lista) =>
+                    lista.map((ing) =>
+                      ing.socio_id === fresco.socio_id
+                        ? {
+                            ...ing,
+                            socios: {
+                              dni: fresco.dni,
+                              nombres: fresco.nombres,
+                              apellidos: fresco.apellidos,
+                            },
+                          }
+                        : ing
+                    )
+                  );
+                }
+              } catch {
+                const [fallback] = await buscarSocios(gymId, dniGuardado);
+                if (fallback) setSeleccionado(fallback);
+              }
+              return;
+            }
+            const r = await buscarSocios(gymId, dniGuardado);
             setResultados(r);
             if (r[0]) {
               await seleccionarSocioConAsistencias(r[0]);
