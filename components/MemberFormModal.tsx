@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { Loader2, UserPlus, X } from 'lucide-react';
+import { Portal } from '@/components/Portal';
 import { crearSocio, actualizarSocio, type NuevoSocio } from '@/services/sociosService';
 import type { SocioEstado } from '@/types';
 
@@ -88,13 +89,14 @@ export function MemberFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center sm:p-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="socio-modal-titulo"
-        className="w-full max-w-md border border-line bg-surface"
-      >
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="socio-modal-titulo"
+          className="modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto border border-line bg-surface"
+        >
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <h2 id="socio-modal-titulo" className="section-title text-xl">
             {socioEditar ? 'Editar socio' : 'Nuevo socio'}
@@ -187,7 +189,8 @@ export function MemberFormModal({
             </button>
           </div>
         </form>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }

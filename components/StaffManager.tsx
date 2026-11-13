@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { KeyRound, Loader2, Plus, RotateCcw, Shield, UserPlus, X } from 'lucide-react';
+import { Portal } from '@/components/Portal';
 import { supabase } from '@/lib/supabase';
 import type { Rol } from '@/types';
 
@@ -326,13 +327,14 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
 
       {/* Modal: Crear nuevo trabajador */}
       {modalNuevo && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Registrar nuevo personal"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
-        >
-          <div className="w-full max-w-md bg-surface p-6">
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Registrar nuevo personal"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
             <div className="flex items-center justify-between border-b border-line/70 pb-3">
               <h3 className="section-title flex items-center gap-2 text-lg">
                 <UserPlus size={18} strokeWidth={1.5} className="text-muted" />
@@ -428,19 +430,21 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Modal: Editar trabajador / cambiar contraseña */}
       {editando && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Editar personal"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
-        >
-          <div className="w-full max-w-md bg-surface p-6">
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Editar personal"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
             <div className="flex items-center justify-between border-b border-line/70 pb-3">
               <h3 className="section-title text-lg">Editar acceso de personal</h3>
               <button
@@ -532,19 +536,21 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Modal: Confirmar reinicio de datos de prueba */}
       {modalReset && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Confirmar limpieza de datos de prueba"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
-        >
-          <div className="w-full max-w-md bg-surface p-6">
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar limpieza de datos de prueba"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
             <div className="flex items-center justify-between border-b border-line/70 pb-3">
               <h3 className="section-title text-lg">Limpiar datos de prueba</h3>
               <button
@@ -599,8 +605,9 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

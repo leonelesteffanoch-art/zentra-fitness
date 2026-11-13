@@ -25,6 +25,7 @@ import { hoyLima } from '@/lib/formato';
 import { buscarSocios, listarPlanes } from '@/services/sociosService';
 import { turnoAbierto } from '@/services/cajaService';
 import { MemberFormModal } from '@/components/MemberFormModal';
+import { Portal } from '@/components/Portal';
 import { QuickPaymentModal } from '@/components/QuickPaymentModal';
 import { ToastBanner } from '@/components/ToastBanner';
 import type { EstadoLead, LeadInteresado } from '@/app/api/leads/route';
@@ -799,13 +800,14 @@ export function LeadsPanel({ gymId, userId }: Props) {
 
       {/* Modal: Registrar prospecto manual */}
       {modalNuevo && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center sm:p-6">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-nuevo-prospecto"
-            className="w-full max-w-md border border-line bg-surface"
-          >
+        <Portal>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-nuevo-prospecto"
+              className="modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto border border-line bg-surface"
+            >
             <header className="flex items-start justify-between border-b border-line/80 p-5">
               <div>
                 <h2 id="modal-nuevo-prospecto" className="section-title text-xl">
@@ -961,8 +963,9 @@ export function LeadsPanel({ gymId, userId }: Props) {
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Modal: Convertir prospecto a Socio oficial */}

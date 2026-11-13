@@ -26,6 +26,7 @@ import {
   type DatosProducto,
 } from '@/services/cajaService';
 import { soles } from '@/lib/formato';
+import { Portal } from '@/components/Portal';
 import type { Plan, Producto } from '@/types';
 
 interface Props {
@@ -695,160 +696,166 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
 
       {/* MODAL: Confirmar eliminación de Plan */}
       {planEliminar && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-        >
-          <div className="w-full max-w-sm border border-line bg-surface p-6 shadow-xl">
-            <h3 className="text-base font-bold text-bone">¿Eliminar plan de membresía?</h3>
-            <p className="mt-2 text-xs leading-relaxed text-muted">
-              Vas a eliminar el plan <strong className="text-bone">&ldquo;{planEliminar.nombre}&rdquo;</strong>. Si
-              el plan tiene socios o ventas registradas en el pasado, se archivará y ocultará de la
-              web automáticamente para proteger el historial financiero.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPlanEliminar(null)}
-                className="btn btn-ghost !min-h-8 !text-xs"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={eliminando}
-                onClick={handleEliminarPlan}
-                className="btn btn-primary !min-h-8 !bg-bad !text-white hover:!bg-bad/90 !text-xs"
-              >
-                {eliminando && <Loader2 size={13} className="animate-spin" />}
-                Confirmar eliminación
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: Confirmar eliminación de Producto */}
-      {prodEliminar && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-        >
-          <div className="w-full max-w-sm border border-line bg-surface p-6 shadow-xl">
-            <h3 className="text-base font-bold text-bone">¿Eliminar producto del catálogo?</h3>
-            <p className="mt-2 text-xs leading-relaxed text-muted">
-              Vas a eliminar <strong className="text-bone">&ldquo;{prodEliminar.nombre}&rdquo;</strong>. Si tiene
-              ventas históricas registradas en caja, se archivará y ocultará del POS automáticamente
-              para no alterar los arqueos pasados.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setProdEliminar(null)}
-                className="btn btn-ghost !min-h-8 !text-xs"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={eliminando}
-                onClick={handleEliminarProd}
-                className="btn btn-primary !min-h-8 !bg-bad !text-white hover:!bg-bad/90 !text-xs"
-              >
-                {eliminando && <Loader2 size={13} className="animate-spin" />}
-                Confirmar eliminación
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: Reposición Rápida de Stock */}
-      {prodReponer && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-        >
-          <div className="w-full max-w-sm border border-line bg-surface p-6 shadow-xl">
-            <div className="flex items-center justify-between border-b border-line/60 pb-3">
-              <div className="flex items-center gap-2">
-                <PackagePlus size={16} className="text-brand" />
-                <h3 className="text-base font-bold text-bone">Reponer existencias</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setProdReponer(null)}
-                className="text-muted hover:text-bone"
-              >
-                <X size={15} />
-              </button>
-            </div>
-
-            <form onSubmit={handleReponerStock} className="mt-4 space-y-3 text-xs">
-              <div>
-                <span className="text-muted block">Producto</span>
-                <span className="font-semibold text-bone text-sm">{prodReponer.nombre}</span>
-                <span className="text-muted block mt-0.5">
-                  Stock actual: <strong className="text-bone">{prodReponer.stock}</strong> unidades
-                </span>
-              </div>
-
-              <div>
-                <label htmlFor="cant-reponer" className="label !text-xs">
-                  Cantidad que ingresa al almacén *
-                </label>
-                <input
-                  id="cant-reponer"
-                  type="number"
-                  min="1"
-                  required
-                  autoFocus
-                  value={cantReponer}
-                  onChange={(e) => setCantReponer(e.target.value)}
-                  className="field !min-h-9 tabular-nums text-sm"
-                  placeholder="Ej: 24"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="costo-reponer" className="label !text-xs">
-                  Nuevo costo unitario de compra (S/) - opcional
-                </label>
-                <input
-                  id="costo-reponer"
-                  type="number"
-                  step="0.10"
-                  min="0"
-                  value={costoReponer}
-                  onChange={(e) => setCostoReponer(e.target.value)}
-                  className="field !min-h-9 tabular-nums text-sm"
-                  placeholder={prodReponer.costo ? String(prodReponer.costo) : '0.00'}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-line/60">
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate w-full max-w-sm p-6 shadow-xl">
+              <h3 className="text-base font-bold text-bone">¿Eliminar plan de membresía?</h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                Vas a eliminar el plan <strong className="text-bone">&ldquo;{planEliminar.nombre}&rdquo;</strong>. Si
+                el plan tiene socios o ventas registradas en el pasado, se archivará y ocultará de la
+                web automáticamente para proteger el historial financiero.
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setProdReponer(null)}
+                  onClick={() => setPlanEliminar(null)}
                   className="btn btn-ghost !min-h-8 !text-xs"
                 >
                   Cancelar
                 </button>
                 <button
-                  type="submit"
-                  disabled={reponiendo}
-                  className="btn btn-primary !min-h-8 !text-xs"
+                  type="button"
+                  disabled={eliminando}
+                  onClick={handleEliminarPlan}
+                  className="btn btn-primary !min-h-8 !bg-bad !text-white hover:!bg-bad/90 !text-xs"
                 >
-                  {reponiendo && <Loader2 size={13} className="animate-spin" />}
-                  Confirmar ingreso
+                  {eliminando && <Loader2 size={13} className="animate-spin" />}
+                  Confirmar eliminación
                 </button>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
+        </Portal>
+      )}
+
+      {/* MODAL: Confirmar eliminación de Producto */}
+      {prodEliminar && (
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate w-full max-w-sm p-6 shadow-xl">
+              <h3 className="text-base font-bold text-bone">¿Eliminar producto del catálogo?</h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                Vas a eliminar <strong className="text-bone">&ldquo;{prodEliminar.nombre}&rdquo;</strong>. Si tiene
+                ventas históricas registradas en caja, se archivará y ocultará del POS automáticamente
+                para no alterar los arqueos pasados.
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProdEliminar(null)}
+                  className="btn btn-ghost !min-h-8 !text-xs"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={eliminando}
+                  onClick={handleEliminarProd}
+                  className="btn btn-primary !min-h-8 !bg-bad !text-white hover:!bg-bad/90 !text-xs"
+                >
+                  {eliminando && <Loader2 size={13} className="animate-spin" />}
+                  Confirmar eliminación
+                </button>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* MODAL: Reposición Rápida de Stock */}
+      {prodReponer && (
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate max-h-[90vh] w-full max-w-sm overflow-y-auto p-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-line/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <PackagePlus size={16} className="text-brand" />
+                  <h3 className="text-base font-bold text-bone">Reponer existencias</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProdReponer(null)}
+                  className="text-muted hover:text-bone"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <form onSubmit={handleReponerStock} className="mt-4 space-y-3 text-xs">
+                <div>
+                  <span className="text-muted block">Producto</span>
+                  <span className="font-semibold text-bone text-sm">{prodReponer.nombre}</span>
+                  <span className="text-muted block mt-0.5">
+                    Stock actual: <strong className="text-bone">{prodReponer.stock}</strong> unidades
+                  </span>
+                </div>
+
+                <div>
+                  <label htmlFor="cant-reponer" className="label !text-xs">
+                    Cantidad que ingresa al almacén *
+                  </label>
+                  <input
+                    id="cant-reponer"
+                    type="number"
+                    min="1"
+                    required
+                    autoFocus
+                    value={cantReponer}
+                    onChange={(e) => setCantReponer(e.target.value)}
+                    className="field !min-h-9 tabular-nums text-sm"
+                    placeholder="Ej: 24"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="costo-reponer" className="label !text-xs">
+                    Nuevo costo unitario de compra (S/) - opcional
+                  </label>
+                  <input
+                    id="costo-reponer"
+                    type="number"
+                    step="0.10"
+                    min="0"
+                    value={costoReponer}
+                    onChange={(e) => setCostoReponer(e.target.value)}
+                    className="field !min-h-9 tabular-nums text-sm"
+                    placeholder={prodReponer.costo ? String(prodReponer.costo) : '0.00'}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-line/60">
+                  <button
+                    type="button"
+                    onClick={() => setProdReponer(null)}
+                    className="btn btn-ghost !min-h-8 !text-xs"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reponiendo}
+                    className="btn btn-primary !min-h-8 !text-xs"
+                  >
+                    {reponiendo && <Loader2 size={13} className="animate-spin" />}
+                    Confirmar ingreso
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
       )}
     </div>
   );

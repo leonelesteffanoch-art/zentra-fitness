@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { Portal } from '@/components/Portal';
 
 export interface AvisoToast {
   tipo: 'ok' | 'error';
@@ -32,7 +33,7 @@ export function ToastBanner({ aviso, onClose, autoCloseMs = 6000 }: Props) {
   const esOk = aviso.tipo === 'ok';
 
   return (
-    <>
+    <Portal>
       {/* Notificación flotante siempre visible en la esquina inferior derecha */}
       <div
         role={esOk ? 'status' : 'alert'}
@@ -71,6 +72,6 @@ export function ToastBanner({ aviso, onClose, autoCloseMs = 6000 }: Props) {
           <X size={15} strokeWidth={2} />
         </button>
       </div>
-    </>
+    </Portal>
   );
 }

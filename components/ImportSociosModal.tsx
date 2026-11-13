@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { Portal } from '@/components/Portal';
 import { supabase } from '@/lib/supabase';
 import { listarPlanes } from '@/services/sociosService';
 import { diffDiasISO, formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
@@ -510,13 +511,14 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center sm:p-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="import-modal-titulo"
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col border border-line bg-surface"
-      >
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="import-modal-titulo"
+          className="modal-animate flex max-h-[90vh] w-full max-w-4xl flex-col border border-line bg-surface"
+        >
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <div>
             <h2 id="import-modal-titulo" className="section-title flex items-center gap-2 text-xl">
@@ -713,7 +715,8 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
             </button>
           </div>
         </footer>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }

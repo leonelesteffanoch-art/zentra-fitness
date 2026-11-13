@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { CashClosureTable, CashSummaryStrip } from '@/components/CashClosureTable';
+import { Portal } from '@/components/Portal';
 import { PosPanel } from '@/components/PosPanel';
 import { ToastBanner } from '@/components/ToastBanner';
 import {
@@ -429,13 +430,14 @@ export default function CajaPage() {
 
       {/* Drawer / Modal: Registrar Egreso */}
       {mostrarEgreso && turno && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="egreso-modal-titulo"
-            className="panel-card modal-animate w-full max-w-md p-6"
-          >
+        <Portal>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="egreso-modal-titulo"
+              className="panel-card modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto p-6"
+            >
             <div className="mb-5 flex items-start justify-between">
               <div>
                 <h2 id="egreso-modal-titulo" className="section-title text-xl">
@@ -549,19 +551,21 @@ export default function CajaPage() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Modal: Cerrar Turno */}
       {mostrarCierre && turno && resumen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center sm:p-6">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cierre-modal-titulo"
-            className="w-full max-w-md border border-line bg-surface p-6"
-          >
+        <Portal>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cierre-modal-titulo"
+              className="panel-card modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto p-6"
+            >
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h2 id="cierre-modal-titulo" className="section-title text-xl">
@@ -645,8 +649,9 @@ export default function CajaPage() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

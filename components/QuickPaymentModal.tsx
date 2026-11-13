@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { History, Loader2, Plus, X } from 'lucide-react';
+import { Portal } from '@/components/Portal';
 import { listarPlanes, registrarMembresia, abonarMembresia } from '@/services/sociosService';
 import { supabase } from '@/lib/supabase';
 import { diffDiasISO, formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
@@ -164,13 +165,14 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center sm:p-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="cobro-titulo"
-        className="max-h-full w-full max-w-xl overflow-y-auto border border-line bg-surface"
-      >
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cobro-titulo"
+          className="modal-animate max-h-[92vh] w-full max-w-xl overflow-y-auto border border-line bg-surface"
+        >
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <div>
             <p className="text-xs text-muted">
@@ -485,7 +487,8 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
               : 'Confirmar cobro'}
           </button>
         </footer>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }
