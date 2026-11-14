@@ -276,3 +276,107 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function tieneHistorialOperativo(
+  adminClient: ReturnType<typeof crearAdminClient>,
+  targetId: string
+): Promise<boolean> {
+  const checks = await Promise.all([
+    adminClient.from('socios').select('id', { count: 'exact', head: true }).eq('created_by', targetId),
+    adminClient
+      .from('turnos_caja')
+      .select('id', { count: 'exact', head: true })
+      .or(`abierto_por.eq.${targetId},cerrado_por.eq.${targetId}`),
+    adminClient
+      .from('membresias')
+      .select('id', { count: 'exact', head: true })
+      .or(`created_by.eq.${targetId},anulado_por.eq.${targetId}`),
+    adminClient
+      .from('asistencias')
+      .select('id', { count: 'exact', head: true })
+      .eq('registrado_por', targetId),
+    adminClient
+      .from('ventas_productos')
+      .select('id', { count: 'exact', head: true })
+      .or(`registrado_por.eq.${targetId},anulado_por.eq.${targetId}`),
+    adminClient
+      .from('movimientos_caja')
+      .select('id', { count: 'exact', head: true })
+      .or(`registrado_por.eq.${targetId},anulado_por.eq.${targetId}`),
+  ]);
+
+  const err = checks.find((c) => c.error)?.error;
+  if (err) {
+    throw new Error(err.message);
+  }
+  return checks.some((c) => (c.count ?? 0) > 0);
+}
+
+/** DELETE /api/admin/personal -> Elimina una cuenta de personal si aún no tiene historial operativo. */
+export async function DELETE(req: NextRequest) {
+  try {
+    const verif = await verificarAdminSolicitante(req);
+    if ('error' in verif) {
+      return NextResponse.json({ error: verif.error }, { status: verif.status });
+    }
+    const { adminClient, adminPerfil } = verif;
+
+    let bodyId = '';
+    try {
+      const body = (await req.json()) as { id?: string };
+      bodyId = body.id ?? '';
+    } catch {
+      bodyId = '';
+    }
+
+    const targetId = (bodyId || req.nextUrl.searchParams.get('id') || '').trim();
+    if (!targetId || !UUID_RE.test(targetId)) {
+      return NextResponse.json({ error: 'ID de trabajador inválido' }, { status: 400 });
+    }
+
+    if (targetId === adminPerfil.id) {
+      return NextResponse.json(
+        { error: 'No puedes eliminar tu propio usuario administrador' },
+        { status: 400 }
+      );
+    }
+
+    const { data: objetivo } = await adminClient
+      .from('perfiles')
+      .select('id, gym_id')
+      .eq('id', targetId)
+      .eq('gym_id', adminPerfil.gym_id)
+      .maybeSingle();
+
+    if (!objetivo) {
+      return NextResponse.json({ error: 'Trabajador no encontrado en este gimnasio' }, { status: 404 });
+    }
+
+    const conHistorial = await tieneHistorialOperativo(adminClient, targetId);
+    if (conHistorial) {
+      return NextResponse.json(
+        {
+          error:
+            'Esta cuenta ya registró cobros, turnos, asistencias o socios y no se puede borrar para proteger el historial contable. Cámbiala a estado Inactivo.',
+          tieneHistorial: true,
+        },
+        { status: 409 }
+      );
+    }
+
+    // auth.users -> public.perfiles tiene ON DELETE CASCADE en el esquema
+    const { error: delErr } = await adminClient.auth.admin.deleteUser(targetId);
+    if (delErr) {
+      return NextResponse.json({ error: delErr.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'Error al eliminar trabajador' },
+      { status: 500 }
+    );
+  }
+}

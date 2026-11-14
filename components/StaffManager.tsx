@@ -1,7 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { KeyRound, Loader2, Plus, RotateCcw, Shield, UserPlus, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  KeyRound,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Shield,
+  Trash2,
+  UserPlus,
+  X,
+} from 'lucide-react';
 import { Portal } from '@/components/Portal';
 import { supabase } from '@/lib/supabase';
 import type { Rol } from '@/types';
@@ -59,6 +69,11 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
   const [editRol, setEditRol] = useState<Rol>('recepcionista');
   const [editActivo, setEditActivo] = useState(true);
   const [editPassword, setEditPassword] = useState('');
+
+  // Modal de confirmación para eliminar un acceso
+  const [eliminando, setEliminando] = useState<TrabajadorItem | null>(null);
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
+  const [puedeDesactivar, setPuedeDesactivar] = useState(false);
 
   // Modal de confirmación para limpiar datos de prueba
   const [modalReset, setModalReset] = useState(false);
@@ -175,6 +190,74 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
     }
   }
 
+  function abrirConfirmacionEliminar(t: TrabajadorItem) {
+    setEliminando(t);
+    setErrorEliminar(null);
+    setPuedeDesactivar(false);
+  }
+
+  async function confirmarEliminacion() {
+    if (!eliminando) return;
+    setGuardando(true);
+    setErrorEliminar(null);
+    setPuedeDesactivar(false);
+    try {
+      const token = await obtenerToken();
+      const res = await fetch('/api/admin/personal', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: eliminando.id }),
+      });
+      const data = (await res.json()) as { error?: string; tieneHistorial?: boolean };
+      if (!res.ok) {
+        setErrorEliminar(data.error ?? 'No se pudo eliminar la cuenta');
+        setPuedeDesactivar(Boolean(data.tieneHistorial && eliminando.activo));
+        return;
+      }
+      const { nombre: nombreBorrado, email: correoBorrado } = eliminando;
+      setEliminando(null);
+      onSuccess(`Acceso de "${nombreBorrado}" (${correoBorrado}) eliminado.`);
+      await cargarPersonal();
+    } catch {
+      setErrorEliminar('Error de red al intentar eliminar el acceso');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function desactivarEnLugarDeEliminar() {
+    if (!eliminando) return;
+    setGuardando(true);
+    setErrorEliminar(null);
+    try {
+      const token = await obtenerToken();
+      const res = await fetch('/api/admin/personal', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: eliminando.id, activo: false }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setErrorEliminar(data.error ?? 'No se pudo desactivar la cuenta');
+        return;
+      }
+      const nombreInactivo = eliminando.nombre;
+      setEliminando(null);
+      onSuccess(`Acceso de "${nombreInactivo}" desactivado (Inactivo).`);
+      await cargarPersonal();
+    } catch {
+      setErrorEliminar('Error de red al desactivar la cuenta');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
   async function ejecutarLimpiezaPruebas(e: FormEvent) {
     e.preventDefault();
     if (confirmText.trim().toUpperCase() !== 'LIMPIAR') return;
@@ -281,14 +364,27 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => abrirEdicion(t)}
-                          className="btn btn-ghost !min-h-8 !px-2.5 text-xs"
-                        >
-                          <KeyRound size={13} strokeWidth={1.5} />
-                          Editar / Clave
-                        </button>
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => abrirEdicion(t)}
+                            className="btn btn-ghost !min-h-8 !px-2.5 text-xs"
+                          >
+                            <KeyRound size={13} strokeWidth={1.5} />
+                            Editar / Clave
+                          </button>
+                          {!esYo && (
+                            <button
+                              type="button"
+                              onClick={() => abrirConfirmacionEliminar(t)}
+                              className="btn btn-ghost !min-h-8 !px-2 text-xs text-muted hover:!border-bad/40 hover:!bg-bad/15 hover:!text-bad"
+                              aria-label={`Eliminar acceso de ${t.nombre}`}
+                              title="Eliminar acceso"
+                            >
+                              <Trash2 size={14} strokeWidth={1.5} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -536,6 +632,97 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                 </button>
               </div>
             </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Modal: Confirmar eliminación de acceso */}
+      {eliminando && (
+        <Portal>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar eliminación de acceso"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-xs"
+          >
+            <div className="panel-card modal-animate max-h-[90vh] w-full max-w-md overflow-y-auto p-6">
+              <div className="flex items-center justify-between border-b border-line/70 pb-3">
+                <h3 className="section-title flex items-center gap-2 text-lg text-bad">
+                  <AlertTriangle size={18} strokeWidth={1.75} />
+                  Eliminar acceso
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setEliminando(null)}
+                  disabled={guardando}
+                  className="btn btn-ghost !min-h-8 !px-2"
+                  aria-label="Cerrar"
+                >
+                  <X size={16} strokeWidth={1.5} />
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3 text-sm">
+                <p className="leading-relaxed text-muted">
+                  ¿Eliminar la cuenta de{' '}
+                  <strong className="text-bone">{eliminando.nombre}</strong> (
+                  <span className="font-mono text-xs text-bone">{eliminando.email}</span>)? Esta
+                  acción quita su acceso de inicio de sesión permanentemente.
+                </p>
+
+                <p className="rounded-md border border-line/70 bg-surface-2/70 px-3 py-2 text-xs leading-relaxed text-muted">
+                  Solo se pueden borrar cuentas sin movimientos previos. Si ya registró cobros o
+                  turnos, podrás pasarla a <strong className="text-bone">Inactivo</strong> para
+                  bloquear su ingreso sin perder el historial.
+                </p>
+
+                {errorEliminar && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-bad/40 bg-bad/15 px-3 py-2 text-xs leading-relaxed text-bad"
+                  >
+                    {errorEliminar}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEliminando(null)}
+                  disabled={guardando}
+                  className="btn btn-ghost !min-h-10"
+                >
+                  Cancelar
+                </button>
+
+                {puedeDesactivar ? (
+                  <button
+                    type="button"
+                    onClick={desactivarEnLugarDeEliminar}
+                    disabled={guardando}
+                    className="btn btn-secondary !min-h-10"
+                  >
+                    {guardando && <Loader2 size={15} strokeWidth={1.5} className="animate-spin" />}
+                    Pasar a Inactivo
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={confirmarEliminacion}
+                    disabled={guardando}
+                    className="btn !min-h-10 border border-bad/40 bg-bad/15 text-bad hover:bg-bad/25"
+                  >
+                    {guardando ? (
+                      <Loader2 size={15} strokeWidth={1.5} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={15} strokeWidth={1.5} />
+                    )}
+                    Sí, eliminar acceso
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </Portal>
