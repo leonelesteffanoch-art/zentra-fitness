@@ -105,24 +105,17 @@ export function PanelShell({ children }: { children: ReactNode }) {
   return (
     <div className="bg-grain flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b border-line/90 bg-ink/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              aria-label="Ir a la página principal"
-              className="group flex shrink-0 items-center gap-2 transition-opacity hover:opacity-90"
-            >
-              <Logo className="w-28" />
-            </Link>
-            <span className="hidden h-4 w-px bg-line lg:block" aria-hidden="true" />
-            <span className="hidden items-center gap-1.5 rounded-full border border-line bg-surface-2/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted xl:inline-flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" />
-              Panel Operativo
-            </span>
-          </div>
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2.5 px-4 py-2.5 sm:px-6 xl:gap-4 xl:px-8">
+          <Link
+            href="/"
+            aria-label="Ir a la página principal"
+            className="group flex shrink-0 items-center gap-2 transition-opacity hover:opacity-90"
+          >
+            <Logo className="w-24 xl:w-28" />
+          </Link>
 
           {/* Navegación en línea en pantallas medianas y grandes */}
-          <nav aria-label="Principal" className="hidden flex-1 items-center justify-center gap-1 md:flex">
+          <nav aria-label="Principal" className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex">
             {itemsVisibles.map((i) => {
               const activo = pathname.startsWith(i.href);
               return (
@@ -130,7 +123,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
                   key={i.href}
                   href={i.href}
                   aria-current={activo ? 'page' : undefined}
-                  className={`relative flex items-center gap-2 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-medium transition-all duration-150 ${
+                  className={`relative flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-[13px] font-medium transition-all duration-150 xl:gap-2 xl:px-3.5 xl:text-sm ${
                     activo
                       ? 'bg-brand/10 text-bone shadow-[inset_0_0_0_1px_rgba(250,204,21,0.22)]'
                       : 'text-muted hover:bg-surface-2/70 hover:text-bone'
@@ -151,20 +144,22 @@ export function PanelShell({ children }: { children: ReactNode }) {
             })}
           </nav>
 
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {reloj && (
               <div
-                className="hidden items-center gap-2 rounded-md border border-line/80 bg-surface/90 px-2.5 py-1 text-xs lg:flex"
+                className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-line/80 bg-surface/90 px-2.5 py-1 text-xs lg:flex"
                 title="Hora local (Lima, Perú)"
               >
-                <Clock size={13} className="text-brand" strokeWidth={1.75} />
-                <span className="font-mono font-semibold tabular-nums text-bone">{reloj.hora}</span>
-                <span className="text-line">·</span>
-                <span className="capitalize text-muted">{reloj.fecha}</span>
+                <Clock size={13} className="shrink-0 text-brand" strokeWidth={1.75} />
+                <span className="whitespace-nowrap font-mono font-semibold tabular-nums text-bone">
+                  {reloj.hora}
+                </span>
+                <span className="text-muted/60" aria-hidden="true">·</span>
+                <span className="whitespace-nowrap capitalize text-muted">{reloj.fecha}</span>
               </div>
             )}
 
-            <div className="flex items-center gap-2.5 rounded-md border border-line/70 bg-surface/60 px-2.5 py-1">
+            <div className="flex shrink-0 items-center gap-2.5 rounded-md border border-line/70 bg-surface/60 px-2.5 py-1">
               <div
                 aria-hidden="true"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-brand/15 font-display text-xs font-bold tracking-wider text-brand ring-1 ring-brand/30"
@@ -172,11 +167,11 @@ export function PanelShell({ children }: { children: ReactNode }) {
                 {iniciales || 'ZF'}
               </div>
               <div className="hidden text-left sm:block">
-                <p className="max-w-[140px] truncate text-xs font-semibold leading-tight text-bone">
+                <p className="max-w-[110px] truncate text-xs font-semibold leading-tight text-bone xl:max-w-[140px]">
                   {perfil.nombre}
                 </p>
-                <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted">
-                  {perfil.rol === 'admin' && <ShieldCheck size={10} className="text-brand" />}
+                <p className="flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-muted">
+                  {perfil.rol === 'admin' && <ShieldCheck size={10} className="shrink-0 text-brand" />}
                   {perfil.rol}
                 </p>
               </div>
@@ -184,7 +179,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
             <button
               onClick={signOut}
-              className="btn btn-ghost !min-h-9 !px-2.5 text-muted hover:!border-bad/40 hover:!text-bad"
+              className="btn btn-ghost shrink-0 !min-h-9 !px-2.5 text-muted hover:!border-bad/40 hover:!text-bad"
               aria-label="Cerrar sesión"
               title="Cerrar sesión"
             >
