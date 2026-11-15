@@ -264,19 +264,19 @@ export default function AdminPage() {
   return (
     <div className="panel-fade-in space-y-8">
       {/* Cabecera y Filtro de rango + Atajos rápidos */}
-      <div className="flex flex-col justify-between gap-4 border-b border-line/80 pb-5 xl:flex-row xl:items-end">
-        <div>
+      <div className="flex flex-col justify-between gap-4 border-b border-line/80 pb-5 2xl:flex-row 2xl:items-end">
+        <div className="shrink-0">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
             Dirección, Finanzas y Catálogo
           </p>
-          <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">
+          <h1 className="mt-0.5 font-display text-3xl tracking-wide sm:text-4xl">
             ADMINISTRACIÓN
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-end gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 2xl:flex-nowrap">
           {/* Atajos de fecha */}
-          <div className="flex items-center gap-1 rounded-md border border-line bg-surface p-1">
+          <div className="flex flex-wrap items-center gap-0.5 rounded-md border border-line bg-surface p-1 sm:h-9 sm:flex-nowrap">
             {(
               [
                 { label: 'Hoy', val: 0 as const },
@@ -290,15 +290,18 @@ export default function AdminPage() {
                 key={preset.label}
                 type="button"
                 onClick={() => aplicarRangoRapido(preset.val)}
-                className="rounded px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-bone"
+                className="rounded px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-bone"
               >
                 {preset.label}
               </button>
             ))}
           </div>
 
-          <div>
-            <label htmlFor="admin-desde" className="label text-[10px]">
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 sm:h-9 sm:flex-nowrap sm:py-0">
+            <label
+              htmlFor="admin-desde"
+              className="select-none text-[11px] font-medium text-muted"
+            >
               Desde
             </label>
             <input
@@ -310,11 +313,13 @@ export default function AdminPage() {
                 setDesde(v);
                 void consultarPeriodo(v, hasta);
               }}
-              className="field !min-h-9 font-mono text-xs"
+              className="border-0 bg-transparent p-0 font-mono text-xs text-bone outline-none [color-scheme:dark]"
             />
-          </div>
-          <div>
-            <label htmlFor="admin-hasta" className="label text-[10px]">
+            <span className="hidden h-4 w-px bg-line/80 sm:block" aria-hidden="true" />
+            <label
+              htmlFor="admin-hasta"
+              className="select-none text-[11px] font-medium text-muted"
+            >
               Hasta
             </label>
             <input
@@ -326,14 +331,15 @@ export default function AdminPage() {
                 setHasta(v);
                 void consultarPeriodo(desde, v);
               }}
-              className="field !min-h-9 font-mono text-xs"
+              className="border-0 bg-transparent p-0 font-mono text-xs text-bone outline-none [color-scheme:dark]"
             />
           </div>
+
           <button
             type="button"
             disabled={exportando}
             onClick={exportarExcel}
-            className="btn btn-secondary !min-h-9"
+            className="btn btn-secondary h-9 !min-h-9 whitespace-nowrap !px-3 text-xs"
           >
             {exportando ? (
               <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
