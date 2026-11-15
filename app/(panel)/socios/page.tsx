@@ -656,7 +656,7 @@ export default function SociosPage() {
         {/* Columna derecha: EmptyState o Ficha ordenada (sticky en escritorio) */}
         <section
           aria-label="Detalle del socio"
-          className="panel-card p-6 lg:sticky lg:top-20"
+          className="panel-card p-6 lg:sticky lg:top-6"
         >
           {!seleccionado ? (
             <div className="flex flex-col items-center py-12 text-center">

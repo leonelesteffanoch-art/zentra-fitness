@@ -530,7 +530,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
 
         {/* Carrito activo (Ticket lateral sticky en escritorio) */}
         {itemsSeleccionados.length > 0 && (
-          <div className="panel-card space-y-3.5 !border-brand/50 p-4 shadow-xl xl:sticky xl:top-20">
+          <div className="panel-card space-y-3.5 !border-brand/50 p-4 shadow-xl xl:sticky xl:top-6">
             <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
               <div className="flex min-w-0 items-center gap-2">
                 <ShoppingBag size={17} className="shrink-0 text-brand" strokeWidth={1.75} />

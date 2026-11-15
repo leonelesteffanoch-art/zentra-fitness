@@ -419,7 +419,7 @@ export default function CajaPage() {
               }}
             />
 
-            <div className="lg:sticky lg:top-20">
+            <div className="lg:sticky lg:top-6">
               <CashSummaryStrip turno={turno} resumen={resumen} />
             </div>
           </div>
