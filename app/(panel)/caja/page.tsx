@@ -238,7 +238,10 @@ export default function CajaPage() {
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-4">
         <div>
-          <div className="flex flex-wrap items-center gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+            Punto de venta | Control de efectivo | Arqueo de turno
+          </p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-3">
             <h1 className="font-display text-4xl tracking-wide sm:text-5xl">CAJA Y POS</h1>
             {turno ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-ok/30 bg-ok/15 px-3 py-1 text-xs font-semibold text-ok">
@@ -253,9 +256,6 @@ export default function CajaPage() {
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-muted">
-            Punto de venta | Control de efectivo | Arqueo de turno
-          </p>
         </div>
 
         {turno && (
