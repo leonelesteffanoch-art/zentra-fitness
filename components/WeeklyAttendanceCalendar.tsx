@@ -62,7 +62,7 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
   const asistioHoy = diasSemana.find((d) => d.esHoy)?.asistio ?? false;
 
   return (
-    <div className="space-y-3 rounded-md border border-line/80 bg-ink/70 p-4">
+    <div className="flex h-full flex-col justify-between space-y-3 rounded-md border border-line/80 bg-ink/70 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-medium text-bone">
           <CalendarDays size={15} strokeWidth={1.75} className="text-brand" />

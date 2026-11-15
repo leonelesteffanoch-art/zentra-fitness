@@ -18,6 +18,7 @@ import {
   UtensilsCrossed,
   X,
 } from 'lucide-react';
+import { Portal } from '@/components/Portal';
 import { registrarVenta } from '@/services/cajaService';
 import { soles } from '@/lib/formato';
 import type { ItemVentaInput, MetodoPago, PagoInput, Producto } from '@/types';
@@ -95,6 +96,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
 
   // Calculadora de vuelto para efectivo
   const [pagaCon, setPagaCon] = useState<string>('');
+  const [modalTicketAbierto, setModalTicketAbierto] = useState(false);
 
   // Agrupación inteligente de productos (combina versión al tiempo + helada en una sola ficha)
   const productosAgrupados = useMemo(() => {
@@ -217,6 +219,11 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
     });
   }
 
+  function agregarProducto(prod: Producto) {
+    sumar(prod, 1);
+    setModalTicketAbierto(true);
+  }
+
   function limpiarCarrito() {
     setCarrito({});
     setCliente('');
@@ -224,6 +231,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
     setModoMixto(false);
     setPagaCon('');
     setError(null);
+    setModalTicketAbierto(false);
   }
 
   async function cobrar() {
@@ -277,25 +285,38 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
           </p>
         </div>
 
-        {/* Buscador en tiempo real */}
-        <div className="relative w-full sm:w-60">
-          <Search size={14} className="absolute left-2.5 top-2.5 text-muted" />
-          <input
-            type="text"
-            placeholder="Buscar producto..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="field !min-h-8 !pl-8 !pr-7 !text-xs !bg-surface"
-          />
-          {busqueda && (
+        {/* Botón para reabrir ticket + buscador en tiempo real */}
+        <div className="flex flex-wrap items-center gap-2">
+          {itemsSeleccionados.length > 0 && (
             <button
               type="button"
-              onClick={() => setBusqueda('')}
-              className="absolute right-2 top-2 text-muted hover:text-bone"
+              onClick={() => setModalTicketAbierto(true)}
+              className="btn btn-primary !min-h-8 !px-3 !text-xs tabular-nums"
             >
-              <X size={13} />
+              <ShoppingBag size={14} strokeWidth={2} />
+              Ticket ({totalItems}) · {soles(total)}
             </button>
           )}
+
+          <div className="relative w-full sm:w-60">
+            <Search size={14} className="absolute left-2.5 top-2.5 text-muted" />
+            <input
+              type="text"
+              placeholder="Buscar producto..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="field !min-h-8 !pl-8 !pr-7 !text-xs !bg-surface"
+            />
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => setBusqueda('')}
+                className="absolute right-2 top-2 text-muted hover:text-bone"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -335,23 +356,14 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
         })}
       </div>
 
-      {/* Catálogo + Ticket lateral (sticky en escritorio cuando hay items) */}
-      <div
-        className={`grid items-start gap-4 ${
-          itemsSeleccionados.length > 0 ? 'xl:grid-cols-[1fr_372px]' : 'grid-cols-1'
-        }`}
-      >
-        <div>
-          {productosFiltrados.length === 0 ? (
-            <div className="panel-card px-4 py-10 text-center text-sm text-muted">
-              No se encontraron productos que coincidan con la búsqueda.
-            </div>
-          ) : (
-            <div
-              className={`grid grid-cols-1 gap-2.5 sm:grid-cols-2 ${
-                itemsSeleccionados.length > 0 ? '2xl:grid-cols-3' : 'xl:grid-cols-3'
-              }`}
-            >
+      {/* Catálogo completo (el ticket se abre como ventana flotante al añadir) */}
+      <div>
+        {productosFiltrados.length === 0 ? (
+          <div className="panel-card px-4 py-10 text-center text-sm text-muted">
+            No se encontraron productos que coincidan con la búsqueda.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
               {productosFiltrados.map((grupo) => {
                 const tieneVariantes = grupo.variantes.length > 1;
                 const cantTotal = grupo.variantes.reduce((sum, v) => sum + (carrito[v.id] ?? 0), 0);
@@ -401,7 +413,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                                 key={v.id}
                                 type="button"
                                 disabled={sinStock}
-                                onClick={() => sumar(v.productoOriginal, 1)}
+                                onClick={() => agregarProducto(v.productoOriginal)}
                                 className={`group relative flex flex-col items-center justify-center rounded-md p-2 text-center transition-all ${
                                   cantVar > 0
                                     ? esHelada
@@ -475,7 +487,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                           <button
                             type="button"
                             disabled={sinStock}
-                            onClick={() => sumar(v.productoOriginal, 1)}
+                            onClick={() => agregarProducto(v.productoOriginal)}
                             className={`mt-3 flex flex-col justify-between rounded-md p-2.5 text-left transition-colors ${
                               cantVar > 0
                                 ? 'border border-brand/60 bg-surface-2'
@@ -526,32 +538,50 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
               })}
             </div>
           )}
-        </div>
+      </div>
 
-        {/* Carrito activo (Ticket lateral sticky en escritorio) */}
-        {itemsSeleccionados.length > 0 && (
-          <div className="panel-card space-y-3.5 !border-brand/50 p-4 shadow-xl xl:sticky xl:top-6">
-            <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <ShoppingBag size={17} className="shrink-0 text-brand" strokeWidth={1.75} />
-                <h3 className="whitespace-nowrap text-sm font-semibold text-bone sm:text-base">
-                  Ticket de venta
-                </h3>
-                <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] font-medium text-muted tabular-nums">
-                  {totalItems} {totalItems === 1 ? 'ítem' : 'ítems'}
-                </span>
+      {/* Ventana flotante del Ticket de venta (se abre al agregar un producto) */}
+      {modalTicketAbierto && itemsSeleccionados.length > 0 && (
+        <Portal>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pos-ticket-titulo"
+              className="panel-card modal-animate max-h-[92vh] w-full max-w-md space-y-3.5 overflow-y-auto !border-brand/50 p-5 shadow-2xl"
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <ShoppingBag size={17} className="shrink-0 text-brand" strokeWidth={1.75} />
+                  <h3 id="pos-ticket-titulo" className="whitespace-nowrap text-base font-semibold text-bone">
+                    Ticket de venta
+                  </h3>
+                  <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] font-medium text-muted tabular-nums">
+                    {totalItems} {totalItems === 1 ? 'ítem' : 'ítems'}
+                  </span>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={limpiarCarrito}
+                    title="Vaciar ticket completo"
+                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-bad/10 hover:text-bad"
+                  >
+                    <Trash2 size={13} strokeWidth={1.6} />
+                    Vaciar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTicketAbierto(false)}
+                    className="btn btn-ghost !min-h-8 !px-2 text-muted hover:text-bone"
+                    aria-label="Cerrar ticket"
+                    title="Seguir viendo productos"
+                  >
+                    <X size={16} strokeWidth={1.75} />
+                  </button>
+                </div>
               </div>
-
-              <button
-                type="button"
-                onClick={limpiarCarrito}
-                title="Vaciar ticket completo"
-                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-bad/10 hover:text-bad"
-              >
-                <Trash2 size={13} strokeWidth={1.6} />
-                Vaciar
-              </button>
-            </div>
 
             {/* Lista de productos seleccionados */}
             <ul className="max-h-60 divide-y divide-line/70 overflow-y-auto pr-0.5">
@@ -779,23 +809,34 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                 </p>
               </div>
 
-              <button
-                type="button"
-                disabled={enviando}
-                onClick={cobrar}
-                className="btn btn-primary !min-h-11 w-full whitespace-nowrap font-bold tabular-nums"
-              >
-                {enviando ? (
-                  <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />
-                ) : (
-                  <Check size={16} strokeWidth={2.25} />
-                )}
-                <span>Cobrar {soles(total)}</span>
-              </button>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr]">
+                <button
+                  type="button"
+                  onClick={() => setModalTicketAbierto(false)}
+                  className="btn btn-secondary !min-h-11 whitespace-nowrap text-xs"
+                >
+                  <Plus size={15} strokeWidth={1.75} />
+                  Seguir agregando
+                </button>
+                <button
+                  type="button"
+                  disabled={enviando}
+                  onClick={cobrar}
+                  className="btn btn-primary !min-h-11 w-full whitespace-nowrap font-bold tabular-nums"
+                >
+                  {enviando ? (
+                    <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />
+                  ) : (
+                    <Check size={16} strokeWidth={2.25} />
+                  )}
+                  <span>Cobrar {soles(total)}</span>
+                </button>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+          </div>
+        </Portal>
+      )}
     </section>
   );
 }

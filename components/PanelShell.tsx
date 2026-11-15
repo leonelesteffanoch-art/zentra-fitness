@@ -140,18 +140,18 @@ export function PanelShell({ children }: { children: ReactNode }) {
   const periodoCorto = (partesHora?.[2] ?? '').replace(/\s+/g, '');
 
   return (
-    <div className="bg-grain flex min-h-screen flex-col md:flex-row">
-      {/* Barra lateral izquierda en pantallas medianas y grandes */}
+    <div className="bg-grain min-h-screen">
+      {/* Barra lateral izquierda fija en pantallas medianas y grandes */}
       <aside
         aria-label="Barra lateral de navegación"
-        className={`relative hidden shrink-0 select-none flex-col border-r border-line/90 bg-ink/95 backdrop-blur-xl transition-[width] duration-200 ease-out md:sticky md:top-0 md:z-30 md:flex md:h-screen ${
-          colapsado ? 'md:w-[72px]' : 'md:w-[224px]'
+        className={`hidden shrink-0 select-none flex-col border-r border-line/90 bg-ink/95 backdrop-blur-xl transition-[width] duration-200 ease-out md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex ${
+          colapsado ? 'md:w-[92px]' : 'md:w-[256px]'
         }`}
       >
         <button
           type="button"
           onClick={alternarSidebar}
-          className="absolute -right-3 top-5 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface-2 text-muted shadow-md transition-colors hover:border-brand/50 hover:bg-surface hover:text-brand"
+          className="absolute -right-3 top-[52px] z-40 flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface-2 text-muted shadow-md transition-colors hover:border-brand/50 hover:bg-surface hover:text-brand"
           aria-label={colapsado ? 'Expandir menú lateral' : 'Contraer menú lateral'}
           title={colapsado ? 'Expandir menú lateral' : 'Contraer menú lateral'}
         >
@@ -162,7 +162,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
           )}
         </button>
 
-        <div className="flex h-16 shrink-0 items-center justify-center border-b border-line/80 px-3">
+        <div className="flex h-[68px] shrink-0 items-center justify-center border-b border-line/80 px-4">
           {!colapsado ? (
             <Link
               href="/"
@@ -183,7 +183,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <nav aria-label="Principal" className="flex-1 space-y-1.5 overflow-y-auto px-2.5 py-4">
+        <nav aria-label="Principal" className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
           {itemsVisibles.map((i) => {
             const activo = pathname.startsWith(i.href);
             return (
@@ -193,7 +193,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
                 aria-current={activo ? 'page' : undefined}
                 title={colapsado ? i.etiqueta : undefined}
                 className={`relative flex items-center rounded-lg text-sm font-medium transition-all duration-150 ${
-                  colapsado ? 'mx-auto h-10 w-10 justify-center' : 'gap-3 px-3 py-2.5'
+                  colapsado ? 'mx-auto h-11 w-11 justify-center' : 'gap-3 px-3.5 py-2.5'
                 } ${
                   activo
                     ? 'bg-brand/12 text-bone shadow-[inset_0_0_0_1px_rgba(250,204,21,0.25)]'
@@ -204,7 +204,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
                   <span
                     aria-hidden="true"
                     className={`absolute top-2 bottom-2 w-[3px] rounded-r-full bg-brand shadow-[0_0_8px_#facc15] ${
-                      colapsado ? '-left-2.5' : 'left-0'
+                      colapsado ? '-left-3' : 'left-0'
                     }`}
                   />
                 )}
@@ -217,24 +217,25 @@ export function PanelShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="shrink-0 space-y-2 border-t border-line/80 p-2.5">
+        <div className="shrink-0 space-y-2.5 border-t border-line/80 p-3">
           {!colapsado ? (
             <>
               {reloj && (
                 <div
-                  className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-line/80 bg-surface/90 px-2.5 py-1.5 text-[11px]"
+                  className="flex items-center justify-between gap-2 whitespace-nowrap rounded-md border border-line/80 bg-surface/90 px-3 py-2 text-xs"
                   title="Hora local (Lima, Perú)"
                 >
-                  <Clock size={13} className="shrink-0 text-brand" strokeWidth={1.75} />
-                  <span className="whitespace-nowrap font-mono font-semibold tabular-nums text-bone">
-                    {reloj.hora}
-                  </span>
-                  <span className="text-muted/60" aria-hidden="true">·</span>
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="shrink-0 text-brand" strokeWidth={1.75} />
+                    <span className="whitespace-nowrap font-mono font-semibold tabular-nums text-bone">
+                      {reloj.hora}
+                    </span>
+                  </div>
                   <span className="truncate whitespace-nowrap capitalize text-muted">{reloj.fecha}</span>
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-2 rounded-md border border-line/70 bg-surface/60 px-2.5 py-2">
+              <div className="flex items-center justify-between gap-2 rounded-md border border-line/70 bg-surface/60 px-3 py-2">
                 <div className="flex min-w-0 items-center gap-2.5">
                   <div
                     aria-hidden="true"
@@ -263,29 +264,29 @@ export function PanelShell({ children }: { children: ReactNode }) {
               </div>
             </>
           ) : (
-            <div className="mx-auto flex w-12 flex-col items-center gap-2 rounded-lg border border-line/80 bg-surface/80 p-1.5">
+            <div className="mx-auto flex w-[68px] flex-col items-center gap-2.5 rounded-lg border border-line/80 bg-surface/80 px-2 py-2.5">
               {reloj && (
                 <>
                   <div
-                    className="flex w-full flex-col items-center justify-center rounded bg-surface-2/80 py-1 text-center leading-none"
+                    className="flex w-full flex-col items-center justify-center rounded-md bg-surface-2/90 px-1.5 py-1.5 text-center leading-none"
                     title={`${reloj.hora} · ${reloj.fecha} (Hora local Lima)`}
                   >
-                    <span className="font-mono text-[10px] font-bold tabular-nums text-bone">
+                    <span className="font-mono text-[11px] font-bold tracking-tight tabular-nums text-bone">
                       {horaCorta}
                     </span>
                     {periodoCorto && (
-                      <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-tight text-brand">
+                      <span className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-brand">
                         {periodoCorto}
                       </span>
                     )}
                   </div>
-                  <span className="h-px w-7 bg-line/70" aria-hidden="true" />
+                  <span className="h-px w-9 bg-line/70" aria-hidden="true" />
                 </>
               )}
 
               <div
                 title={`${perfil.nombre} (${perfil.rol})`}
-                className="flex h-8 w-8 items-center justify-center rounded-md bg-brand/15 font-display text-xs font-bold tracking-wider text-brand ring-1 ring-brand/30"
+                className="flex h-9 w-9 items-center justify-center rounded-md bg-brand/15 font-display text-xs font-bold tracking-wider text-brand ring-1 ring-brand/30"
               >
                 {iniciales || 'ZF'}
               </div>
@@ -302,6 +303,12 @@ export function PanelShell({ children }: { children: ReactNode }) {
           )}
         </div>
       </aside>
+
+      <div
+        className={`flex min-h-screen min-w-0 flex-1 flex-col transition-[padding] duration-200 ease-out ${
+          colapsado ? 'md:pl-[92px]' : 'md:pl-[256px]'
+        }`}
+      >
 
       {/* Cabecera compacta únicamente en pantallas móviles */}
       <header className="sticky top-0 z-30 border-b border-line/90 bg-ink/90 backdrop-blur-xl md:hidden">
@@ -367,9 +374,10 @@ export function PanelShell({ children }: { children: ReactNode }) {
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-        {children}
-      </main>
+        <main className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

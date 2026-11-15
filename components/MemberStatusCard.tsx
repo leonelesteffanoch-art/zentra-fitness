@@ -163,64 +163,25 @@ export function MemberStatusCard({
   return (
     <article
       aria-live="polite"
-      className={`panel-card panel-fade-in relative space-y-5 p-5 sm:p-7 ${est.acento}`}
+      className={`panel-card panel-fade-in space-y-4 p-4 sm:p-6 ${est.acento}`}
     >
-      {onLimpiar && (
-        <button
-          type="button"
-          onClick={onLimpiar}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md border border-line/70 bg-surface-2/80 text-muted transition-colors hover:border-bone/40 hover:text-bone"
-          aria-label="Cerrar ficha del socio"
-          title="Cerrar ficha (Esc)"
-        >
-          <X size={15} strokeWidth={1.75} />
-        </button>
-      )}
-
-      <div className="flex flex-col justify-between gap-5 pr-8 sm:flex-row sm:items-center">
-        {/* Columna izquierda: Anillo gráfico + Estado principal */}
-        <div className="flex items-center gap-4 sm:gap-5">
-          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
-            <svg className="h-20 w-20 -rotate-90" viewBox="0 0 72 72" aria-hidden="true">
-              <circle
-                cx="36"
-                cy="36"
-                r={radioSvg}
-                fill="none"
-                stroke="#1c1c21"
-                strokeWidth="6"
-              />
-              <circle
-                cx="36"
-                cy="36"
-                r={radioSvg}
-                fill="none"
-                stroke={est.strokeColor}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={circunferencia}
-                strokeDashoffset={dashOffset}
-                className="transition-all duration-700 ease-out"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="font-mono text-lg font-bold leading-none text-bone tabular-nums">
-                {socio.dias_restantes === null
-                  ? '—'
-                  : socio.dias_restantes < 0
-                  ? Math.abs(socio.dias_restantes)
-                  : socio.dias_restantes}
-              </span>
-              <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted">
-                {socio.dias_restantes !== null && socio.dias_restantes < 0 ? 'venc.' : 'días'}
-              </span>
-            </div>
+      {/* Fila 1: Identidad del socio + acciones inmediatas para recepción */}
+      <div className="flex flex-col justify-between gap-4 border-b border-line/70 pb-4 lg:flex-row lg:items-center">
+        <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
+          <div
+            aria-hidden="true"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand/15 font-display text-lg font-bold tracking-wider text-brand ring-1 ring-brand/30"
+          >
+            {iniciales || 'S'}
           </div>
 
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate text-lg font-bold leading-tight text-bone sm:text-xl">
+                {socio.apellidos}, {socio.nombres}
+              </h2>
               <span
-                className={`inline-flex items-center gap-1.5 rounded px-2.5 py-0.5 text-xs font-semibold ${est.badge}`}
+                className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold ${est.badge}`}
               >
                 <span
                   className="h-1.5 w-1.5 rounded-full"
@@ -235,39 +196,17 @@ export function MemberStatusCard({
               )}
             </div>
 
-            <h2 className="mt-2 font-display text-3xl tracking-wide text-bone tabular-nums sm:text-4xl">
-              {titular.toUpperCase()}
-            </h2>
-            {detalles.length > 0 && (
-              <p className="mt-1 text-sm font-medium text-muted tabular-nums">
-                {detalles.join(' · ')}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Columna derecha: Identidad del socio */}
-        <div className="flex items-center gap-3.5 rounded-md border border-line/70 bg-ink/50 p-3.5 sm:text-right">
-          <div
-            aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-brand/15 font-display text-lg font-bold tracking-wider text-brand ring-1 ring-brand/30 sm:order-2"
-          >
-            {iniciales || 'S'}
-          </div>
-          <div className="min-w-0 flex-1 sm:order-1">
-            <p className="truncate text-base font-bold text-bone sm:text-lg">
-              {socio.apellidos}, {socio.nombres}
-            </p>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted sm:justify-end">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
               <span className="font-mono font-semibold text-bone">DNI {socio.dni}</span>
               {datosPendientes.dniProvisional && (
                 <span className="rounded bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn ring-1 ring-warn/30">
                   Provisional
                 </span>
               )}
+              <span aria-hidden="true">·</span>
               {socio.telefono ? (
                 <span className="inline-flex items-center gap-1 font-mono">
-                  · <Phone size={11} /> {socio.telefono}
+                  <Phone size={11} /> {socio.telefono}
                 </span>
               ) : (
                 onEditarDatos && (
@@ -283,193 +222,265 @@ export function MemberStatusCard({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Barra gráfica de ciclo de membresía */}
-      {socio.fecha_inicio && socio.fecha_fin && (
-        <div className="rounded-md border border-line/60 bg-ink/40 px-4 py-3">
-          <div className="flex items-center justify-between text-[11px] text-muted">
-            <span>
-              Inicio: <strong className="font-mono text-bone">{socio.fecha_inicio}</strong>
-            </span>
-            <span className="font-mono font-semibold text-bone">{pctRestante}% disponible</span>
-            <span>
-              Vence: <strong className="font-mono text-bone">{socio.fecha_fin}</strong>
-            </span>
-          </div>
-          <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
-            <div
-              className={`bar-fill h-full rounded-full ${est.barColor}`}
-              style={{ width: `${pctRestante}%` }}
-            />
-          </div>
-        </div>
-      )}
+        {/* Acciones directas arriba para operar en 1 segundo */}
+        <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+          {puedeEntrar && (
+            <button
+              onClick={onCheckIn}
+              disabled={registrando || yaAsistioHoy}
+              className="btn btn-primary !min-h-10 !px-5 text-sm"
+            >
+              <LogIn size={16} strokeWidth={1.75} />
+              {yaAsistioHoy ? 'Ingreso ya registrado' : 'Registrar ingreso'}
+            </button>
+          )}
 
-      {/* Calendario semanal de asistencias (Lun a Sáb) */}
-      <WeeklyAttendanceCalendar asistencias={asistencias} planNombre={socio.plan} />
-
-      {/* Atajo destacado cuando el socio tiene DNI provisional o nombre/apellido "(Pendiente)" */}
-      {onEditarDatos && datosPendientes.incompleto && (
-        <div className="flex flex-col items-start justify-between gap-3 rounded-xs border-l-4 border-warn bg-warn/15 p-4 sm:flex-row sm:items-center">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-warn">
-              <AlertTriangle size={16} strokeWidth={2} />
-              DATOS PENDIENTES DE COMPLETAR
-            </span>
-            <p className="mt-1 text-xs leading-relaxed text-bone">
-              Falta:{' '}
-              {[
-                datosPendientes.dniProvisional ? 'DNI real' : null,
-                datosPendientes.nombrePendiente ? 'nombre o apellido completo' : null,
-                datosPendientes.sinTelefono ? 'teléfono' : null,
-              ]
-                .filter(Boolean)
-                .join(', ')}
-              . Pídelo ahora que ingresó y actualízalo aquí mismo.
-            </p>
-          </div>
           <button
-            type="button"
-            onClick={onEditarDatos}
-            className="btn btn-primary shrink-0 !min-h-9 !px-3.5 text-xs"
+            onClick={onRenovar}
+            className={`btn !min-h-10 text-xs sm:text-sm ${
+              socio.semaforo === 'ROJO' ? 'btn-primary !px-5' : 'btn-secondary'
+            }`}
           >
-            <Edit3 size={14} strokeWidth={1.75} />
-            Completar datos ahora
+            <RefreshCw size={15} strokeWidth={1.75} />
+            Renovar membresía
           </button>
-        </div>
-      )}
 
-      {/* Alerta de Moroso / Saldo Pendiente */}
-      {socio.saldo_pendiente > 0 && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-bad bg-bad/15 p-4 rounded-xs">
-          <div>
-            <span className="inline-flex items-center gap-1.5 font-bold text-bad text-sm">
-              <AlertTriangle size={16} strokeWidth={2} />
-              SOCIO MOROSO · SALDO PENDIENTE
-            </span>
-            <p className="mt-1 text-xs text-bone leading-relaxed">
-              Debe <strong className="text-bad tabular-nums font-bold">{soles(socio.saldo_pendiente)}</strong> del plan {socio.plan}.
-              {diasAtraso > 0 && ` Atraso de ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} desde su inicio (${socio.fecha_inicio}).`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+          {socio.saldo_pendiente > 0 && (
+            <button onClick={onCobrarSaldo} className="btn btn-ghost !min-h-10 text-xs tabular-nums">
+              <CircleDollarSign size={15} strokeWidth={1.75} />
+              Cobrar ({soles(socio.saldo_pendiente)})
+            </button>
+          )}
+
+          {onEditarDatos && (
             <button
               type="button"
-              onClick={onCobrarSaldo}
-              className="btn btn-primary !min-h-8 !px-3 text-xs !bg-bad hover:!bg-bad/90"
+              onClick={onEditarDatos}
+              className={`btn !min-h-10 text-xs ${
+                datosPendientes.incompleto
+                  ? 'btn-secondary !border-warn/60 text-warn hover:!border-warn'
+                  : 'btn-ghost'
+              }`}
             >
-              <CircleDollarSign size={14} />
-              Cobrar deuda
+              <Edit3 size={15} strokeWidth={1.75} />
+              {datosPendientes.incompleto ? 'Completar datos' : 'Editar datos'}
             </button>
-            {socio.telefono && (
-              <a
-                href={`https://wa.me/51${socio.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
-                  `Hola ${socio.nombres}, te saludamos de Zentra Fitness. Te recordamos cordialmente que mantienes un saldo pendiente de ${soles(
-                    socio.saldo_pendiente
-                  )} de tu membresía. Puedes cancelarlo en tu próximo ingreso o vía Yape/Plin. ¡Muchas gracias!`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary !min-h-8 !px-2.5 text-xs text-ok hover:text-ok"
-                title="Enviar recordatorio por WhatsApp"
-              >
-                <MessageCircle size={14} />
-                Recordar
-              </a>
-            )}
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Alerta de Socio Inactivo (7+ días sin venir con membresía activa) */}
-      {estaInactivo && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-warn bg-warn/15 p-4 rounded-xs">
-          <div>
-            <span className="inline-flex items-center gap-1.5 font-bold text-warn text-sm">
-              <Clock size={16} strokeWidth={2} />
-              ALERTA DE ABANDONO · {diasSinVenir} DÍAS SIN ENTRENAR
-            </span>
-            <p className="mt-1 text-xs text-bone leading-relaxed">
-              {ultimaAsistencia
-                ? `Su última visita registrada fue el ${ultimaAsistencia}.`
-                : `Inició su membresía el ${socio.fecha_inicio} pero aún no registra check-in.`}
-              {' '}Contáctalo para motivarlo antes de que pierda la constancia y no renueve.
-            </p>
-          </div>
-          {socio.telefono && (
-            <a
-              href={`https://wa.me/51${socio.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
-                `¡Hola ${socio.nombres}! Te extrañamos en Zentra Fitness 💪 Notamos que llevas ${diasSinVenir} días sin venir a entrenar. Recuerda que tu membresía ${
-                  socio.plan ? `(${socio.plan})` : ''
-                } sigue activa y la constancia es la clave para tus resultados. ¿Tienes algún horario disponible esta semana para retomar? ¡Te esperamos en la sala!`
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-secondary !min-h-8 !px-3 text-xs shrink-0"
+          {onLimpiar && (
+            <button
+              type="button"
+              onClick={onLimpiar}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line/70 bg-surface-2/80 text-muted transition-colors hover:border-bone/40 hover:text-bone"
+              aria-label="Cerrar ficha del socio"
+              title="Cerrar ficha (Esc)"
             >
-              <MessageCircle size={14} className="text-ok" />
-              Motivar por WhatsApp
-            </a>
+              <X size={15} strokeWidth={1.75} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Fila 2: Alertas operativas puntuales (solo aparecen cuando aplican) */}
+      {(datosPendientes.incompleto ||
+        socio.saldo_pendiente > 0 ||
+        estaInactivo ||
+        (puedeEntrar && ingresoPrevioHoy)) && (
+        <div className="space-y-2.5">
+          {onEditarDatos && datosPendientes.incompleto && (
+            <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-warn bg-warn/15 px-3.5 py-2.5 sm:flex-row sm:items-center">
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warn sm:text-sm">
+                  <AlertTriangle size={15} strokeWidth={2} />
+                  DATOS PENDIENTES DE COMPLETAR
+                </span>
+                <p className="mt-0.5 text-xs leading-relaxed text-bone">
+                  Falta:{' '}
+                  {[
+                    datosPendientes.dniProvisional ? 'DNI real' : null,
+                    datosPendientes.nombrePendiente ? 'nombre o apellido completo' : null,
+                    datosPendientes.sinTelefono ? 'teléfono' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                  . Pídelo ahora que ingresó y actualízalo aquí mismo.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onEditarDatos}
+                className="btn btn-primary shrink-0 !min-h-8 !px-3 text-xs"
+              >
+                <Edit3 size={13} strokeWidth={1.75} />
+                Completar datos ahora
+              </button>
+            </div>
+          )}
+
+          {socio.saldo_pendiente > 0 && (
+            <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-bad bg-bad/15 px-3.5 py-2.5 sm:flex-row sm:items-center">
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-bad sm:text-sm">
+                  <AlertTriangle size={15} strokeWidth={2} />
+                  SOCIO MOROSO · SALDO PENDIENTE
+                </span>
+                <p className="mt-0.5 text-xs leading-relaxed text-bone">
+                  Debe <strong className="font-bold text-bad tabular-nums">{soles(socio.saldo_pendiente)}</strong> del plan {socio.plan}.
+                  {diasAtraso > 0 && ` Atraso de ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} desde su inicio (${socio.fecha_inicio}).`}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onCobrarSaldo}
+                  className="btn btn-primary !min-h-8 !px-3 text-xs !bg-bad hover:!bg-bad/90"
+                >
+                  <CircleDollarSign size={14} />
+                  Cobrar deuda
+                </button>
+                {socio.telefono && (
+                  <a
+                    href={`https://wa.me/51${socio.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+                      `Hola ${socio.nombres}, te saludamos de Zentra Fitness. Te recordamos cordialmente que mantienes un saldo pendiente de ${soles(
+                        socio.saldo_pendiente
+                      )} de tu membresía. Puedes cancelarlo en tu próximo ingreso o vía Yape/Plin. ¡Muchas gracias!`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-secondary !min-h-8 !px-2.5 text-xs text-ok hover:text-ok"
+                    title="Enviar recordatorio por WhatsApp"
+                  >
+                    <MessageCircle size={14} />
+                    Recordar
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {estaInactivo && (
+            <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-warn bg-warn/15 px-3.5 py-2.5 sm:flex-row sm:items-center">
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warn sm:text-sm">
+                  <Clock size={15} strokeWidth={2} />
+                  ALERTA DE ABANDONO · {diasSinVenir} DÍAS SIN ENTRENAR
+                </span>
+                <p className="mt-0.5 text-xs leading-relaxed text-bone">
+                  {ultimaAsistencia
+                    ? `Su última visita registrada fue el ${ultimaAsistencia}.`
+                    : `Inició su membresía el ${socio.fecha_inicio} pero aún no registra check-in.`}
+                  {' '}Contáctalo para motivarlo antes de que pierda la constancia y no renueve.
+                </p>
+              </div>
+              {socio.telefono && (
+                <a
+                  href={`https://wa.me/51${socio.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+                    `¡Hola ${socio.nombres}! Te extrañamos en Zentra Fitness 💪 Notamos que llevas ${diasSinVenir} días sin venir a entrenar. Recuerda que tu membresía ${
+                      socio.plan ? `(${socio.plan})` : ''
+                    } sigue activa y la constancia es la clave para tus resultados. ¿Tienes algún horario disponible esta semana para retomar? ¡Te esperamos en la sala!`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-secondary shrink-0 !min-h-8 !px-3 text-xs"
+                >
+                  <MessageCircle size={14} className="text-ok" />
+                  Motivar por WhatsApp
+                </a>
+              )}
+            </div>
+          )}
+
+          {puedeEntrar && ingresoPrevioHoy && (
+            <div className="flex items-start gap-2.5 border-l-2 border-warn bg-warn/10 px-3.5 py-2.5 text-xs text-warn">
+              <AlertTriangle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
+              <p>
+                <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
+                Ningún plan incluye doble ingreso en el mismo día. Para un segundo ingreso corresponde abonar un{' '}
+                <strong>Pase por día (S/ 10)</strong> en mostrador.
+              </p>
+            </div>
           )}
         </div>
       )}
 
-      {/* Aviso si ya ingresó hoy */}
-      {puedeEntrar && ingresoPrevioHoy && (
-        <div className="flex items-start gap-2.5 border-l-2 border-warn bg-warn/10 px-3.5 py-2.5 text-xs text-warn">
-          <AlertTriangle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
-          <p>
-            <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
-            Ningún plan incluye doble ingreso en el mismo día. Para un segundo ingreso corresponde abonar un{' '}
-            <strong>Pase por día (S/ 10)</strong> en mostrador.
-          </p>
+      {/* Fila 3: Grilla de 2 columnas -> Vigencia/Ciclo a la izquierda + Constancia semanal a la derecha */}
+      <div className="grid items-stretch gap-4 lg:grid-cols-12">
+        <div className="flex h-full flex-col justify-between gap-4 rounded-md border border-line/80 bg-ink/60 p-4 lg:col-span-5">
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+              <svg className="h-16 w-16 -rotate-90" viewBox="0 0 72 72" aria-hidden="true">
+                <circle
+                  cx="36"
+                  cy="36"
+                  r={radioSvg}
+                  fill="none"
+                  stroke="#1c1c21"
+                  strokeWidth="6"
+                />
+                <circle
+                  cx="36"
+                  cy="36"
+                  r={radioSvg}
+                  fill="none"
+                  stroke={est.strokeColor}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={circunferencia}
+                  strokeDashoffset={dashOffset}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="font-mono text-base font-bold leading-none text-bone tabular-nums">
+                  {socio.dias_restantes === null
+                    ? '—'
+                    : socio.dias_restantes < 0
+                    ? Math.abs(socio.dias_restantes)
+                    : socio.dias_restantes}
+                </span>
+                <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted">
+                  {socio.dias_restantes !== null && socio.dias_restantes < 0 ? 'venc.' : 'días'}
+                </span>
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-2xl leading-none tracking-wide text-bone tabular-nums sm:text-3xl">
+                {titular.toUpperCase()}
+              </h3>
+              {detalles.length > 0 && (
+                <p className="mt-1.5 truncate text-xs font-medium text-muted tabular-nums sm:text-sm">
+                  {detalles.join(' · ')}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {socio.fecha_inicio && socio.fecha_fin && (
+            <div className="rounded-md border border-line/60 bg-ink/50 px-3.5 py-2.5">
+              <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
+                <span>
+                  Inicio: <strong className="font-mono text-bone">{socio.fecha_inicio}</strong>
+                </span>
+                <span className="font-mono font-semibold text-bone">{pctRestante}% disp.</span>
+                <span>
+                  Vence: <strong className="font-mono text-bone">{socio.fecha_fin}</strong>
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                <div
+                  className={`bar-fill h-full rounded-full ${est.barColor}`}
+                  style={{ width: `${pctRestante}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-line/70 pt-5">
-        {puedeEntrar && (
-          <button
-            onClick={onCheckIn}
-            disabled={registrando || yaAsistioHoy}
-            className="btn btn-primary !min-h-11 !px-6"
-          >
-            <LogIn size={17} strokeWidth={1.75} />
-            {yaAsistioHoy ? 'Ingreso de hoy ya registrado' : 'Registrar ingreso'}
-          </button>
-        )}
-
-        <button
-          onClick={onRenovar}
-          className={`btn !min-h-11 ${
-            socio.semaforo === 'ROJO' ? 'btn-primary !px-6' : 'btn-secondary'
-          }`}
-        >
-          <RefreshCw size={17} strokeWidth={1.75} />
-          Renovar membresía
-        </button>
-
-        {socio.saldo_pendiente > 0 && (
-          <button onClick={onCobrarSaldo} className="btn btn-ghost !min-h-11 tabular-nums">
-            <CircleDollarSign size={17} strokeWidth={1.75} />
-            Cobrar saldo ({soles(socio.saldo_pendiente)})
-          </button>
-        )}
-
-        {onEditarDatos && (
-          <button
-            type="button"
-            onClick={onEditarDatos}
-            className={`btn !min-h-11 ${
-              datosPendientes.incompleto
-                ? 'btn-secondary !border-warn/60 text-warn hover:!border-warn'
-                : 'btn-ghost'
-            }`}
-          >
-            <Edit3 size={16} strokeWidth={1.75} />
-            {datosPendientes.incompleto ? 'Completar datos' : 'Editar datos'}
-          </button>
-        )}
+        <div className="lg:col-span-7">
+          <WeeklyAttendanceCalendar asistencias={asistencias} planNombre={socio.plan} />
+        </div>
       </div>
     </article>
   );

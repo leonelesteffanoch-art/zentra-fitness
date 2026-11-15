@@ -260,7 +260,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid items-start gap-8 lg:grid-cols-2">
       {/* 1. PLANES DE MEMBRESÍA */}
       <section aria-label="Planes de membresía" className="bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -380,7 +380,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
           </form>
         )}
 
-        <ul className="divide-y divide-line/70 border-t border-line/70">
+        <ul className="max-h-[430px] divide-y divide-line/70 overflow-y-auto border-t border-line/70 pr-1.5">
           {planes.map((p) => (
             <li
               key={p.id}
@@ -599,7 +599,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
           </form>
         )}
 
-        <ul className="divide-y divide-line/70 border-t border-line/70">
+        <ul className="max-h-[430px] divide-y divide-line/70 overflow-y-auto border-t border-line/70 pr-1.5">
           {productos.map((p) => {
             const esBajo = !p.es_servicio && p.stock <= 5;
             const esAgotado = !p.es_servicio && p.stock === 0;
