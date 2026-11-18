@@ -245,7 +245,7 @@ export default function RecepcionPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link href="/caja" className="btn btn-ghost !min-h-10 text-xs">
             <Wallet size={15} strokeWidth={1.75} />
-            Ir a Caja / POS
+            Ir a Caja
           </Link>
           <button
             type="button"
@@ -301,7 +301,7 @@ export default function RecepcionPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-ok" /> Activos ({metricasHoy.pctVerde}%)
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Deuda
+              <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Atención (Deuda o por vencer)
             </span>
           </div>
         </div>
@@ -537,7 +537,7 @@ export default function RecepcionPage() {
             <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
               <div className="flex items-center gap-2">
                 <BarChart2 size={15} className="text-brand" strokeWidth={1.75} />
-                <h2 className="text-sm font-semibold text-bone">Afluencia por hora (Hoy)</h2>
+                <h2 className="text-sm font-semibold text-bone">Flujo de clientes por hora</h2>
               </div>
               <span className="text-[11px] text-muted">6:00 – 22:00</span>
             </div>
