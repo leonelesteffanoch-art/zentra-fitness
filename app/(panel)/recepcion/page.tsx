@@ -280,7 +280,7 @@ export default function RecepcionPage() {
         <div className="panel-card flex flex-col justify-between p-4">
           <div className="flex items-center justify-between text-xs">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Salud de ingresos hoy
+              Ingresos de hoy
             </span>
             <span className="font-mono text-xs font-semibold text-bone tabular-nums">
               {metricasHoy.verdes} al día · {metricasHoy.ambar} por vencer
