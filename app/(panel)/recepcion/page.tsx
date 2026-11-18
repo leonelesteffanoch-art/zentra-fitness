@@ -301,7 +301,7 @@ export default function RecepcionPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-ok" /> Activos ({metricasHoy.pctVerde}%)
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Atención / Deuda
+              <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Deuda
             </span>
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function RecepcionPage() {
         buscando={buscando}
         size="lg"
         autoFocus
-        placeholder="Dictar DNI o nombre del socio..."
+        placeholder="DNI - Nombre del Socio..."
       />
 
       <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
@@ -484,8 +484,7 @@ export default function RecepcionPage() {
             {ingresosHoy.length === 0 ? (
               <div className="py-10 text-center">
                 <p className="text-xs text-muted">
-                  Aún no hay asistencias registradas hoy. Busca un socio por DNI arriba para marcar el primer check-in.
-                </p>
+                  Aún no hay asistencias registradas hoy.
               </div>
             ) : (
               <ul className="mt-3 max-h-[290px] divide-y divide-line/60 overflow-y-auto pr-1">
