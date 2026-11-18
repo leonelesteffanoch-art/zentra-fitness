@@ -485,6 +485,7 @@ export default function RecepcionPage() {
               <div className="py-10 text-center">
                 <p className="text-xs text-muted">
                   Aún no hay asistencias registradas hoy.
+                </p>
               </div>
             ) : (
               <ul className="mt-3 max-h-[290px] divide-y divide-line/60 overflow-y-auto pr-1">
