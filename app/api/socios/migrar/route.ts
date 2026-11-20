@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { capitalizarNombre } from '@/lib/formato';
 
 function crearServiceClient(token?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -170,8 +171,8 @@ export async function POST(req: NextRequest) {
     body.registros.forEach((raw, idx) => {
       const fila = idx + 1;
       const dni = typeof raw.dni === 'string' ? raw.dni.replace(/\D/g, '') : '';
-      const nombres = typeof raw.nombres === 'string' ? raw.nombres.trim() : '';
-      const apellidos = typeof raw.apellidos === 'string' ? raw.apellidos.trim() : '';
+      const nombres = typeof raw.nombres === 'string' ? capitalizarNombre(raw.nombres) : '';
+      const apellidos = typeof raw.apellidos === 'string' ? capitalizarNombre(raw.apellidos) : '';
       const telefono =
         typeof raw.telefono === 'string' && raw.telefono.trim() ? raw.telefono.trim() : null;
       const planId = typeof raw.planId === 'string' ? raw.planId : '';

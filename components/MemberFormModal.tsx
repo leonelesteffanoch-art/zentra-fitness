@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { AlertTriangle, Loader2, UserPlus, X } from 'lucide-react';
 import { Portal } from '@/components/Portal';
-import { estadoDatosSocio } from '@/lib/formato';
+import { capitalizarNombre, estadoDatosSocio } from '@/lib/formato';
 import { crearSocio, actualizarSocio, type NuevoSocio } from '@/services/sociosService';
 import type { SocioEstado } from '@/types';
 
@@ -50,8 +50,8 @@ export function MemberFormModal({
     setError(null);
 
     const dniLimpio = dni.trim();
-    const nomLimpio = nombres.trim();
-    const apeLimpio = apellidos.trim();
+    const nomLimpio = capitalizarNombre(nombres);
+    const apeLimpio = capitalizarNombre(apellidos);
     const telLimpio = telefono.trim();
 
     if (!/^\d{7,12}$/.test(dniLimpio)) {

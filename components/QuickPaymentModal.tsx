@@ -5,7 +5,14 @@ import { History, Loader2, Plus, X } from 'lucide-react';
 import { Portal } from '@/components/Portal';
 import { listarPlanes, registrarMembresia, abonarMembresia } from '@/services/sociosService';
 import { supabase } from '@/lib/supabase';
-import { diffDiasISO, formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
+import {
+  diffDiasISO,
+  formatearFechaDMY,
+  formatearNombreSocio,
+  hoyLima,
+  soles,
+  sumarDias,
+} from '@/lib/formato';
 import type { MetodoPago, PagoInput, Plan, SocioEstado } from '@/types';
 
 export type ModoCobro = 'renovar' | 'abonar';
@@ -176,7 +183,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <div>
             <p className="text-xs text-muted">
-              {socio.apellidos}, {socio.nombres} ·{' '}
+              {formatearNombreSocio(socio)} ·{' '}
               <span className="text-bone">
                 {esSocioNuevo ? 'Inscripción de socio nuevo' : 'Socio antiguo'}
               </span>

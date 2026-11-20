@@ -12,7 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
-import { estadoDatosSocio, hoyLima, soles } from '@/lib/formato';
+import { estadoDatosSocio, formatearNombreSocio, hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, Semaforo, SocioEstado } from '@/types';
 
 interface Props {
@@ -178,7 +178,7 @@ export function MemberStatusCard({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="truncate text-lg font-bold leading-tight text-bone sm:text-xl">
-                {socio.apellidos}, {socio.nombres}
+                {formatearNombreSocio(socio)}
               </h2>
               <span
                 className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold ${est.badge}`}

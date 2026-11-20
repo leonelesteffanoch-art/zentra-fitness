@@ -39,7 +39,7 @@ import {
 } from '@/services/sociosService';
 import { ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import { hoyLima, soles } from '@/lib/formato';
+import { formatearNombreSocio, hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, MembresiaEstado, Semaforo, SocioEstado } from '@/types';
 
 // Se carga solo al abrir "Importar Excel" (arrastra la librería xlsx, que es pesada).
@@ -257,7 +257,7 @@ export default function SociosPage() {
       }
 
       const filas = todos.map((s) => ({
-        Nombres: `${s.apellidos}, ${s.nombres}`,
+        Nombres: formatearNombreSocio(s),
         DNI: s.dni,
         Celular: s.telefono ?? '—',
         'Plan Elegido': s.plan ?? 'Sin membresía',
@@ -309,7 +309,7 @@ export default function SociosPage() {
   const pctVencidos = resumenPadron ? Math.max(0, 100 - pctActivos - pctPorVencer) : 0;
 
   return (
-    <div className="panel-fade-in space-y-6">
+    <div className="panel-fade-in space-y-4">
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -522,14 +522,14 @@ export default function SociosPage() {
       <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
         {/* Columna izquierda: Tabla de socios */}
         <section aria-label="Listado de socios" className="space-y-3">
-          <div className="panel-card overflow-x-auto">
+          <div className="panel-card max-h-[430px] overflow-auto">
             <table className="w-full border-collapse text-left text-sm">
-              <thead className="border-b border-line bg-surface-2/80 text-xs font-semibold uppercase tracking-wider text-muted">
+              <thead className="sticky top-0 z-10 border-b border-line bg-surface-2 text-xs font-semibold uppercase tracking-wider text-muted">
                 <tr>
-                  <th className="px-4 py-3">Socio</th>
-                  <th className="px-3 py-3">DNI</th>
-                  <th className="px-3 py-3">Plan / Ciclo</th>
-                  <th className="px-4 py-3 text-right">Estado</th>
+                  <th className="px-4 py-2.5">Socio</th>
+                  <th className="px-3 py-2.5">DNI</th>
+                  <th className="px-3 py-2.5">Plan / Ciclo</th>
+                  <th className="px-4 py-2.5 text-right">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/70">
@@ -554,7 +554,7 @@ export default function SociosPage() {
                             : 'hover:bg-surface-2/60'
                         }`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-2.5">
                           <div className="flex items-center gap-3">
                             <span
                               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded font-display text-xs font-bold tracking-wider ring-1 ${
@@ -567,7 +567,7 @@ export default function SociosPage() {
                             </span>
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-bone">
-                                {s.apellidos}, {s.nombres}
+                                {formatearNombreSocio(s)}
                               </p>
                               {s.saldo_pendiente > 0 && (
                                 <span className="mt-0.5 inline-block rounded bg-bad/20 px-1.5 py-0.2 font-mono text-[10px] font-bold text-bad tabular-nums">
@@ -577,8 +577,8 @@ export default function SociosPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-3 font-mono text-xs text-muted">{s.dni}</td>
-                        <td className="px-3 py-3 text-xs">
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted">{s.dni}</td>
+                        <td className="px-3 py-2.5 text-xs">
                           {s.plan ? (
                             <div>
                               <span className="font-medium text-bone">{s.plan}</span>
@@ -605,7 +605,7 @@ export default function SociosPage() {
                             <span className="text-muted">Sin membresía</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-2.5 text-right">
                           <span
                             className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${badge.cls}`}
                           >
@@ -653,13 +653,13 @@ export default function SociosPage() {
           )}
         </section>
 
-        {/* Columna derecha: EmptyState o Ficha ordenada (sticky en escritorio) */}
+        {/* Columna derecha: EmptyState o Ficha ordenada (sticky con scroll interno en escritorio) */}
         <section
           aria-label="Detalle del socio"
-          className="panel-card p-6 lg:sticky lg:top-6"
+          className="panel-card p-5 lg:sticky lg:top-6 lg:max-h-[480px] lg:overflow-y-auto"
         >
           {!seleccionado ? (
-            <div className="flex flex-col items-center py-12 text-center">
+            <div className="flex flex-col items-center py-10 text-center">
               <Users size={32} strokeWidth={1.5} className="text-muted" />
               <p className="mt-3 text-sm font-medium text-bone">Ningún socio seleccionado</p>
               <p className="mt-1 max-w-xs text-xs text-muted">
@@ -714,7 +714,7 @@ export default function SociosPage() {
               {/* 2. Datos del socio */}
               <div>
                 <h2 className="section-title text-xl">
-                  {seleccionado.apellidos}, {seleccionado.nombres}
+                  {formatearNombreSocio(seleccionado)}
                 </h2>
                 <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted">
                   <div>

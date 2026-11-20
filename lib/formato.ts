@@ -50,3 +50,27 @@ export function estadoDatosSocio(s: {
     incompleto: dniProvisional || nombrePendiente,
   };
 }
+
+/** Capitaliza la primera letra de cada palabra (preservando "(Pendiente)"). */
+export function capitalizarNombre(texto: string): string {
+  const limpio = texto.replace(/\s+/g, ' ').trim();
+  if (!limpio) return '';
+  if (limpio.toLowerCase() === '(pendiente)') return '(Pendiente)';
+  return limpio
+    .split(' ')
+    .map((p) => {
+      if (p.toLowerCase() === '(pendiente)') return '(Pendiente)';
+      return p.charAt(0).toLocaleUpperCase('es-PE') + p.slice(1).toLocaleLowerCase('es-PE');
+    })
+    .join(' ');
+}
+
+/** Formatea apellidos y nombres con iniciales en mayúscula y sin coma. */
+export function formatearNombreSocio(s: {
+  nombres?: string | null;
+  apellidos?: string | null;
+}): string {
+  const ape = capitalizarNombre(s.apellidos ?? '');
+  const nom = capitalizarNombre(s.nombres ?? '');
+  return [ape, nom].filter(Boolean).join(' ');
+}

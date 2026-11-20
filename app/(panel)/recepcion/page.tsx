@@ -26,7 +26,7 @@ import {
   type AsistenciaHoyDetalle,
 } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import { estadoDatosSocio, soles } from '@/lib/formato';
+import { estadoDatosSocio, formatearNombreSocio, soles } from '@/lib/formato';
 import type { Asistencia, Semaforo, SocioEstado, TurnoCaja } from '@/types';
 
 const BADGE_ESTADO: Record<Semaforo, { cls: string; txt: string }> = {
@@ -412,7 +412,7 @@ export default function RecepcionPage() {
                       </span>
                       <div>
                         <p className="font-semibold text-bone">
-                          {s.apellidos}, {s.nombres}
+                          {formatearNombreSocio(s)}
                         </p>
                         <p className="mt-0.5 text-xs text-muted">
                           <span className="font-mono text-bone">DNI {s.dni}</span>
@@ -492,7 +492,7 @@ export default function RecepcionPage() {
                 {ingresosHoy.slice(0, 12).map((ing) => {
                   const b = BADGE_ESTADO[ing.semaforo];
                   const nombreCompleto = ing.socios
-                    ? `${ing.socios.apellidos}, ${ing.socios.nombres}`
+                    ? formatearNombreSocio(ing.socios)
                     : 'Socio registrado';
                   return (
                     <li key={ing.id}>

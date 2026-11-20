@@ -14,7 +14,14 @@ import * as XLSX from 'xlsx';
 import { Portal } from '@/components/Portal';
 import { supabase } from '@/lib/supabase';
 import { listarPlanes } from '@/services/sociosService';
-import { diffDiasISO, formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
+import {
+  diffDiasISO,
+  formatearFechaDMY,
+  formatearNombreSocio,
+  hoyLima,
+  soles,
+  sumarDias,
+} from '@/lib/formato';
 import type { Plan } from '@/types';
 
 interface Props {
@@ -629,9 +636,7 @@ export function ImportSociosModal({ gymId, onClose, onDone }: Props) {
                           <td className="px-3 py-2 font-mono text-[11px] text-muted">{r.filaNum}</td>
                           <td className="px-3 py-2 font-mono text-bone">{r.dni}</td>
                           <td className="px-3 py-2">
-                            {r.apellidos && r.nombres
-                              ? `${r.apellidos}, ${r.nombres}`
-                              : r.apellidos || r.nombres || '—'}
+                            {r.apellidos || r.nombres ? formatearNombreSocio(r) : '—'}
                           </td>
                           <td className="px-3 py-2">{r.plan?.nombre ?? '—'}</td>
                           <td className="px-3 py-2 font-mono text-[11px]">
