@@ -265,10 +265,7 @@ export default function RecepcionPage() {
         className="rounded-lg border-2 border-brand/60 bg-surface p-4 shadow-[0_0_28px_-8px_rgba(250,204,21,0.3)] ring-1 ring-brand/15 transition-all focus-within:border-brand focus-within:shadow-[0_0_32px_-6px_rgba(250,204,21,0.45)]"
       >
         <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-black text-ink">
-              1
-            </span>
+          <p className="text-xs font-bold uppercase tracking-wider text-brand">
             Buscar socio para registrar ingreso
           </p>
           <span className="text-xs text-muted">

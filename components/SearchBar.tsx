@@ -136,15 +136,7 @@ export function SearchBar({
             <X size={14} strokeWidth={2} />
             {esHero && <span>Limpiar</span>}
           </button>
-        ) : esHero ? (
-          <span
-            aria-hidden="true"
-            className="hidden sm:inline-flex items-center gap-1 rounded border border-brand/30 bg-brand/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-brand"
-            title="Presiona / para buscar rápido"
-          >
-            Presiona /
-          </span>
-        ) : (
+        ) : esHero ? null : (
           <kbd
             aria-hidden="true"
             className="hidden rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted sm:inline-block"
