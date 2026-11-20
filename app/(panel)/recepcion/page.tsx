@@ -582,7 +582,7 @@ export default function RecepcionPage() {
               {/* Eje Y discreto */}
               <div
                 aria-hidden="true"
-                className="mt-5 flex h-28 w-5 shrink-0 flex-col justify-between text-right font-mono text-[9px] leading-none text-muted/70 tabular-nums"
+                className="mt-9 flex h-28 w-5 shrink-0 flex-col justify-between text-right font-mono text-[9px] leading-none text-muted/70 tabular-nums"
               >
                 <span>{metricasHoy.escalaMax}</span>
                 <span>{Math.round(metricasHoy.escalaMax / 2)}</span>
@@ -593,7 +593,7 @@ export default function RecepcionPage() {
                 {/* Líneas guía horizontales muy tenues */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-0 top-5 flex h-28 flex-col justify-between"
+                  className="pointer-events-none absolute inset-x-0 top-9 flex h-28 flex-col justify-between"
                 >
                   <span className="border-t border-dashed border-line/45" />
                   <span className="border-t border-dashed border-line/45" />
@@ -613,9 +613,9 @@ export default function RecepcionPage() {
                       className="group relative z-10 flex min-w-0 flex-1 flex-col items-center gap-1"
                       title={`${f.label}${esAhora ? ' (Ahora)' : ''}: ${f.cant} ingresos`}
                     >
-                      <div className="flex h-4 items-center justify-center gap-0.5">
+                      <div className="flex h-8 flex-col items-center justify-end gap-0.5 leading-none">
                         {esAhora && (
-                          <span className="rounded border border-brand/40 bg-brand/15 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-brand">
+                          <span className="rounded border border-brand/40 bg-brand/15 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-brand">
                             Ahora
                           </span>
                         )}
