@@ -39,7 +39,13 @@ import {
 } from '@/services/sociosService';
 import { ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import { formatearFechaDMY, formatearNombreSocio, hoyLima, soles } from '@/lib/formato';
+import {
+  estadoDatosSocio,
+  formatearFechaDMY,
+  formatearNombreSocio,
+  hoyLima,
+  soles,
+} from '@/lib/formato';
 import type { Asistencia, MembresiaEstado, Semaforo, SocioEstado } from '@/types';
 
 // Se carga solo al abrir "Importar Excel" (arrastra la librería xlsx, que es pesada).
@@ -313,6 +319,7 @@ export default function SociosPage() {
   const pctActivos = resumenPadron ? Math.round((resumenPadron.activos / totalPadron) * 100) : 0;
   const pctPorVencer = resumenPadron ? Math.round((resumenPadron.porVencer / totalPadron) * 100) : 0;
   const pctVencidos = resumenPadron ? Math.max(0, 100 - pctActivos - pctPorVencer) : 0;
+  const datosPendientes = seleccionado ? estadoDatosSocio(seleccionado) : null;
 
   return (
     <div className="panel-fade-in space-y-4">
@@ -715,11 +722,24 @@ export default function SociosPage() {
                 <button
                   type="button"
                   onClick={() => setModalSocio('editar')}
-                  className="btn btn-ghost !min-h-9 !px-2.5"
+                  className={`btn !min-h-9 !px-3 text-xs ${
+                    datosPendientes?.incompleto
+                      ? '!border !border-warn !bg-warn/20 !text-warn font-bold ring-1 ring-warn/40 shadow-[0_0_18px_-4px_rgba(245,158,11,0.5)] hover:!bg-warn/30'
+                      : datosPendientes?.sinTelefono
+                      ? '!border !border-warn/60 !bg-warn/10 !text-warn font-semibold hover:!bg-warn/20'
+                      : 'btn-secondary'
+                  }`}
                   title="Editar datos del socio"
-                  aria-label="Editar datos del socio"
                 >
-                  <Edit3 size={15} strokeWidth={1.5} />
+                  {datosPendientes?.incompleto && (
+                    <span className="h-2 w-2 rounded-full bg-warn animate-pulse" aria-hidden="true" />
+                  )}
+                  <Edit3 size={14} strokeWidth={1.75} />
+                  {datosPendientes?.incompleto
+                    ? 'Completar datos'
+                    : datosPendientes?.sinTelefono
+                    ? 'Agregar teléfono'
+                    : 'Editar datos'}
                 </button>
               </div>
 
@@ -829,6 +849,36 @@ export default function SociosPage() {
 
                 return (
                   <div className="space-y-3">
+                    {datosPendientes?.incompleto && (
+                      <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-warn bg-warn/15 p-3.5 sm:flex-row sm:items-center">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warn">
+                            <AlertTriangle size={15} strokeWidth={2} />
+                            DATOS PENDIENTES DE COMPLETAR
+                          </span>
+                          <p className="mt-0.5 text-xs text-bone">
+                            Falta:{' '}
+                            {[
+                              datosPendientes.dniProvisional ? 'DNI real' : null,
+                              datosPendientes.nombrePendiente ? 'nombre o apellido completo' : null,
+                              datosPendientes.sinTelefono ? 'teléfono' : null,
+                            ]
+                              .filter(Boolean)
+                              .join(', ')}
+                            .
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setModalSocio('editar')}
+                          className="btn btn-primary shrink-0 !min-h-8 !px-3 text-xs"
+                        >
+                          <Edit3 size={13} strokeWidth={1.75} />
+                          Completar datos ahora
+                        </button>
+                      </div>
+                    )}
+
                     {seleccionado.saldo_pendiente > 0 && (
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-bad bg-bad/15 p-3.5 rounded-xs">
                         <div>

@@ -284,12 +284,21 @@ export function MemberStatusCard({
               onClick={onEditarDatos}
               className={`btn flex-1 !min-h-10 text-xs sm:flex-initial ${
                 datosPendientes.incompleto
-                  ? 'btn-secondary !border-warn/60 text-warn hover:!border-warn'
-                  : 'btn-ghost'
+                  ? '!border !border-warn !bg-warn/20 !text-warn font-bold ring-1 ring-warn/40 shadow-[0_0_18px_-4px_rgba(245,158,11,0.5)] hover:!bg-warn/30'
+                  : datosPendientes.sinTelefono
+                  ? '!border !border-warn/60 !bg-warn/10 !text-warn font-semibold hover:!bg-warn/20'
+                  : 'btn-secondary'
               }`}
             >
+              {datosPendientes.incompleto && (
+                <span className="h-2 w-2 rounded-full bg-warn animate-pulse" aria-hidden="true" />
+              )}
               <Edit3 size={15} strokeWidth={1.75} />
-              {datosPendientes.incompleto ? 'Completar datos' : 'Editar datos'}
+              {datosPendientes.incompleto
+                ? 'Completar datos'
+                : datosPendientes.sinTelefono
+                ? 'Agregar teléfono'
+                : 'Editar datos'}
             </button>
           )}
 

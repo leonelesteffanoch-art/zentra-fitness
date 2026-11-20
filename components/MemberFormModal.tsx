@@ -89,6 +89,12 @@ export function MemberFormModal({
     }
   }
 
+  const datos = estadoDatosSocio({ dni, nombres, apellidos, telefono });
+  const dniFalta = Boolean(socioEditar && datos.dniProvisional);
+  const nomFalta = Boolean(socioEditar && nombres.includes('(Pendiente)'));
+  const apeFalta = Boolean(socioEditar && apellidos.includes('(Pendiente)'));
+  const telFalta = Boolean(socioEditar && datos.sinTelefono);
+
   return (
     <Portal>
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs sm:items-center sm:p-6">
@@ -108,29 +114,36 @@ export function MemberFormModal({
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
-          {(() => {
-            const datos = estadoDatosSocio({ dni, nombres, apellidos, telefono });
-            if (!socioEditar || !datos.incompleto) return null;
-            const faltantes = [
-              datos.dniProvisional ? 'DNI real (actual es provisional 99...)' : null,
-              datos.nombrePendiente ? 'nombre o apellido "(Pendiente)"' : null,
-              datos.sinTelefono ? 'teléfono (opcional)' : null,
-            ].filter(Boolean);
-            return (
-              <div className="flex items-start gap-2 rounded-xs border-l-4 border-warn bg-warn/15 px-3 py-2.5 text-xs text-warn">
-                <AlertTriangle size={15} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-semibold">Faltan datos por completar:</p>
-                  <p className="mt-0.5 text-bone/90">{faltantes.join(' · ')}.</p>
-                </div>
+          {socioEditar && datos.incompleto && (
+            <div className="flex items-start gap-2 rounded-xs border-l-4 border-warn bg-warn/15 px-3 py-2.5 text-xs text-warn">
+              <AlertTriangle size={15} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold">Faltan datos por completar:</p>
+                <p className="mt-0.5 text-bone/90">
+                  {[
+                    datos.dniProvisional ? 'DNI real (actual es provisional 99...)' : null,
+                    datos.nombrePendiente ? 'nombre o apellido "(Pendiente)"' : null,
+                    datos.sinTelefono ? 'teléfono (opcional)' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  .
+                </p>
               </div>
-            );
-          })()}
+            </div>
+          )}
 
           <div>
-            <label htmlFor="socio-dni" className="label">
-              DNI / Documento *
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="socio-dni" className="label">
+                DNI / Documento *
+              </label>
+              {dniFalta && (
+                <span className="mb-1 rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warn ring-1 ring-warn/40">
+                  Provisional
+                </span>
+              )}
+            </div>
             <input
               id="socio-dni"
               type="text"
@@ -144,14 +157,21 @@ export function MemberFormModal({
                 if (/^99\d{7,}$/.test(e.target.value)) e.target.select();
               }}
               onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-              className="field font-mono"
+              className={`field font-mono ${dniFalta ? '!border-warn/80 !bg-warn/5' : ''}`}
             />
           </div>
 
           <div>
-            <label htmlFor="socio-nombres" className="label">
-              Nombres *
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="socio-nombres" className="label">
+                Nombres *
+              </label>
+              {nomFalta && (
+                <span className="mb-1 rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warn ring-1 ring-warn/40">
+                  Pendiente
+                </span>
+              )}
+            </div>
             <input
               id="socio-nombres"
               type="text"
@@ -162,14 +182,21 @@ export function MemberFormModal({
                 if (e.target.value.trim() === '(Pendiente)') e.target.select();
               }}
               onChange={(e) => setNombres(e.target.value)}
-              className="field"
+              className={`field ${nomFalta ? '!border-warn/80 !bg-warn/5' : ''}`}
             />
           </div>
 
           <div>
-            <label htmlFor="socio-apellidos" className="label">
-              Apellidos *
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="socio-apellidos" className="label">
+                Apellidos *
+              </label>
+              {apeFalta && (
+                <span className="mb-1 rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warn ring-1 ring-warn/40">
+                  Pendiente
+                </span>
+              )}
+            </div>
             <input
               id="socio-apellidos"
               type="text"
@@ -180,21 +207,28 @@ export function MemberFormModal({
                 if (e.target.value.trim() === '(Pendiente)') e.target.select();
               }}
               onChange={(e) => setApellidos(e.target.value)}
-              className="field"
+              className={`field ${apeFalta ? '!border-warn/80 !bg-warn/5' : ''}`}
             />
           </div>
 
           <div>
-            <label htmlFor="socio-telefono" className="label">
-              Teléfono / WhatsApp (opcional)
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="socio-telefono" className="label">
+                Teléfono / WhatsApp (opcional)
+              </label>
+              {telFalta && (
+                <span className="mb-1 rounded bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-warn ring-1 ring-warn/30">
+                  Falta
+                </span>
+              )}
+            </div>
             <input
               id="socio-telefono"
               type="tel"
               placeholder="Ej: 987654321"
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
-              className="field tabular-nums"
+              className={`field tabular-nums ${telFalta ? '!border-warn/50' : ''}`}
             />
           </div>
 
