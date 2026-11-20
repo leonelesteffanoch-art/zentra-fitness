@@ -22,9 +22,11 @@ export function diffDiasISO(fechaFin: string, fechaBase: string = hoyLima()): nu
   return Math.round((Date.UTC(ya, ma - 1, da) - Date.UTC(yb, mb - 1, db)) / 86_400_000);
 }
 
-/** Convierte YYYY-MM-DD a DD/MM/YYYY para lectura rápida. */
-export function formatearFechaDMY(fecha: string): string {
-  const [y, m, d] = fecha.split('-');
+/** Convierte YYYY-MM-DD (o timestamp ISO) a DD/MM/YYYY para lectura rápida. */
+export function formatearFechaDMY(fecha?: string | null): string {
+  if (!fecha) return '—';
+  const iso = fecha.slice(0, 10);
+  const [y, m, d] = iso.split('-');
   if (!y || !m || !d) return fecha;
   return `${d}/${m}/${y}`;
 }

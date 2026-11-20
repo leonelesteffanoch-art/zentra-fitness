@@ -238,7 +238,7 @@ export default function CajaPage() {
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
             Punto de venta | Control de efectivo | Arqueo de turno
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-3">

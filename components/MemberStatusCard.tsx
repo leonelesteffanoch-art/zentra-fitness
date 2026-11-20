@@ -12,7 +12,13 @@ import {
   X,
 } from 'lucide-react';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
-import { estadoDatosSocio, formatearNombreSocio, hoyLima, soles } from '@/lib/formato';
+import {
+  estadoDatosSocio,
+  formatearFechaDMY,
+  formatearNombreSocio,
+  hoyLima,
+  soles,
+} from '@/lib/formato';
 import type { Asistencia, Semaforo, SocioEstado } from '@/types';
 
 interface Props {
@@ -167,60 +173,74 @@ export function MemberStatusCard({
     >
       {/* Fila 1: Identidad del socio + acciones inmediatas para recepción */}
       <div className="flex flex-col justify-between gap-4 border-b border-line/70 pb-4 lg:flex-row lg:items-center">
-        <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
-          <div
-            aria-hidden="true"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand/15 font-display text-lg font-bold tracking-wider text-brand ring-1 ring-brand/30"
-          >
-            {iniciales || 'S'}
-          </div>
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
+            <div
+              aria-hidden="true"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand/15 font-display text-lg font-bold tracking-wider text-brand ring-1 ring-brand/30"
+            >
+              {iniciales || 'S'}
+            </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-lg font-bold leading-tight text-bone sm:text-xl">
-                {formatearNombreSocio(socio)}
-              </h2>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold ${est.badge}`}
-              >
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-lg font-bold leading-tight text-bone sm:text-xl">
+                  {formatearNombreSocio(socio)}
+                </h2>
                 <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: est.strokeColor }}
-                />
-                {est.etiqueta}
-              </span>
-              {yaAsistioHoy && (
-                <span className="inline-flex items-center gap-1 rounded bg-ok/15 px-2 py-0.5 text-[11px] font-semibold text-ok ring-1 ring-ok/30">
-                  ✓ Asistió hoy {horaPrevioHoy && `(${horaPrevioHoy})`}
+                  className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold ${est.badge}`}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: est.strokeColor }}
+                  />
+                  {est.etiqueta}
                 </span>
-              )}
-            </div>
+                {yaAsistioHoy && (
+                  <span className="inline-flex items-center gap-1 rounded bg-ok/15 px-2 py-0.5 text-[11px] font-semibold text-ok ring-1 ring-ok/30">
+                    ✓ Asistió hoy {horaPrevioHoy && `(${horaPrevioHoy})`}
+                  </span>
+                )}
+              </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
-              <span className="font-mono font-semibold text-bone">DNI {socio.dni}</span>
-              {datosPendientes.dniProvisional && (
-                <span className="rounded bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn ring-1 ring-warn/30">
-                  Provisional
-                </span>
-              )}
-              <span aria-hidden="true">·</span>
-              {socio.telefono ? (
-                <span className="inline-flex items-center gap-1 font-mono">
-                  <Phone size={11} /> {socio.telefono}
-                </span>
-              ) : (
-                onEditarDatos && (
-                  <button
-                    type="button"
-                    onClick={onEditarDatos}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
-                  >
-                    + Teléfono
-                  </button>
-                )
-              )}
+              <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
+                <span className="font-mono font-semibold text-bone">DNI {socio.dni}</span>
+                {datosPendientes.dniProvisional && (
+                  <span className="rounded bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn ring-1 ring-warn/30">
+                    Provisional
+                  </span>
+                )}
+                <span aria-hidden="true">·</span>
+                {socio.telefono ? (
+                  <span className="inline-flex items-center gap-1 font-mono">
+                    <Phone size={11} /> {socio.telefono}
+                  </span>
+                ) : (
+                  onEditarDatos && (
+                    <button
+                      type="button"
+                      onClick={onEditarDatos}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+                    >
+                      + Teléfono
+                    </button>
+                  )
+                )}
+              </div>
             </div>
           </div>
+
+          {onLimpiar && (
+            <button
+              type="button"
+              onClick={onLimpiar}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line/70 bg-surface-2/80 text-muted transition-colors hover:border-bone/40 hover:text-bone lg:hidden"
+              aria-label="Cerrar ficha del socio"
+              title="Cerrar ficha (Esc)"
+            >
+              <X size={15} strokeWidth={1.75} />
+            </button>
+          )}
         </div>
 
         {/* Acciones directas arriba para operar en 1 segundo */}
@@ -229,7 +249,7 @@ export function MemberStatusCard({
             <button
               onClick={onCheckIn}
               disabled={registrando || yaAsistioHoy}
-              className="btn btn-primary !min-h-10 !px-5 text-sm"
+              className="btn btn-primary w-full !min-h-11 !px-5 text-sm sm:w-auto sm:!min-h-10"
             >
               <LogIn size={16} strokeWidth={1.75} />
               {yaAsistioHoy ? 'Ingreso ya registrado' : 'Registrar ingreso'}
@@ -239,7 +259,9 @@ export function MemberStatusCard({
           <button
             onClick={onRenovar}
             className={`btn !min-h-10 text-xs sm:text-sm ${
-              socio.semaforo === 'ROJO' ? 'btn-primary !px-5' : 'btn-secondary'
+              socio.semaforo === 'ROJO'
+                ? 'btn-primary w-full !min-h-11 !px-5 sm:w-auto sm:!min-h-10'
+                : 'btn-secondary flex-1 sm:flex-initial'
             }`}
           >
             <RefreshCw size={15} strokeWidth={1.75} />
@@ -247,7 +269,10 @@ export function MemberStatusCard({
           </button>
 
           {socio.saldo_pendiente > 0 && (
-            <button onClick={onCobrarSaldo} className="btn btn-ghost !min-h-10 text-xs tabular-nums">
+            <button
+              onClick={onCobrarSaldo}
+              className="btn btn-ghost flex-1 !min-h-10 text-xs tabular-nums sm:flex-initial"
+            >
               <CircleDollarSign size={15} strokeWidth={1.75} />
               Cobrar ({soles(socio.saldo_pendiente)})
             </button>
@@ -257,7 +282,7 @@ export function MemberStatusCard({
             <button
               type="button"
               onClick={onEditarDatos}
-              className={`btn !min-h-10 text-xs ${
+              className={`btn flex-1 !min-h-10 text-xs sm:flex-initial ${
                 datosPendientes.incompleto
                   ? 'btn-secondary !border-warn/60 text-warn hover:!border-warn'
                   : 'btn-ghost'
@@ -272,7 +297,7 @@ export function MemberStatusCard({
             <button
               type="button"
               onClick={onLimpiar}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line/70 bg-surface-2/80 text-muted transition-colors hover:border-bone/40 hover:text-bone"
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line/70 bg-surface-2/80 text-muted transition-colors hover:border-bone/40 hover:text-bone lg:flex"
               aria-label="Cerrar ficha del socio"
               title="Cerrar ficha (Esc)"
             >
@@ -327,7 +352,7 @@ export function MemberStatusCard({
                 </span>
                 <p className="mt-0.5 text-xs leading-relaxed text-bone">
                   Debe <strong className="font-bold text-bad tabular-nums">{soles(socio.saldo_pendiente)}</strong> del plan {socio.plan}.
-                  {diasAtraso > 0 && ` Atraso de ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} desde su inicio (${socio.fecha_inicio}).`}
+                  {diasAtraso > 0 && ` Atraso de ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} desde su inicio (${formatearFechaDMY(socio.fecha_inicio)}).`}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -368,8 +393,8 @@ export function MemberStatusCard({
                 </span>
                 <p className="mt-0.5 text-xs leading-relaxed text-bone">
                   {ultimaAsistencia
-                    ? `Su última visita registrada fue el ${ultimaAsistencia}.`
-                    : `Inició su membresía el ${socio.fecha_inicio} pero aún no registra check-in.`}
+                    ? `Su última visita registrada fue el ${formatearFechaDMY(ultimaAsistencia)}.`
+                    : `Inició su membresía el ${formatearFechaDMY(socio.fecha_inicio)} pero aún no registra check-in.`}
                   {' '}Contáctalo para motivarlo antes de que pierda la constancia y no renueve.
                 </p>
               </div>
@@ -395,9 +420,9 @@ export function MemberStatusCard({
             <div className="flex items-start gap-2.5 border-l-2 border-warn bg-warn/10 px-3.5 py-2.5 text-xs text-warn">
               <AlertTriangle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
               <p>
-                <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
+                <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''} </strong>{' '}
                 Ningún plan incluye doble ingreso en el mismo día. Para un segundo ingreso corresponde abonar un{' '}
-                <strong>Pase por día (S/ 10)</strong> en mostrador.
+                <strong>Pase por día (S/ 10)</strong>.
               </p>
             </div>
           )}
@@ -458,21 +483,58 @@ export function MemberStatusCard({
           </div>
 
           {socio.fecha_inicio && socio.fecha_fin && (
-            <div className="rounded-md border border-line/60 bg-ink/50 px-3.5 py-2.5">
-              <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-                <span>
-                  Inicio: <strong className="font-mono text-bone">{socio.fecha_inicio}</strong>
-                </span>
-                <span className="font-mono font-semibold text-bone">{pctRestante}% disp.</span>
-                <span>
-                  Vence: <strong className="font-mono text-bone">{socio.fecha_fin}</strong>
-                </span>
-              </div>
-              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="rounded-md border border-line/80 bg-surface px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                    Inicio
+                  </p>
+                  <p className="mt-0.5 font-mono text-sm font-bold text-bone tabular-nums sm:text-base">
+                    {formatearFechaDMY(socio.fecha_inicio)}
+                  </p>
+                </div>
+
                 <div
-                  className={`bar-fill h-full rounded-full ${est.barColor}`}
-                  style={{ width: `${pctRestante}%` }}
-                />
+                  className={`rounded-md border px-3 py-2 ${
+                    socio.semaforo === 'ROJO'
+                      ? 'border-bad/50 bg-bad/10'
+                      : socio.semaforo === 'AMBAR'
+                      ? 'border-warn/50 bg-warn/10'
+                      : 'border-ok/40 bg-ok/10'
+                  }`}
+                >
+                  <p
+                    className={`text-[10px] font-semibold uppercase tracking-wider ${
+                      socio.semaforo === 'ROJO'
+                        ? 'text-bad'
+                        : socio.semaforo === 'AMBAR'
+                        ? 'text-warn'
+                        : 'text-ok'
+                    }`}
+                  >
+                    {socio.dias_restantes !== null && socio.dias_restantes < 0
+                      ? 'Venció el'
+                      : 'Vence el'}
+                  </p>
+                  <p className="mt-0.5 font-mono text-sm font-bold text-bone tabular-nums sm:text-base">
+                    {formatearFechaDMY(socio.fecha_fin)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[11px] text-muted">
+                  <span>Progreso del ciclo</span>
+                  <span className="font-mono font-semibold text-bone tabular-nums">
+                    {pctRestante}% disponible
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className={`bar-fill h-full rounded-full ${est.barColor}`}
+                    style={{ width: `${pctRestante}%` }}
+                  />
+                </div>
               </div>
             </div>
           )}

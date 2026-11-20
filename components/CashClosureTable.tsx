@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Ban, Check, Filter, Search, Wallet, X } from 'lucide-react';
-import { soles } from '@/lib/formato';
+import { formatearFechaDMY, soles } from '@/lib/formato';
 import type { MovimientoCaja, ResumenTurno, TurnoCaja } from '@/types';
 
 interface SummaryProps {
@@ -41,7 +41,7 @@ export function CashSummaryStrip({ turno, resumen }: SummaryProps) {
           <h2 className="section-title text-base">Arqueo · Turno {turno.turno}</h2>
         </div>
         <span className="rounded bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted">
-          {turno.fecha}
+          {formatearFechaDMY(turno.fecha)}
         </span>
       </div>
 

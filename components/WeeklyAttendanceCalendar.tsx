@@ -92,7 +92,7 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
       </div>
 
       {/* Grilla semanal Lun -> Sáb */}
-      <div className="grid grid-cols-6 gap-2 text-center">
+      <div className="grid grid-cols-3 gap-2 text-center sm:grid-cols-6">
         {diasSemana.map((d) => (
           <div
             key={d.fecha}
@@ -118,7 +118,7 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
               {d.asistio ? (
                 <span className="inline-flex items-center gap-0.5 rounded bg-ok/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-ok">
                   <Check size={10} strokeWidth={2.5} />
-                  {d.horaTexto && <span className="hidden sm:inline">{d.horaTexto}</span>}
+                  {d.horaTexto && <span>{d.horaTexto}</span>}
                 </span>
               ) : d.esHoy ? (
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-brand">

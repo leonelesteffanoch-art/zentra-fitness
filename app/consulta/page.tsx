@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Flame, Loader2, Search } from 'lucide-react';
 import { Logo } from '@/components/Logo';
-import { soles } from '@/lib/formato';
+import { formatearFechaDMY, soles } from '@/lib/formato';
 import type { ConsultaSocioResultado, Semaforo } from '@/types';
 
 const BADGE_SEMAFORO: Record<Semaforo, { badge: string; acento: string; estado: string }> = {
@@ -181,7 +181,7 @@ export default function ConsultaPage() {
               {resultado.plan && (
                 <p className="mt-2 text-sm text-muted">
                   Plan {resultado.plan} · Vence el{' '}
-                  <span className="font-mono text-bone">{resultado.fecha_fin}</span>
+                  <span className="font-mono text-bone">{formatearFechaDMY(resultado.fecha_fin)}</span>
                 </p>
               )}
               {resultado.saldo_pendiente > 0 && (

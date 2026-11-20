@@ -60,6 +60,7 @@ function formatearFechaHora(iso: string): string {
       timeZone: 'America/Lima',
       day: '2-digit',
       month: '2-digit',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -375,7 +376,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
             CRM y Embudo comercial
           </p>
           <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">PROSPECTOS</h1>

@@ -33,7 +33,7 @@ import {
   type DesgloseProducto,
 } from '@/services/cajaService';
 import { listarPlanes } from '@/services/sociosService';
-import { hoyLima, soles, sumarDias } from '@/lib/formato';
+import { formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
 import type {
   MetodoPago,
   MovimientoExport,
@@ -212,7 +212,7 @@ export default function AdminPage() {
       }
 
       const filasExcel = acumulado.map((f) => ({
-        Fecha: f.Fecha,
+        Fecha: f.Fecha ? formatearFechaDMY(f.Fecha) : f.Fecha,
         Hora: f.Hora,
         Turno: f.Turno,
         Tipo: f.Tipo,
@@ -266,7 +266,7 @@ export default function AdminPage() {
       {/* Cabecera y Filtro de rango + Atajos rápidos */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-5">
         <div className="shrink-0">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
             Dirección, Finanzas y Catálogo
           </p>
           <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">
@@ -274,9 +274,9 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 xl:flex-nowrap">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-1.5 xl:flex-nowrap">
           {/* Atajos de fecha */}
-          <div className="flex flex-wrap items-center gap-0.5 rounded-md border border-line bg-surface p-1 sm:h-9 sm:flex-nowrap">
+          <div className="flex w-full flex-wrap items-center justify-between gap-0.5 rounded-md border border-line bg-surface p-1 sm:h-9 sm:w-auto sm:flex-nowrap sm:justify-start">
             {(
               [
                 { label: 'Hoy', val: 0 as const },
@@ -290,56 +290,60 @@ export default function AdminPage() {
                 key={preset.label}
                 type="button"
                 onClick={() => aplicarRangoRapido(preset.val)}
-                className="rounded px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-bone"
+                className="flex-1 rounded px-2 py-1 text-center text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-bone sm:flex-initial"
               >
                 {preset.label}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 sm:h-9 sm:flex-nowrap sm:py-0">
-            <label
-              htmlFor="admin-desde"
-              className="select-none text-[11px] font-medium text-muted"
-            >
-              Desde
-            </label>
-            <input
-              id="admin-desde"
-              type="date"
-              value={desde}
-              onChange={(e) => {
-                const v = e.target.value;
-                setDesde(v);
-                void consultarPeriodo(v, hasta);
-              }}
-              className="border-0 bg-transparent p-0 font-mono text-xs text-bone outline-none [color-scheme:dark]"
-            />
+          <div className="flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-2.5 py-2 sm:h-9 sm:w-auto sm:flex-nowrap sm:justify-start sm:gap-1.5 sm:py-0">
+            <div className="flex items-center gap-1.5">
+              <label
+                htmlFor="admin-desde"
+                className="select-none text-[11px] font-medium text-muted"
+              >
+                Desde
+              </label>
+              <input
+                id="admin-desde"
+                type="date"
+                value={desde}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setDesde(v);
+                  void consultarPeriodo(v, hasta);
+                }}
+                className="border-0 bg-transparent p-0 font-mono text-xs text-bone outline-none [color-scheme:dark]"
+              />
+            </div>
             <span className="hidden h-4 w-px bg-line/80 sm:block" aria-hidden="true" />
-            <label
-              htmlFor="admin-hasta"
-              className="select-none text-[11px] font-medium text-muted"
-            >
-              Hasta
-            </label>
-            <input
-              id="admin-hasta"
-              type="date"
-              value={hasta}
-              onChange={(e) => {
-                const v = e.target.value;
-                setHasta(v);
-                void consultarPeriodo(desde, v);
-              }}
-              className="border-0 bg-transparent p-0 font-mono text-xs text-bone outline-none [color-scheme:dark]"
-            />
+            <div className="flex items-center gap-1.5">
+              <label
+                htmlFor="admin-hasta"
+                className="select-none text-[11px] font-medium text-muted"
+              >
+                Hasta
+              </label>
+              <input
+                id="admin-hasta"
+                type="date"
+                value={hasta}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setHasta(v);
+                  void consultarPeriodo(desde, v);
+                }}
+                className="border-0 bg-transparent p-0 font-mono text-xs text-bone outline-none [color-scheme:dark]"
+              />
+            </div>
           </div>
 
           <button
             type="button"
             disabled={exportando}
             onClick={exportarExcel}
-            className="btn btn-secondary h-9 !min-h-9 whitespace-nowrap !px-2.5 text-xs"
+            className="btn btn-secondary h-9 w-full !min-h-9 whitespace-nowrap !px-2.5 text-xs sm:w-auto"
           >
             {exportando ? (
               <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
@@ -401,7 +405,9 @@ export default function AdminPage() {
           {/* 1. Balance del período: Flujo neto + Barra gráfica de métodos */}
           <section aria-label="Balance del período" className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="section-title text-lg">Balance financiero ({desde} → {hasta})</h2>
+              <h2 className="section-title text-lg">
+                Balance financiero ({formatearFechaDMY(desde)} → {formatearFechaDMY(hasta)})
+              </h2>
               {cargando && <Loader2 size={15} strokeWidth={1.75} className="animate-spin text-brand" />}
             </div>
 
@@ -519,12 +525,12 @@ export default function AdminPage() {
                     d.egresos === 0
                       ? 0
                       : Math.max(8, Math.round((d.egresos / kpis.maxDiario) * 100));
-                  const etiquetaDia = d.fecha.slice(5); // MM-DD
+                  const etiquetaDia = `${d.fecha.slice(8, 10)}/${d.fecha.slice(5, 7)}`; // DD/MM
                   return (
                     <div
                       key={d.fecha}
                       className="group flex min-w-[44px] flex-1 flex-col items-center gap-1.5"
-                      title={`${d.fecha} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)}`}
+                      title={`${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)}`}
                     >
                       <span className="font-mono text-[10px] font-semibold text-bone opacity-85 tabular-nums">
                         {d.ingresos > 0 ? Math.round(d.ingresos) : ''}

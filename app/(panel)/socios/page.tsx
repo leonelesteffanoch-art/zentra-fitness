@@ -39,7 +39,7 @@ import {
 } from '@/services/sociosService';
 import { ultimasAsistencias } from '@/services/asistenciasService';
 import { turnoAbierto } from '@/services/cajaService';
-import { formatearNombreSocio, hoyLima, soles } from '@/lib/formato';
+import { formatearFechaDMY, formatearNombreSocio, hoyLima, soles } from '@/lib/formato';
 import type { Asistencia, MembresiaEstado, Semaforo, SocioEstado } from '@/types';
 
 // Se carga solo al abrir "Importar Excel" (arrastra la librería xlsx, que es pesada).
@@ -96,6 +96,7 @@ export default function SociosPage() {
 
   // Evita que una respuesta lenta (vieja) pise a una más reciente al escribir rápido.
   const ultimaCarga = useRef(0);
+  const detalleRef = useRef<HTMLElement | null>(null);
 
   /**
    * Carga la lista. El resumen del padrón (descarga TODAS las filas) solo se
@@ -168,6 +169,11 @@ export default function SociosPage() {
     setSeleccionado(socio);
     setAnulandoId(null);
     setCargandoHistorial(true);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      requestAnimationFrame(() => {
+        detalleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
     try {
       const [mems, asis] = await Promise.all([
         membresiasDeSocio(socio.socio_id),
@@ -262,8 +268,8 @@ export default function SociosPage() {
         Celular: s.telefono ?? '—',
         'Plan Elegido': s.plan ?? 'Sin membresía',
         Deuda: Number(s.saldo_pendiente) || 0,
-        'Inicio de la Membresía': s.fecha_inicio ?? '—',
-        'Fin de Membresía': s.fecha_fin ?? '—',
+        'Inicio de la Membresía': formatearFechaDMY(s.fecha_inicio),
+        'Fin de Membresía': formatearFechaDMY(s.fecha_fin),
         'Días Restantes': s.dias_restantes ?? 0,
         Estado:
           s.semaforo === 'VERDE'
@@ -313,16 +319,16 @@ export default function SociosPage() {
       {/* Cabecera */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
             Padrón e historial de membresías
           </p>
           <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">SOCIOS</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-2.5">
           <button
             type="button"
             onClick={() => setModalImportar(true)}
-            className="btn btn-ghost !min-h-10"
+            className="btn btn-ghost flex-1 !min-h-10 text-xs sm:flex-initial sm:text-sm"
           >
             <Upload size={15} strokeWidth={1.75} />
             Importar Excel
@@ -331,7 +337,7 @@ export default function SociosPage() {
             type="button"
             disabled={exportando}
             onClick={exportarExcelSocios}
-            className="btn btn-ghost !min-h-10"
+            className="btn btn-ghost flex-1 !min-h-10 text-xs sm:flex-initial sm:text-sm"
           >
             {exportando ? (
               <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
@@ -343,7 +349,7 @@ export default function SociosPage() {
           <button
             type="button"
             onClick={() => setModalSocio('nuevo')}
-            className="btn btn-primary !min-h-10"
+            className="btn btn-primary w-full !min-h-10 sm:w-auto"
           >
             <UserPlus size={16} strokeWidth={1.75} />
             Nuevo socio
@@ -526,10 +532,10 @@ export default function SociosPage() {
             <table className="w-full border-collapse text-left text-sm">
               <thead className="sticky top-0 z-10 border-b border-line bg-surface-2 text-xs font-semibold uppercase tracking-wider text-muted">
                 <tr>
-                  <th className="px-4 py-2.5">Socio</th>
-                  <th className="px-3 py-2.5">DNI</th>
-                  <th className="px-3 py-2.5">Plan / Ciclo</th>
-                  <th className="px-4 py-2.5 text-right">Estado</th>
+                  <th className="px-3.5 py-2.5 sm:px-4">Socio</th>
+                  <th className="hidden px-3 py-2.5 sm:table-cell">DNI</th>
+                  <th className="px-3 py-2.5">Plan / Vence</th>
+                  <th className="px-3.5 py-2.5 text-right sm:px-4">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/70">
@@ -554,8 +560,8 @@ export default function SociosPage() {
                             : 'hover:bg-surface-2/60'
                         }`}
                       >
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-3">
+                        <td className="px-3.5 py-2.5 sm:px-4">
+                          <div className="flex items-center gap-2.5 sm:gap-3">
                             <span
                               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded font-display text-xs font-bold tracking-wider ring-1 ${
                                 activo
@@ -569,6 +575,9 @@ export default function SociosPage() {
                               <p className="truncate font-semibold text-bone">
                                 {formatearNombreSocio(s)}
                               </p>
+                              <p className="mt-0.5 font-mono text-[11px] text-muted sm:hidden">
+                                DNI {s.dni}
+                              </p>
                               {s.saldo_pendiente > 0 && (
                                 <span className="mt-0.5 inline-block rounded bg-bad/20 px-1.5 py-0.2 font-mono text-[10px] font-bold text-bad tabular-nums">
                                   Debe {soles(s.saldo_pendiente)}
@@ -577,13 +586,17 @@ export default function SociosPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-muted">{s.dni}</td>
+                        <td className="hidden px-3 py-2.5 font-mono text-xs text-muted sm:table-cell">
+                          {s.dni}
+                        </td>
                         <td className="px-3 py-2.5 text-xs">
                           {s.plan ? (
                             <div>
                               <span className="font-medium text-bone">{s.plan}</span>
-                              <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[11px] text-muted">
-                                <span>{s.fecha_fin}</span>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+                                <span className="font-semibold text-bone">
+                                  Vence {formatearFechaDMY(s.fecha_fin)}
+                                </span>
                                 {s.dias_restantes !== null && (
                                   <span
                                     className={`rounded px-1 py-0.2 text-[10px] font-semibold ${
@@ -594,9 +607,7 @@ export default function SociosPage() {
                                         : 'bg-surface-2 text-muted'
                                     }`}
                                   >
-                                    {s.dias_restantes < 0
-                                      ? `${s.dias_restantes}d`
-                                      : `${s.dias_restantes}d`}
+                                    {s.dias_restantes}d
                                   </span>
                                 )}
                               </div>
@@ -605,7 +616,7 @@ export default function SociosPage() {
                             <span className="text-muted">Sin membresía</span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="px-3.5 py-2.5 text-right sm:px-4">
                           <span
                             className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${badge.cls}`}
                           >
@@ -655,6 +666,7 @@ export default function SociosPage() {
 
         {/* Columna derecha: EmptyState o Ficha ordenada (sticky con scroll interno en escritorio) */}
         <section
+          ref={detalleRef}
           aria-label="Detalle del socio"
           className="panel-card p-5 lg:sticky lg:top-6 lg:max-h-[480px] lg:overflow-y-auto"
         >
@@ -728,6 +740,63 @@ export default function SociosPage() {
                     </div>
                   )}
                 </dl>
+
+                {seleccionado.fecha_inicio && seleccionado.fecha_fin && (
+                  <div className="mt-3 grid grid-cols-2 gap-2.5">
+                    <div className="rounded-md border border-line/80 bg-surface-2/60 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                        Inicio
+                      </p>
+                      <p className="mt-0.5 font-mono text-sm font-bold text-bone tabular-nums">
+                        {formatearFechaDMY(seleccionado.fecha_inicio)}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`rounded-md border px-3 py-2 ${
+                        seleccionado.semaforo === 'ROJO'
+                          ? 'border-bad/50 bg-bad/10'
+                          : seleccionado.semaforo === 'AMBAR'
+                          ? 'border-warn/50 bg-warn/10'
+                          : 'border-ok/40 bg-ok/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <p
+                          className={`text-[10px] font-semibold uppercase tracking-wider ${
+                            seleccionado.semaforo === 'ROJO'
+                              ? 'text-bad'
+                              : seleccionado.semaforo === 'AMBAR'
+                              ? 'text-warn'
+                              : 'text-ok'
+                          }`}
+                        >
+                          {seleccionado.dias_restantes !== null && seleccionado.dias_restantes < 0
+                            ? 'Venció el'
+                            : 'Vence el'}
+                        </p>
+                        {seleccionado.dias_restantes !== null && (
+                          <span
+                            className={`rounded px-1.5 py-0.2 font-mono text-[10px] font-bold tabular-nums ${
+                              seleccionado.semaforo === 'ROJO'
+                                ? 'bg-bad/20 text-bad'
+                                : seleccionado.semaforo === 'AMBAR'
+                                ? 'bg-warn/20 text-warn'
+                                : 'bg-ok/20 text-ok'
+                            }`}
+                          >
+                            {seleccionado.dias_restantes < 0
+                              ? `Hace ${Math.abs(seleccionado.dias_restantes)}d`
+                              : `${seleccionado.dias_restantes}d`}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 font-mono text-sm font-bold text-bone tabular-nums">
+                        {formatearFechaDMY(seleccionado.fecha_fin)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Alerta de Moroso / Deuda y Alerta de Inactividad */}
@@ -799,8 +868,8 @@ export default function SociosPage() {
                           </span>
                           <p className="mt-0.5 text-xs text-bone">
                             {ultimaAsis
-                              ? `Última visita registrada: ${ultimaAsis}.`
-                              : `Inició membresía el ${seleccionado.fecha_inicio} pero aún no registra check-in.`}
+                              ? `Última visita registrada: ${formatearFechaDMY(ultimaAsis)}.`
+                              : `Inició membresía el ${formatearFechaDMY(seleccionado.fecha_inicio)} pero aún no registra check-in.`}
                           </p>
                         </div>
                         {seleccionado.telefono && (
@@ -853,10 +922,10 @@ export default function SociosPage() {
                             anulada ? 'opacity-50 line-through' : ''
                           }`}
                         >
-                          <div className="flex items-baseline justify-between">
+                          <div className="flex flex-wrap items-baseline justify-between gap-1">
                             <span className="font-semibold text-bone">{m.plan}</span>
-                            <span className="font-mono text-xs text-muted">
-                              {m.fecha_inicio} → {m.fecha_fin}
+                            <span className="font-mono text-xs font-semibold text-bone tabular-nums">
+                              {formatearFechaDMY(m.fecha_inicio)} → {formatearFechaDMY(m.fecha_fin)}
                             </span>
                           </div>
 

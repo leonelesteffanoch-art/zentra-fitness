@@ -87,9 +87,22 @@ export default function RecepcionPage() {
   const [registrando, setRegistrando] = useState(false);
   const [yaIngreso, setYaIngreso] = useState(false);
   const [turnoActual, setTurnoActual] = useState<TurnoCaja | null | undefined>(undefined);
+  const [horaActualLima, setHoraActualLima] = useState<number | null>(null);
   const [cobro, setCobro] = useState<ModoCobro | null>(null);
   const [modalSocio, setModalSocio] = useState<'nuevo' | 'editar' | null>(null);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+
+  useEffect(() => {
+    const actualizarHora = () => {
+      setHoraActualLima(obtenerHoraLimaNumero(new Date().toISOString()));
+    };
+    const init = setTimeout(actualizarHora, 0);
+    const id = setInterval(actualizarHora, 60_000);
+    return () => {
+      clearTimeout(init);
+      clearInterval(id);
+    };
+  }, []);
 
   const cargarIngresosHoy = useCallback(async () => {
     if (!gymId) return;
@@ -220,30 +233,31 @@ export default function RecepcionPage() {
       }).length;
       return { ...f, cant };
     });
-    const maxFranja = Math.max(1, ...conteoPorFranja.map((c) => c.cant));
+    const maxReal = Math.max(0, ...conteoPorFranja.map((c) => c.cant));
+    const escalaMax = maxReal <= 4 ? 4 : Math.ceil(maxReal / 4) * 4;
 
-    return { total, verdes, ambar, pctVerde, conteoPorFranja, maxFranja };
+    return { total, verdes, ambar, pctVerde, conteoPorFranja, escalaMax };
   }, [ingresosHoy]);
 
   const hayTurno = turnoActual !== null && turnoActual !== undefined;
 
   return (
-    <div className="panel-fade-in space-y-6">
+    <div className="panel-fade-in space-y-5 sm:space-y-6">
       {/* Encabezado y Acciones */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-brand/15 text-brand">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-surface-2 text-[#9CA3AF]">
               <ScanLine size={14} strokeWidth={2} />
             </span>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-brand">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
               Control de acceso y mostrador
             </p>
           </div>
           <h1 className="mt-1 font-display text-4xl tracking-wide sm:text-5xl">RECEPCIÓN</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-2.5">
           <Link href="/caja" className="btn btn-ghost !min-h-10 text-xs">
             <Wallet size={15} strokeWidth={1.75} />
             Ir a Caja
@@ -338,14 +352,14 @@ export default function RecepcionPage() {
                 <li key={s.socio_id}>
                   <button
                     onClick={() => void seleccionarSocioConAsistencias(s)}
-                    className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-surface-2/80"
+                    className="flex w-full flex-col items-start gap-2 px-4 py-3 text-left transition-colors hover:bg-surface-2/80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-surface-2 font-display text-sm font-bold text-bone ring-1 ring-line">
                         {ini}
                       </span>
-                      <div>
-                        <p className="font-semibold text-bone">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-bone">
                           {formatearNombreSocio(s)}
                         </p>
                         <p className="mt-0.5 text-xs text-muted">
@@ -368,7 +382,7 @@ export default function RecepcionPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:shrink-0">
                       {s.saldo_pendiente > 0 && (
                         <span className="rounded bg-bad/20 px-2 py-0.5 font-mono text-[11px] font-bold text-bad">
                           Debe {soles(s.saldo_pendiente)}
@@ -564,33 +578,82 @@ export default function RecepcionPage() {
               <span className="text-[11px] text-muted">6:00 – 22:00</span>
             </div>
 
-            <div className="mt-5 flex h-40 items-end justify-between gap-2 px-1 pt-4">
-              {metricasHoy.conteoPorFranja.map((f) => {
-                const alturaPct =
-                  f.cant === 0 ? 6 : Math.max(14, Math.round((f.cant / metricasHoy.maxFranja) * 100));
-                return (
-                  <div
-                    key={f.h}
-                    className="group flex flex-1 flex-col items-center gap-1.5"
-                    title={`${f.label}: ${f.cant} ingresos`}
-                  >
-                    <span className="font-mono text-[10px] font-bold text-bone opacity-80 tabular-nums">
-                      {f.cant > 0 ? f.cant : ''}
-                    </span>
-                    <div className="flex h-28 w-full items-end justify-center rounded-t bg-surface-2/60 p-0.5">
+            <div className="mt-5 flex items-start gap-2 pt-3">
+              {/* Eje Y discreto */}
+              <div
+                aria-hidden="true"
+                className="mt-5 flex h-28 w-5 shrink-0 flex-col justify-between text-right font-mono text-[9px] leading-none text-muted/70 tabular-nums"
+              >
+                <span>{metricasHoy.escalaMax}</span>
+                <span>{Math.round(metricasHoy.escalaMax / 2)}</span>
+                <span>0</span>
+              </div>
+
+              <div className="relative flex flex-1 items-end justify-between gap-1 sm:gap-2">
+                {/* Líneas guía horizontales muy tenues */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 top-5 flex h-28 flex-col justify-between"
+                >
+                  <span className="border-t border-dashed border-line/45" />
+                  <span className="border-t border-dashed border-line/45" />
+                  <span className="border-t border-dashed border-line/45" />
+                </div>
+
+                {metricasHoy.conteoPorFranja.map((f) => {
+                  const esAhora =
+                    horaActualLima !== null && horaActualLima >= f.h && horaActualLima < f.h + 2;
+                  const alturaPct =
+                    f.cant === 0
+                      ? 5
+                      : Math.max(10, Math.round((f.cant / metricasHoy.escalaMax) * 100));
+                  return (
+                    <div
+                      key={f.h}
+                      className="group relative z-10 flex min-w-0 flex-1 flex-col items-center gap-1"
+                      title={`${f.label}${esAhora ? ' (Ahora)' : ''}: ${f.cant} ingresos`}
+                    >
+                      <div className="flex h-4 items-center justify-center gap-0.5">
+                        {esAhora && (
+                          <span className="rounded border border-brand/40 bg-brand/15 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-brand">
+                            Ahora
+                          </span>
+                        )}
+                        {f.cant > 0 && (
+                          <span className="font-mono text-[10px] font-bold text-bone opacity-85 tabular-nums">
+                            {f.cant}
+                          </span>
+                        )}
+                      </div>
                       <div
-                        className={`w-full rounded-t transition-all duration-500 ${
-                          f.cant > 0
-                            ? 'bg-gradient-to-t from-brand/60 to-brand group-hover:brightness-110'
-                            : 'bg-line/40'
+                        className={`flex h-28 w-full items-end justify-center rounded-t p-0.5 transition-colors ${
+                          esAhora
+                            ? 'border border-brand/55 bg-brand/5 ring-1 ring-brand/15'
+                            : 'bg-surface-2/60'
                         }`}
-                        style={{ height: `${alturaPct}%` }}
-                      />
+                      >
+                        <div
+                          className={`w-full rounded-t transition-all duration-500 ${
+                            f.cant > 0
+                              ? 'bg-gradient-to-t from-brand/60 to-brand group-hover:brightness-110'
+                              : esAhora
+                              ? 'bg-brand/35'
+                              : 'bg-line/40'
+                          }`}
+                          style={{ height: `${alturaPct}%` }}
+                        />
+                      </div>
+                      <span
+                        className={`font-mono text-[9px] tabular-nums sm:text-[10px] ${
+                          esAhora ? 'font-bold text-brand' : 'text-muted'
+                        }`}
+                      >
+                        {f.label}
+                      </span>
                     </div>
-                    <span className="font-mono text-[10px] text-muted">{f.label}</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 

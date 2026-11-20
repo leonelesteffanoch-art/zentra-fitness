@@ -23,6 +23,7 @@ import type { Rol } from '@/types';
 interface ItemNav {
   href: string;
   etiqueta: string;
+  etiquetaMovil: string;
   icono: ReactNode;
   roles: Rol[];
 }
@@ -31,30 +32,35 @@ const NAV: ItemNav[] = [
   {
     href: '/recepcion',
     etiqueta: 'Recepción',
+    etiquetaMovil: 'Recepción',
     icono: <ScanLine size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
   },
   {
     href: '/caja',
     etiqueta: 'Caja y POS',
+    etiquetaMovil: 'Caja',
     icono: <Wallet size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
   },
   {
     href: '/socios',
     etiqueta: 'Socios',
+    etiquetaMovil: 'Socios',
     icono: <Users size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
   },
   {
     href: '/prospectos',
     etiqueta: 'Prospectos',
+    etiquetaMovil: 'Prospectos',
     icono: <Target size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
   },
   {
     href: '/admin',
     etiqueta: 'Administración',
+    etiquetaMovil: 'Admin',
     icono: <BarChart3 size={18} strokeWidth={1.75} />,
     roles: ['admin'],
   },
@@ -311,8 +317,8 @@ export function PanelShell({ children }: { children: ReactNode }) {
       >
 
       {/* Cabecera compacta únicamente en pantallas móviles */}
-      <header className="sticky top-0 z-30 border-b border-line/90 bg-ink/90 backdrop-blur-xl md:hidden">
-        <div className="flex items-center justify-between gap-2.5 px-4 py-2.5">
+      <header className="sticky top-0 z-30 border-b border-line/90 bg-ink/95 backdrop-blur-xl md:hidden">
+        <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
           <Link
             href="/"
             aria-label="Ir a la página principal"
@@ -322,6 +328,19 @@ export function PanelShell({ children }: { children: ReactNode }) {
           </Link>
 
           <div className="flex shrink-0 items-center gap-2">
+            {reloj && (
+              <div
+                className="flex items-center gap-1 rounded-md border border-line/70 bg-surface/80 px-2 py-1 font-mono text-[11px] font-semibold tabular-nums text-bone"
+                title={`${reloj.hora} · ${reloj.fecha} (Hora local Lima)`}
+              >
+                <Clock size={12} className="text-brand" strokeWidth={1.75} />
+                <span>{horaCorta}</span>
+                {periodoCorto && (
+                  <span className="text-[9px] uppercase text-brand">{periodoCorto}</span>
+                )}
+              </div>
+            )}
+
             <div
               title={`${perfil.nombre} (${perfil.rol})`}
               className="flex items-center gap-2 rounded-md border border-line/70 bg-surface/60 px-2 py-1"
@@ -347,37 +366,42 @@ export function PanelShell({ children }: { children: ReactNode }) {
             </button>
           </div>
         </div>
-
-        {/* Barra de pestañas dedicada en móvil */}
-        <nav
-          aria-label="Principal móvil"
-          className="flex gap-1 overflow-x-auto border-t border-line/60 bg-surface/50 px-2 py-1"
-        >
-          {itemsVisibles.map((i) => {
-            const activo = pathname.startsWith(i.href);
-            return (
-              <Link
-                key={i.href}
-                href={i.href}
-                aria-current={activo ? 'page' : undefined}
-                className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2.5 py-2 text-xs font-medium transition-colors ${
-                  activo
-                    ? 'bg-brand/15 text-brand ring-1 ring-brand/30'
-                    : 'text-muted hover:text-bone'
-                }`}
-              >
-                {i.icono}
-                <span>{i.etiqueta}</span>
-              </Link>
-            );
-          })}
-        </nav>
       </header>
 
-        <main className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-3.5 pt-4 pb-24 sm:px-6 sm:py-6 md:pb-6 lg:px-8">
           {children}
         </main>
       </div>
+
+      {/* Barra de navegación inferior fija tipo app en pantallas móviles */}
+      <nav
+        aria-label="Principal móvil"
+        className="fixed inset-x-0 bottom-0 z-40 grid border-t border-line/90 bg-ink/95 px-1 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden"
+        style={{ gridTemplateColumns: `repeat(${itemsVisibles.length}, minmax(0, 1fr))` }}
+      >
+        {itemsVisibles.map((i) => {
+          const activo = pathname.startsWith(i.href);
+          return (
+            <Link
+              key={i.href}
+              href={i.href}
+              aria-current={activo ? 'page' : undefined}
+              className={`relative flex flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[11px] font-medium transition-colors ${
+                activo ? 'bg-brand/12 text-brand' : 'text-muted hover:text-bone'
+              }`}
+            >
+              {activo && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0 h-[2px] w-7 rounded-b-full bg-brand"
+                />
+              )}
+              <span className={activo ? 'text-brand' : 'text-muted'}>{i.icono}</span>
+              <span className="max-w-full truncate">{i.etiquetaMovil}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
