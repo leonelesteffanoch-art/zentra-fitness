@@ -8,6 +8,7 @@ interface Props {
   buscando?: boolean;
   placeholder?: string;
   size?: 'md' | 'lg';
+  variant?: 'default' | 'hero';
   autoFocus?: boolean;
 }
 
@@ -22,6 +23,7 @@ export function SearchBar({
   buscando = false,
   placeholder = 'Buscar por DNI o nombre del socio',
   size = 'md',
+  variant = 'default',
   autoFocus = false,
 }: Props) {
   const [valor, setValor] = useState('');
@@ -76,6 +78,7 @@ export function SearchBar({
   }
 
   const esGrande = size === 'lg';
+  const esHero = variant === 'hero';
 
   return (
     <div className="group relative">
@@ -83,9 +86,13 @@ export function SearchBar({
         Buscar socio por DNI o nombre
       </label>
       <Search
-        size={esGrande ? 18 : 16}
-        strokeWidth={1.75}
-        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted transition-colors group-focus-within:text-brand"
+        size={esHero ? 22 : esGrande ? 18 : 16}
+        strokeWidth={esHero ? 2.25 : 1.75}
+        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 transition-colors ${
+          esHero
+            ? 'left-4 text-brand'
+            : 'left-3.5 text-muted group-focus-within:text-brand'
+        }`}
       />
       <input
         ref={inputRef}
@@ -98,10 +105,12 @@ export function SearchBar({
         onChange={(e) => setValor(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className={`field !pl-10 !pr-16 transition-all ${
-          esGrande
-            ? '!min-h-12 !text-base font-medium shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)]'
-            : '!min-h-10 !text-sm'
+        className={`field transition-all ${
+          esHero
+            ? '!min-h-14 !pl-12 !pr-28 !text-base sm:!text-lg font-semibold !bg-surface-2 !border-brand/70 placeholder:text-bone/60 shadow-[0_6px_24px_-8px_rgba(250,204,21,0.3)] focus:!border-brand focus:!ring-2 focus:!ring-brand/35'
+            : esGrande
+            ? '!min-h-12 !pl-10 !pr-16 !text-base font-medium shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)]'
+            : '!min-h-10 !pl-10 !pr-16 !text-sm'
         }`}
       />
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
@@ -116,12 +125,25 @@ export function SearchBar({
           <button
             type="button"
             onClick={limpiar}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted transition-colors hover:bg-surface-2 hover:text-bone"
+            className={
+              esHero
+                ? 'inline-flex items-center gap-1 rounded border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-bone transition-colors hover:border-brand/60 hover:text-brand'
+                : 'flex h-6 w-6 items-center justify-center rounded text-muted transition-colors hover:bg-surface-2 hover:text-bone'
+            }
             aria-label="Limpiar búsqueda"
             title="Limpiar (Esc)"
           >
             <X size={14} strokeWidth={2} />
+            {esHero && <span>Limpiar</span>}
           </button>
+        ) : esHero ? (
+          <span
+            aria-hidden="true"
+            className="hidden sm:inline-flex items-center gap-1 rounded border border-brand/30 bg-brand/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-brand"
+            title="Presiona / para buscar rápido"
+          >
+            Presiona /
+          </span>
         ) : (
           <kbd
             aria-hidden="true"

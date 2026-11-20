@@ -79,6 +79,7 @@ export default function RecepcionPage() {
 
   const [resultados, setResultados] = useState<SocioEstado[]>([]);
   const [termino, setTermino] = useState('');
+  const [searchReset, setSearchReset] = useState(0);
   const [seleccionado, setSeleccionado] = useState<SocioEstado | null>(null);
   const [asistenciasSocio, setAsistenciasSocio] = useState<Asistencia[]>([]);
   const [ingresosHoy, setIngresosHoy] = useState<AsistenciaHoyDetalle[]>([]);
@@ -258,6 +259,150 @@ export default function RecepcionPage() {
         </div>
       </div>
 
+      {/* Buscador principal destacado */}
+      <section
+        aria-label="Buscador de socios"
+        className="rounded-lg border-2 border-brand/60 bg-surface p-4 shadow-[0_0_28px_-8px_rgba(250,204,21,0.3)] ring-1 ring-brand/15 transition-all focus-within:border-brand focus-within:shadow-[0_0_32px_-6px_rgba(250,204,21,0.45)]"
+      >
+        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-black text-ink">
+              1
+            </span>
+            Buscar socio para registrar ingreso
+          </p>
+          <span className="text-xs text-muted">
+            Escribe el DNI, nombre o apellido del socio
+          </span>
+        </div>
+        <SearchBar
+          key={searchReset}
+          onSearch={buscar}
+          buscando={buscando}
+          size="lg"
+          variant="hero"
+          autoFocus
+          placeholder="Escribe aquí el DNI o nombre del socio..."
+        />
+      </section>
+
+      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
+
+      {aviso && (
+        <p
+          role={aviso.tipo === 'error' ? 'alert' : 'status'}
+          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
+            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
+          }`}
+        >
+          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
+          {aviso.texto}
+        </p>
+      )}
+
+      {/* Ficha activa del socio seleccionado */}
+      {seleccionado && gymId && (
+        <MemberStatusCard
+          socio={seleccionado}
+          asistencias={asistenciasSocio}
+          registrando={registrando}
+          yaIngreso={yaIngreso}
+          onCheckIn={checkIn}
+          onRenovar={() => setCobro('renovar')}
+          onCobrarSaldo={() => setCobro('abonar')}
+          onEditarDatos={() => setModalSocio('editar')}
+          onLimpiar={() => {
+            setSeleccionado(null);
+            setAsistenciasSocio([]);
+            if (resultados.length <= 1) {
+              setTermino('');
+              setResultados([]);
+              setAviso(null);
+              setSearchReset((k) => k + 1);
+            }
+          }}
+        />
+      )}
+
+      {/* Resultados múltiples de búsqueda */}
+      {!seleccionado && resultados.length > 1 && (
+        <div className="panel-card panel-fade-in overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line bg-surface-2/60 px-4 py-2.5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Coincidencias encontradas ({resultados.length})
+            </span>
+            <span className="text-[11px] text-muted">Haz clic en un socio para abrir su ficha</span>
+          </div>
+          <ul className="divide-y divide-line" aria-label="Resultados">
+            {resultados.map((s) => {
+              const b = BADGE_ESTADO[s.semaforo];
+              const ini = `${s.nombres?.[0] ?? ''}${s.apellidos?.[0] ?? ''}`.toUpperCase();
+              return (
+                <li key={s.socio_id}>
+                  <button
+                    onClick={() => void seleccionarSocioConAsistencias(s)}
+                    className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-surface-2/80"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-surface-2 font-display text-sm font-bold text-bone ring-1 ring-line">
+                        {ini}
+                      </span>
+                      <div>
+                        <p className="font-semibold text-bone">
+                          {formatearNombreSocio(s)}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted">
+                          <span className="font-mono text-bone">DNI {s.dni}</span>
+                          {estadoDatosSocio(s).dniProvisional && (
+                            <span className="ml-1.5 rounded bg-warn/15 px-1.5 py-0.2 text-[10px] font-semibold text-warn">
+                              Provisional
+                            </span>
+                          )}
+                          {s.plan && <span> · {s.plan}</span>}
+                          {s.dias_restantes !== null && (
+                            <span>
+                              {' '}
+                              ·{' '}
+                              {s.dias_restantes < 0
+                                ? `Venció hace ${Math.abs(s.dias_restantes)}d`
+                                : `${s.dias_restantes}d restantes`}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {s.saldo_pendiente > 0 && (
+                        <span className="rounded bg-bad/20 px-2 py-0.5 font-mono text-[11px] font-bold text-bad">
+                          Debe {soles(s.saldo_pendiente)}
+                        </span>
+                      )}
+                      <span className={`rounded px-2.5 py-0.5 text-xs font-semibold ${b.cls}`}>
+                        {b.txt}
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {!buscando && termino.length >= 2 && resultados.length === 0 && (
+        <div className="panel-card panel-fade-in px-6 py-10 text-center">
+          <p className="text-sm text-muted">No se encontró ningún socio con “{termino}”.</p>
+          <button
+            type="button"
+            onClick={() => setModalSocio('nuevo')}
+            className="btn btn-primary mt-4"
+          >
+            <UserPlus size={16} strokeWidth={1.75} />
+            Registrar nuevo socio
+          </button>
+        </div>
+      )}
+
       {/* Cinta de KPIs en vivo de Recepción */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="panel-card flex items-center justify-between gap-4 p-4">
@@ -345,126 +490,6 @@ export default function RecepcionPage() {
           </div>
         </div>
       </div>
-
-      {/* Buscador principal */}
-      <SearchBar
-        onSearch={buscar}
-        buscando={buscando}
-        size="lg"
-        autoFocus
-        placeholder="DNI - Nombre del Socio..."
-      />
-
-      <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
-
-      {aviso && (
-        <p
-          role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
-          }`}
-        >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
-          {aviso.texto}
-        </p>
-      )}
-
-      {/* Ficha activa del socio seleccionado */}
-      {seleccionado && gymId && (
-        <MemberStatusCard
-          socio={seleccionado}
-          asistencias={asistenciasSocio}
-          registrando={registrando}
-          yaIngreso={yaIngreso}
-          onCheckIn={checkIn}
-          onRenovar={() => setCobro('renovar')}
-          onCobrarSaldo={() => setCobro('abonar')}
-          onEditarDatos={() => setModalSocio('editar')}
-          onLimpiar={() => {
-            setSeleccionado(null);
-            setAsistenciasSocio([]);
-          }}
-        />
-      )}
-
-      {/* Resultados múltiples de búsqueda */}
-      {!seleccionado && resultados.length > 1 && (
-        <div className="panel-card panel-fade-in overflow-hidden">
-          <div className="flex items-center justify-between border-b border-line bg-surface-2/60 px-4 py-2.5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Coincidencias encontradas ({resultados.length})
-            </span>
-            <span className="text-[11px] text-muted">Haz clic en un socio para abrir su ficha</span>
-          </div>
-          <ul className="divide-y divide-line" aria-label="Resultados">
-            {resultados.map((s) => {
-              const b = BADGE_ESTADO[s.semaforo];
-              const ini = `${s.nombres?.[0] ?? ''}${s.apellidos?.[0] ?? ''}`.toUpperCase();
-              return (
-                <li key={s.socio_id}>
-                  <button
-                    onClick={() => void seleccionarSocioConAsistencias(s)}
-                    className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-surface-2/80"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-surface-2 font-display text-sm font-bold text-bone ring-1 ring-line">
-                        {ini}
-                      </span>
-                      <div>
-                        <p className="font-semibold text-bone">
-                          {formatearNombreSocio(s)}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted">
-                          <span className="font-mono text-bone">DNI {s.dni}</span>
-                          {estadoDatosSocio(s).dniProvisional && (
-                            <span className="ml-1.5 rounded bg-warn/15 px-1.5 py-0.2 text-[10px] font-semibold text-warn">
-                              Provisional
-                            </span>
-                          )}
-                          {s.plan && <span> · {s.plan}</span>}
-                          {s.dias_restantes !== null && (
-                            <span>
-                              {' '}
-                              ·{' '}
-                              {s.dias_restantes < 0
-                                ? `Venció hace ${Math.abs(s.dias_restantes)}d`
-                                : `${s.dias_restantes}d restantes`}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {s.saldo_pendiente > 0 && (
-                        <span className="rounded bg-bad/20 px-2 py-0.5 font-mono text-[11px] font-bold text-bad">
-                          Debe {soles(s.saldo_pendiente)}
-                        </span>
-                      )}
-                      <span className={`rounded px-2.5 py-0.5 text-xs font-semibold ${b.cls}`}>
-                        {b.txt}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {!buscando && termino.length >= 2 && resultados.length === 0 && (
-        <div className="panel-card panel-fade-in px-6 py-10 text-center">
-          <p className="text-sm text-muted">No se encontró ningún socio con “{termino}”.</p>
-          <button
-            type="button"
-            onClick={() => setModalSocio('nuevo')}
-            className="btn btn-primary mt-4"
-          >
-            <UserPlus size={16} strokeWidth={1.75} />
-            Registrar nuevo socio
-          </button>
-        </div>
-      )}
 
       {/* Panel inferior: Actividad de hoy en vivo + Flujo por franja horaria */}
       <div className="grid gap-5 lg:grid-cols-12">
