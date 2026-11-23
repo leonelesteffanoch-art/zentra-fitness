@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
+import { AdminDailyCalendar } from '@/components/AdminDailyCalendar';
 import { CatalogManager } from '@/components/CatalogManager';
 import { GymStatsSection } from '@/components/GymStatsSection';
 import { StaffManager } from '@/components/StaffManager';
@@ -58,6 +59,8 @@ export default function AdminPage() {
   const [desglosePlanes, setDesglosePlanes] = useState<DesglosePlan[]>([]);
   const [desgloseProds, setDesgloseProds] = useState<DesgloseProducto[]>([]);
   const [pestana, setPestana] = useState<'todo' | 'finanzas' | 'catalogo' | 'personal'>('todo');
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
+  const [recargaCalendario, setRecargaCalendario] = useState(0);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   useEffect(() => {
@@ -482,7 +485,17 @@ export default function AdminPage() {
             </div>
           </section>
 
-          {/* 1.1 Gráfico de Evolución Diaria de Ingresos vs Egresos */}
+          {/* 1.1 Calendario mensual interactivo con resumen por día */}
+          {gymId && (
+            <AdminDailyCalendar
+              gymId={gymId}
+              fechaExterna={diaSeleccionado}
+              onSeleccionarDia={setDiaSeleccionado}
+              refreshKey={recargaCalendario}
+            />
+          )}
+
+          {/* 1.2 Gráfico de Evolución Diaria de Ingresos vs Egresos */}
           {kpis.serieDiaria.length > 0 && (
             <section className="panel-card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/70 pb-3">
@@ -491,6 +504,9 @@ export default function AdminPage() {
                   <h3 className="section-title text-base">
                     Evolución diaria
                   </h3>
+                  <span className="hidden text-[11px] text-muted sm:inline">
+                    · Presiona una barra para ver el detalle
+                  </span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted">
                   <span className="inline-flex items-center gap-1.5">
@@ -514,10 +530,12 @@ export default function AdminPage() {
                       : Math.max(8, Math.round((d.egresos / kpis.maxDiario) * 100));
                   const etiquetaDia = `${d.fecha.slice(8, 10)}/${d.fecha.slice(5, 7)}`; // DD/MM
                   return (
-                    <div
+                    <button
                       key={d.fecha}
-                      className="group flex min-w-[44px] flex-1 flex-col items-center gap-1.5"
-                      title={`${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)}`}
+                      type="button"
+                      onClick={() => setDiaSeleccionado(d.fecha)}
+                      className="group flex min-w-[44px] flex-1 cursor-pointer flex-col items-center gap-1.5 rounded-md p-0.5 transition-colors hover:bg-surface-2/40"
+                      title={`${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)} (Ver detalle)`}
                     >
                       <span className="font-mono text-[10px] font-semibold text-bone opacity-85 tabular-nums">
                         {d.ingresos > 0 ? Math.round(d.ingresos) : ''}
@@ -534,8 +552,10 @@ export default function AdminPage() {
                           />
                         )}
                       </div>
-                      <span className="font-mono text-[10px] text-muted">{etiquetaDia}</span>
-                    </div>
+                      <span className="font-mono text-[10px] text-muted group-hover:text-bone">
+                        {etiquetaDia}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -719,6 +739,7 @@ export default function AdminPage() {
           onSuccess={(texto) => setAviso({ tipo: 'ok', texto })}
           onError={(texto) => setAviso({ tipo: 'error', texto })}
           onResetComplete={async () => {
+            setRecargaCalendario((n) => n + 1);
             await consultarPeriodo(desde, hasta);
             await recargarCatalogos();
           }}

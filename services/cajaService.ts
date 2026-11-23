@@ -1,9 +1,11 @@
 import { supabase } from '@/lib/supabase';
+import { hoyLima } from '@/lib/formato';
 import type {
   TurnoCaja,
   TurnoNombre,
   ResumenTurno,
   CierreTurnoResultado,
+  MetodoPago,
   MovimientoCaja,
   MovimientoExport,
   Producto,
@@ -290,6 +292,29 @@ export interface ComparativaMeses {
   nombreMesAnterior: string;
 }
 
+export interface ResumenDiaCalendario {
+  fecha: string;
+  ingresos: number;
+  egresos: number;
+  operaciones: number;
+  asistencias: number;
+}
+
+export interface DetalleDiaAdmin {
+  fecha: string;
+  ingresos: number;
+  egresos: number;
+  neto: number;
+  porMetodo: Record<MetodoPago, number>;
+  operacionesActivas: number;
+  anulaciones: number;
+  asistencias: number;
+  nuevosSocios: number;
+  membresias: DesglosePlan[];
+  productos: DesgloseProducto[];
+  movimientos: MovimientoExport[];
+}
+
 /** Obtiene métricas gerenciales para el dashboard de administración. */
 export async function obtenerEstadisticasAdmin(
   gymId: string,
@@ -300,18 +325,19 @@ export async function obtenerEstadisticasAdmin(
   planes: DesglosePlan[];
   productos: DesgloseProducto[];
 }> {
-  const hoy = new Date();
+  const [anioStr, mesStr, diaStr] = hoyLima().split('-');
   const pad = (n: number) => String(n).padStart(2, '0');
-  const y = hoy.getFullYear();
-  const m = hoy.getMonth();
+  const y = Number(anioStr);
+  const m = Number(mesStr) - 1;
+  const diaHoy = Number(diaStr);
 
   const inicioMesAct = `${y}-${pad(m + 1)}-01`;
-  const finMesAct = `${y}-${pad(m + 1)}-${pad(hoy.getDate())}`;
+  const finMesAct = `${y}-${pad(m + 1)}-${pad(diaHoy)}`;
 
   const yAnt = m === 0 ? y - 1 : y;
   const mAnt = m === 0 ? 11 : m - 1;
   const inicioMesAnt = `${yAnt}-${pad(mAnt + 1)}-01`;
-  const ultimoDiaAnt = new Date(y, m, 0).getDate();
+  const ultimoDiaAnt = new Date(Date.UTC(yAnt, mAnt + 1, 0)).getUTCDate();
   const finMesAnt = `${yAnt}-${pad(mAnt + 1)}-${pad(ultimoDiaAnt)}`;
 
   const [resAct, resAnt, { data: movsPlanes }, { data: ventasProd }] = await Promise.all([
@@ -324,15 +350,15 @@ export async function obtenerEstadisticasAdmin(
       .eq('tipo', 'INGRESO')
       .eq('categoria', 'MEMBRESIA')
       .eq('estado', 'ACTIVO')
-      .gte('fecha_hora', `${desde}T00:00:00`)
-      .lte('fecha_hora', `${hasta}T23:59:59`),
+      .gte('fecha_hora', `${desde}T00:00:00-05:00`)
+      .lte('fecha_hora', `${hasta}T23:59:59.999-05:00`),
     supabase
       .from('ventas_productos')
       .select('descripcion, cantidad, total')
       .eq('gym_id', gymId)
       .eq('estado', 'ACTIVO')
-      .gte('created_at', `${desde}T00:00:00`)
-      .lte('created_at', `${hasta}T23:59:59`),
+      .gte('created_at', `${desde}T00:00:00-05:00`)
+      .lte('created_at', `${hasta}T23:59:59.999-05:00`),
   ]);
 
   const totAct = resAct.reduce(
@@ -430,4 +456,179 @@ export async function movimientosParaExport(
     .range(pagina * tam, pagina * tam + tam - 1);
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as MovimientoExport[];
+}
+
+/** Resumen por cada día de un mes (1..12) para el calendario del panel administrador. */
+export async function obtenerResumenMesCalendario(
+  gymId: string,
+  anio: number,
+  mes: number
+): Promise<Record<string, ResumenDiaCalendario>> {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const primerDia = `${anio}-${pad(mes)}-01`;
+  const ultimoDiaNum = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+  const ultimoDia = `${anio}-${pad(mes)}-${pad(ultimoDiaNum)}`;
+
+  const [filasCaja, asisRes] = await Promise.all([
+    resumenPeriodo(primerDia, ultimoDia),
+    supabase
+      .from('asistencias')
+      .select('fecha')
+      .eq('gym_id', gymId)
+      .gte('fecha', primerDia)
+      .lte('fecha', ultimoDia)
+      .limit(5000),
+  ]);
+
+  if (asisRes.error) throw new Error(asisRes.error.message);
+
+  const mapa: Record<string, ResumenDiaCalendario> = {};
+  const asegurarDia = (fecha: string) => {
+    if (!mapa[fecha]) {
+      mapa[fecha] = { fecha, ingresos: 0, egresos: 0, operaciones: 0, asistencias: 0 };
+    }
+    return mapa[fecha];
+  };
+
+  for (const r of filasCaja) {
+    const d = asegurarDia(r.fecha);
+    const monto = Number(r.total) || 0;
+    const cant = Number(r.cantidad) || 0;
+    if (r.tipo === 'INGRESO') {
+      d.ingresos = Math.round((d.ingresos + monto) * 100) / 100;
+    } else {
+      d.egresos = Math.round((d.egresos + monto) * 100) / 100;
+    }
+    d.operaciones += cant;
+  }
+
+  for (const a of asisRes.data ?? []) {
+    const fecha = String(a.fecha ?? '').slice(0, 10);
+    if (fecha) asegurarDia(fecha).asistencias += 1;
+  }
+
+  return mapa;
+}
+
+/** Detalle completo de ventas, movimientos, asistencias y nuevos socios de un día (hora Lima). */
+export async function obtenerDetalleDia(
+  gymId: string,
+  fecha: string
+): Promise<DetalleDiaAdmin> {
+  const inicioDia = `${fecha}T00:00:00-05:00`;
+  const finDia = `${fecha}T23:59:59.999-05:00`;
+
+  const [movRes, ventasRes, asisRes, sociosRes] = await Promise.all([
+    supabase
+      .from('v_movimientos_export')
+      .select(
+        'movimiento_id, "Fecha", "Hora", "Turno", "Tipo", "Concepto", "Monto", "Método", "Socio/Cliente", "Responsable", categoria, estado'
+      )
+      .eq('gym_id', gymId)
+      .eq('Fecha', fecha)
+      .order('Hora', { ascending: false })
+      .limit(500),
+    supabase
+      .from('ventas_productos')
+      .select('descripcion, cantidad, total')
+      .eq('gym_id', gymId)
+      .eq('estado', 'ACTIVO')
+      .gte('created_at', inicioDia)
+      .lte('created_at', finDia)
+      .limit(500),
+    supabase
+      .from('asistencias')
+      .select('id', { count: 'exact', head: true })
+      .eq('gym_id', gymId)
+      .eq('fecha', fecha),
+    supabase
+      .from('socios')
+      .select('id', { count: 'exact', head: true })
+      .eq('gym_id', gymId)
+      .eq('activo', true)
+      .gte('created_at', inicioDia)
+      .lte('created_at', finDia),
+  ]);
+
+  if (movRes.error) throw new Error(movRes.error.message);
+  if (ventasRes.error) throw new Error(ventasRes.error.message);
+  if (asisRes.error) throw new Error(asisRes.error.message);
+  if (sociosRes.error) throw new Error(sociosRes.error.message);
+
+  const movimientos = (movRes.data ?? []) as unknown as MovimientoExport[];
+  const porMetodo: Record<MetodoPago, number> = {
+    Efectivo: 0,
+    Yape: 0,
+    Plin: 0,
+    Tarjeta: 0,
+  };
+
+  let ingresos = 0;
+  let egresos = 0;
+  let operacionesActivas = 0;
+  let anulaciones = 0;
+  const mapaMembresias = new Map<string, { total: number; cantidad: number }>();
+
+  for (const m of movimientos) {
+    if (m.estado !== 'ACTIVO') {
+      anulaciones += 1;
+      continue;
+    }
+    operacionesActivas += 1;
+    const monto = Number(m.Monto) || 0;
+    const esIngreso = m.Tipo.toLowerCase() === 'ingreso';
+
+    if (esIngreso) {
+      ingresos += monto;
+      const metodo = m['Método'];
+      if (metodo in porMetodo) {
+        porMetodo[metodo] = Math.round((porMetodo[metodo] + monto) * 100) / 100;
+      }
+      if (m.categoria === 'MEMBRESIA') {
+        const nombreLimpio = m.Concepto.replace(/^Membresía\s+/i, '').trim() || m.Concepto;
+        const prev = mapaMembresias.get(nombreLimpio) ?? { total: 0, cantidad: 0 };
+        mapaMembresias.set(nombreLimpio, {
+          total: Math.round((prev.total + monto) * 100) / 100,
+          cantidad: prev.cantidad + 1,
+        });
+      }
+    } else {
+      egresos += monto;
+    }
+  }
+
+  ingresos = Math.round(ingresos * 100) / 100;
+  egresos = Math.round(egresos * 100) / 100;
+
+  const membresias: DesglosePlan[] = Array.from(mapaMembresias.entries())
+    .map(([nombre, d]) => ({ nombre, total: d.total, cantidad: d.cantidad }))
+    .sort((a, b) => b.total - a.total);
+
+  const mapaProductos = new Map<string, { total: number; unidades: number }>();
+  for (const v of ventasRes.data ?? []) {
+    const nombre = String(v.descripcion);
+    const prev = mapaProductos.get(nombre) ?? { total: 0, unidades: 0 };
+    mapaProductos.set(nombre, {
+      total: Math.round((prev.total + (Number(v.total) || 0)) * 100) / 100,
+      unidades: prev.unidades + (Number(v.cantidad) || 0),
+    });
+  }
+  const productos: DesgloseProducto[] = Array.from(mapaProductos.entries())
+    .map(([nombre, d]) => ({ nombre, total: d.total, unidades: d.unidades }))
+    .sort((a, b) => b.total - a.total);
+
+  return {
+    fecha,
+    ingresos,
+    egresos,
+    neto: Math.round((ingresos - egresos) * 100) / 100,
+    porMetodo,
+    operacionesActivas,
+    anulaciones,
+    asistencias: asisRes.count ?? 0,
+    nuevosSocios: sociosRes.count ?? 0,
+    membresias,
+    productos,
+    movimientos,
+  };
 }
