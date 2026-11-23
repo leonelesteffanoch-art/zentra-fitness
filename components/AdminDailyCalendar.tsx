@@ -631,14 +631,22 @@ export function AdminDailyCalendar({
                         return (
                           <div
                             key={m.id}
-                            className="flex items-center justify-between rounded-md border border-line/60 bg-surface-2/40 px-3 py-2 text-xs tabular-nums"
+                            className="flex flex-col justify-between gap-1 rounded-md border border-line/60 bg-surface-2/40 px-3.5 py-2.5 tabular-nums"
                           >
-                            <span className="flex items-center gap-1.5 text-muted">
-                              <span className={`h-2 w-2 rounded-full ${m.color}`} />
-                              {m.id}
-                              {pct > 0 && <span className="text-[10px]">({pct}%)</span>}
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="flex items-center gap-1.5 text-muted">
+                                <span className={`h-2 w-2 shrink-0 rounded-full ${m.color}`} />
+                                {m.id}
+                              </span>
+                              {pct > 0 && (
+                                <span className="font-mono text-[11px] text-muted">
+                                  {pct}%
+                                </span>
+                              )}
+                            </div>
+                            <span className="whitespace-nowrap font-mono text-sm font-semibold text-bone">
+                              {soles(monto)}
                             </span>
-                            <span className="font-mono font-semibold text-bone">{soles(monto)}</span>
                           </div>
                         );
                       })}

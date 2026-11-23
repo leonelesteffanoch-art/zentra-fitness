@@ -456,29 +456,37 @@ export default function AdminPage() {
                 </div>
 
                 <dl className="grid grid-cols-2 gap-3 pt-1 text-xs tabular-nums sm:grid-cols-4">
-                  <div className="flex items-center justify-between rounded bg-surface-2/50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
                     <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 rounded-full bg-ok" /> Efectivo ({pctEfec}%)
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-ok" /> Efectivo ({pctEfec}%)
                     </dt>
-                    <dd className="font-mono font-bold text-bone">{soles(kpis.porMetodo.Efectivo)}</dd>
+                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
+                      {soles(kpis.porMetodo.Efectivo)}
+                    </dd>
                   </div>
-                  <div className="flex items-center justify-between rounded bg-surface-2/50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
                     <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 rounded-full bg-purple-500" /> Yape ({pctYape}%)
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-purple-500" /> Yape ({pctYape}%)
                     </dt>
-                    <dd className="font-mono font-bold text-bone">{soles(kpis.porMetodo.Yape)}</dd>
+                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
+                      {soles(kpis.porMetodo.Yape)}
+                    </dd>
                   </div>
-                  <div className="flex items-center justify-between rounded bg-surface-2/50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
                     <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 rounded-full bg-cyan-400" /> Plin ({pctPlin}%)
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-cyan-400" /> Plin ({pctPlin}%)
                     </dt>
-                    <dd className="font-mono font-bold text-bone">{soles(kpis.porMetodo.Plin)}</dd>
+                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
+                      {soles(kpis.porMetodo.Plin)}
+                    </dd>
                   </div>
-                  <div className="flex items-center justify-between rounded bg-surface-2/50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
                     <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 rounded-full bg-amber-400" /> Tarjeta ({pctTarj}%)
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" /> Tarjeta ({pctTarj}%)
                     </dt>
-                    <dd className="font-mono font-bold text-bone">{soles(kpis.porMetodo.Tarjeta)}</dd>
+                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
+                      {soles(kpis.porMetodo.Tarjeta)}
+                    </dd>
                   </div>
                 </dl>
               </div>
