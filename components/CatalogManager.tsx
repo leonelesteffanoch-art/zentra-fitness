@@ -260,9 +260,9 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
   }
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-2">
+    <div className="grid items-start gap-6 lg:grid-cols-2">
       {/* 1. PLANES DE MEMBRESÍA */}
-      <section aria-label="Planes de membresía" className="bg-surface p-5">
+      <section aria-label="Planes de membresía" className="panel-card p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="section-title text-base">Planes de entrenamiento</h3>
           <button
@@ -275,7 +275,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
         </div>
 
         {mostrarFormPlan && (
-          <form onSubmit={guardarPlan} className="mb-5 space-y-3 bg-surface-2 p-4 text-sm">
+          <form onSubmit={guardarPlan} className="mb-5 space-y-3 rounded-md border border-line/70 bg-surface-2 p-4 text-sm">
             <p className="text-xs font-semibold text-bone">
               {planEditId ? 'Editar plan' : 'Crear nuevo plan'}
             </p>
@@ -407,7 +407,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                 <button
                   type="button"
                   onClick={() => abrirEditarPlan(p)}
-                  className="rounded-xs p-2 text-muted transition-colors hover:bg-surface-2 hover:text-bone"
+                  className="rounded-md p-2 text-muted transition-colors hover:bg-surface-2 hover:text-bone"
                   aria-label={`Editar ${p.nombre}`}
                   title={`Editar ${p.nombre}`}
                 >
@@ -416,7 +416,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                 <button
                   type="button"
                   onClick={() => setPlanEliminar(p)}
-                  className="rounded-xs p-2 text-muted transition-colors hover:bg-bad/20 hover:text-bad"
+                  className="rounded-md p-2 text-muted transition-colors hover:bg-bad/20 hover:text-bad"
                   aria-label={`Eliminar ${p.nombre}`}
                   title={`Eliminar ${p.nombre}`}
                 >
@@ -428,16 +428,16 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
         </ul>
       </section>
 
-      {/* 2. PRODUCTOS DEL POS */}
-      <section aria-label="Productos de mostrador" className="bg-surface p-5">
+      {/* 2. PRODUCTOS DE MOSTRADOR */}
+      <section aria-label="Productos de mostrador" className="panel-card p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="section-title text-base flex items-center gap-1.5">
+            <h3 className="section-title flex items-center gap-1.5 text-base">
               <Boxes size={16} className="text-brand" />
-              Catálogo POS y Almacén
+              Productos e inventario
             </h3>
             <p className="text-[11px] text-muted">
-              Precios, costo de compra, márgenes de ganancia y reposición
+              Precios, costo de compra, márgenes y reposición de stock
             </p>
           </div>
           <button
@@ -450,7 +450,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
         </div>
 
         {mostrarFormProd && (
-          <form onSubmit={guardarProd} className="mb-5 space-y-3 bg-surface-2 p-4 text-sm">
+          <form onSubmit={guardarProd} className="mb-5 space-y-3 rounded-md border border-line/70 bg-surface-2 p-4 text-sm">
             <p className="text-xs font-semibold text-bone">
               {prodEditId ? 'Editar producto' : 'Crear nuevo producto'}
             </p>
@@ -549,7 +549,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
               const gan = pv - pc;
               const pct = pc > 0 ? Math.round((gan / pc) * 100) : 100;
               return (
-                <div className="rounded-xs bg-surface p-2.5 text-xs flex items-center justify-between border border-line/50">
+                <div className="rounded-md border border-line/50 bg-surface p-2.5 text-xs flex items-center justify-between">
                   <span className="text-muted flex items-center gap-1">
                     <Percent size={13} className="text-brand" /> Margen unitario proyectado:
                   </span>
@@ -671,7 +671,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   <button
                     type="button"
                     onClick={() => abrirEditarProd(p)}
-                    className="rounded-xs p-2 text-muted transition-colors hover:bg-surface-2 hover:text-bone"
+                    className="rounded-md p-2 text-muted transition-colors hover:bg-surface-2 hover:text-bone"
                     aria-label={`Editar ${p.nombre}`}
                     title={`Editar ${p.nombre}`}
                   >
@@ -681,7 +681,7 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
                   <button
                     type="button"
                     onClick={() => setProdEliminar(p)}
-                    className="rounded-xs p-2 text-muted transition-colors hover:bg-bad/20 hover:text-bad"
+                    className="rounded-md p-2 text-muted transition-colors hover:bg-bad/20 hover:text-bad"
                     aria-label={`Eliminar ${p.nombre}`}
                     title={`Eliminar ${p.nombre}`}
                   >
@@ -744,8 +744,8 @@ export function CatalogManager({ gymId, planes, productos, onUpdated, onError }:
               <h3 className="text-base font-bold text-bone">¿Eliminar producto del catálogo?</h3>
               <p className="mt-2 text-xs leading-relaxed text-muted">
                 Vas a eliminar <strong className="text-bone">&ldquo;{prodEliminar.nombre}&rdquo;</strong>. Si tiene
-                ventas históricas registradas en caja, se archivará y ocultará del POS automáticamente
-                para no alterar los arqueos pasados.
+                ventas históricas registradas en caja, se archivará y ocultará del mostrador automáticamente
+                para no alterar los registros pasados.
               </p>
               <div className="mt-5 flex justify-end gap-2">
                 <button

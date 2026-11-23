@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Ban,
   Check,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
@@ -65,7 +64,7 @@ const FILTROS: { id: FiltroEstadoSocio; label: string }[] = [
   { id: 'activos', label: 'Activos' },
   { id: 'por_vencer', label: 'Por vencer' },
   { id: 'vencidos', label: 'Vencidos' },
-  { id: 'morosos', label: '🔴 Morosos' },
+  { id: 'morosos', label: 'Con saldo' },
 ];
 
 export default function SociosPage() {
@@ -226,7 +225,7 @@ export default function SociosPage() {
   }
 
   async function handleAnularMembresia(membresiaId: string) {
-    if (!motivoAnular.trim()) return;
+    if (motivoAnular.trim().length < 4) return;
     setProcesandoAccion(true);
     setAviso(null);
     try {
@@ -322,12 +321,12 @@ export default function SociosPage() {
   const datosPendientes = seleccionado ? estadoDatosSocio(seleccionado) : null;
 
   return (
-    <div className="panel-fade-in space-y-4">
+    <div className="panel-fade-in space-y-6">
       {/* Cabecera */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-5">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
-            Padrón e historial de membresías
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+            Padrón de socios y membresías
           </p>
           <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">SOCIOS</h1>
         </div>
@@ -440,7 +439,7 @@ export default function SociosPage() {
               }`}
             >
               <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bad">
-                🔴 Morosos ({resumenPadron.morosos})
+                <span className="h-2 w-2 rounded-full bg-bad" /> Saldos pendientes ({resumenPadron.morosos})
               </span>
               <p className="mt-1 font-mono text-xl font-bold text-bad tabular-nums">
                 {soles(resumenPadron.deudaTotal)}
@@ -491,7 +490,7 @@ export default function SociosPage() {
             key={searchReset}
             onSearch={handleSearch}
             buscando={cargando}
-            placeholder="Buscar por DNI, nombres o apellidos... (Presiona /)"
+            placeholder="Buscar por DNI, nombre o apellido"
           />
         </div>
 
@@ -519,23 +518,11 @@ export default function SociosPage() {
 
       <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
-      {aviso && (
-        <p
-          role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
-          }`}
-        >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
-          {aviso.texto}
-        </p>
-      )}
-
       {/* Grilla: Listado a la izquierda + Ficha del socio a la derecha */}
       <div className="grid items-start gap-6 lg:grid-cols-[1.25fr_1fr]">
         {/* Columna izquierda: Tabla de socios */}
         <section aria-label="Listado de socios" className="space-y-3">
-          <div className="panel-card max-h-[430px] overflow-auto">
+          <div className="panel-card max-h-[460px] overflow-auto lg:max-h-[calc(100vh-23rem)]">
             <table className="w-full border-collapse text-left text-sm">
               <thead className="sticky top-0 z-10 border-b border-line bg-surface-2 text-xs font-semibold uppercase tracking-wider text-muted">
                 <tr>
@@ -675,7 +662,7 @@ export default function SociosPage() {
         <section
           ref={detalleRef}
           aria-label="Detalle del socio"
-          className="panel-card p-5 lg:sticky lg:top-6 lg:max-h-[480px] lg:overflow-y-auto"
+          className="panel-card p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-20rem)] lg:overflow-y-auto"
         >
           {!seleccionado ? (
             <div className="flex flex-col items-center py-10 text-center">
@@ -724,16 +711,13 @@ export default function SociosPage() {
                   onClick={() => setModalSocio('editar')}
                   className={`btn !min-h-9 !px-3 text-xs ${
                     datosPendientes?.incompleto
-                      ? '!border !border-warn !bg-warn/20 !text-warn font-bold ring-1 ring-warn/40 shadow-[0_0_18px_-4px_rgba(245,158,11,0.5)] hover:!bg-warn/30'
+                      ? '!border !border-warn/70 !bg-warn/15 !text-warn font-semibold hover:!bg-warn/25'
                       : datosPendientes?.sinTelefono
-                      ? '!border !border-warn/60 !bg-warn/10 !text-warn font-semibold hover:!bg-warn/20'
+                      ? '!border !border-warn/50 !bg-warn/10 !text-warn font-medium hover:!bg-warn/20'
                       : 'btn-secondary'
                   }`}
                   title="Editar datos del socio"
                 >
-                  {datosPendientes?.incompleto && (
-                    <span className="h-2 w-2 rounded-full bg-warn animate-pulse" aria-hidden="true" />
-                  )}
                   <Edit3 size={14} strokeWidth={1.75} />
                   {datosPendientes?.incompleto
                     ? 'Completar datos'
@@ -850,11 +834,11 @@ export default function SociosPage() {
                 return (
                   <div className="space-y-3">
                     {datosPendientes?.incompleto && (
-                      <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-warn bg-warn/15 p-3.5 sm:flex-row sm:items-center">
+                      <div className="flex flex-col items-start justify-between gap-2.5 rounded-md border-l-4 border-warn bg-warn/10 p-3.5 sm:flex-row sm:items-center">
                         <div>
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warn">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warn">
                             <AlertTriangle size={15} strokeWidth={2} />
-                            DATOS PENDIENTES DE COMPLETAR
+                            Datos pendientes por completar
                           </span>
                           <p className="mt-0.5 text-xs text-bone">
                             Falta:{' '}
@@ -874,20 +858,22 @@ export default function SociosPage() {
                           className="btn btn-primary shrink-0 !min-h-8 !px-3 text-xs"
                         >
                           <Edit3 size={13} strokeWidth={1.75} />
-                          Completar datos ahora
+                          Completar datos
                         </button>
                       </div>
                     )}
 
                     {seleccionado.saldo_pendiente > 0 && (
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-bad bg-bad/15 p-3.5 rounded-xs">
+                      <div className="flex flex-col items-start justify-between gap-3 rounded-md border-l-4 border-bad bg-bad/10 p-3.5 sm:flex-row sm:items-center">
                         <div>
-                          <span className="inline-flex items-center gap-1.5 font-bold text-bad text-xs">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-bad">
                             <AlertTriangle size={15} strokeWidth={2} />
-                            SALDO PENDIENTE · {diasAtraso > 0 ? `${diasAtraso} DÍAS DE ATRASO` : 'PENDIENTE'}
+                            Saldo pendiente · {diasAtraso > 0 ? `${diasAtraso} días desde el inicio` : 'Por cobrar'}
                           </span>
                           <p className="mt-0.5 text-xs text-bone">
-                            Debe <strong className="text-bad font-bold">{soles(seleccionado.saldo_pendiente)}</strong> del plan {seleccionado.plan}.
+                            Tiene un saldo pendiente de{' '}
+                            <strong className="font-semibold text-bad">{soles(seleccionado.saldo_pendiente)}</strong>{' '}
+                            por el plan {seleccionado.plan}.
                           </p>
                         </div>
                         {seleccionado.telefono && (
@@ -899,27 +885,27 @@ export default function SociosPage() {
                             )}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="btn btn-secondary !min-h-8 !px-2.5 text-xs text-ok hover:text-ok shrink-0"
+                            className="btn btn-secondary shrink-0 !min-h-8 !px-2.5 text-xs text-ok hover:text-ok"
                             title="Enviar recordatorio por WhatsApp"
                           >
                             <MessageCircle size={14} />
-                            Cobrar por WhatsApp
+                            Recordar por WhatsApp
                           </a>
                         )}
                       </div>
                     )}
 
                     {estaInactivo && (
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-l-4 border-warn bg-warn/15 p-3.5 rounded-xs">
+                      <div className="flex flex-col items-start justify-between gap-3 rounded-md border-l-4 border-warn bg-warn/10 p-3.5 sm:flex-row sm:items-center">
                         <div>
-                          <span className="inline-flex items-center gap-1.5 font-bold text-warn text-xs">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warn">
                             <Clock size={15} strokeWidth={2} />
-                            INACTIVO · {diasSinVenir} DÍAS SIN ENTRENAR
+                            Sin asistencias recientes · {diasSinVenir} días
                           </span>
                           <p className="mt-0.5 text-xs text-bone">
                             {ultimaAsis
                               ? `Última visita registrada: ${formatearFechaDMY(ultimaAsis)}.`
-                              : `Inició membresía el ${formatearFechaDMY(seleccionado.fecha_inicio)} pero aún no registra check-in.`}
+                              : `Inició membresía el ${formatearFechaDMY(seleccionado.fecha_inicio)} y aún no registra asistencia.`}
                           </p>
                         </div>
                         {seleccionado.telefono && (
@@ -931,10 +917,10 @@ export default function SociosPage() {
                             )}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="btn btn-secondary !min-h-8 !px-2.5 text-xs shrink-0"
+                            className="btn btn-secondary shrink-0 !min-h-8 !px-2.5 text-xs"
                           >
                             <MessageCircle size={14} className="text-ok" />
-                            Motivar por WhatsApp
+                            Escribir por WhatsApp
                           </a>
                         )}
                       </div>
@@ -958,7 +944,7 @@ export default function SociosPage() {
                     <Loader2 className="animate-spin" strokeWidth={1.5} />
                   </div>
                 ) : historial.length === 0 ? (
-                  <p className="bg-surface-2 p-4 text-xs text-muted">
+                  <p className="rounded-md bg-surface-2 p-4 text-xs text-muted">
                     Este socio aún no tiene membresías registradas.
                   </p>
                 ) : (
@@ -968,7 +954,7 @@ export default function SociosPage() {
                       return (
                         <li
                           key={m.membresia_id}
-                          className={`bg-surface-2 p-4 text-sm ${
+                          className={`rounded-md bg-surface-2 p-4 text-sm ${
                             anulada ? 'opacity-50 line-through' : ''
                           }`}
                         >
@@ -1006,14 +992,14 @@ export default function SociosPage() {
                                 <div className="flex items-center gap-1.5">
                                   <input
                                     type="text"
-                                    placeholder="Motivo de anulación"
+                                    placeholder="Motivo (mín. 4 caracteres)"
                                     value={motivoAnular}
                                     onChange={(e) => setMotivoAnular(e.target.value)}
-                                    className="field !min-h-8 !w-40 !px-2 text-xs"
+                                    className="field !min-h-8 !w-44 !px-2.5 text-xs"
                                   />
                                   <button
                                     type="button"
-                                    disabled={procesandoAccion || !motivoAnular.trim()}
+                                    disabled={procesandoAccion || motivoAnular.trim().length < 4}
                                     onClick={() => handleAnularMembresia(m.membresia_id)}
                                     className="btn btn-secondary !min-h-8 !px-2.5"
                                   >

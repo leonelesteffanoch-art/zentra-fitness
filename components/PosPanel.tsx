@@ -272,16 +272,16 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
   }
 
   return (
-    <section aria-label="Punto de venta" className="space-y-4">
-      {/* Cabecera del POS con buscador rápido */}
+    <section aria-label="Mostrador de ventas" className="space-y-4">
+      {/* Cabecera del mostrador con buscador rápido */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="section-title flex items-center gap-2 text-lg">
             <ShoppingBag size={18} strokeWidth={1.75} className="text-brand" />
-            Punto de venta
+            Mostrador de ventas
           </h2>
           <p className="mt-0.5 text-xs text-muted">
-            Mostrador de bebidas, suplementos y pases con variantes al tiempo o heladas
+            Bebidas, suplementos y pases disponibles en mostrador
           </p>
         </div>
 
@@ -325,7 +325,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
         <button
           type="button"
           onClick={() => setCategoriaActiva('todos')}
-          className={`flex items-center gap-1.5 rounded-xs px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
             categoriaActiva === 'todos'
               ? 'bg-bone text-ink shadow-xs'
               : 'bg-surface text-muted hover:bg-surface-2 hover:text-bone'
@@ -342,7 +342,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
               key={cat}
               type="button"
               onClick={() => setCategoriaActiva(cat)}
-              className={`flex items-center gap-1.5 rounded-xs px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 activo
                   ? 'bg-bone text-ink shadow-xs'
                   : 'bg-surface text-muted hover:bg-surface-2 hover:text-bone'
@@ -371,9 +371,9 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                 return (
                   <div
                     key={grupo.nombreBase}
-                    className={`panel-card relative flex flex-col justify-between p-3.5 transition-all ${
+                    className={`panel-card relative flex flex-col justify-between p-4 transition-colors ${
                       cantTotal > 0
-                        ? '!border-brand/70 bg-surface-2 shadow-[0_0_20px_-6px_rgba(250,204,21,0.28)]'
+                        ? '!border-brand/60 bg-surface-2 ring-1 ring-brand/20'
                         : 'hover:border-line hover:bg-surface-2/60'
                     }`}
                   >
@@ -503,10 +503,10 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                                   {v.es_servicio ? (
                                     <span className="text-emerald-400">Acceso inmediato</span>
                                   ) : sinStock ? (
-                                    <span className="font-bold text-bad">⚠️ Agotado</span>
+                                    <span className="font-bold text-bad">Agotado</span>
                                   ) : v.stock <= 5 ? (
                                     <span className="font-semibold text-warn">
-                                      ⚠️ Stock bajo ({v.stock})
+                                      Stock bajo ({v.stock})
                                     </span>
                                   ) : (
                                     <span className="text-muted">Stock: {v.stock}</span>
@@ -548,7 +548,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
               role="dialog"
               aria-modal="true"
               aria-labelledby="pos-ticket-titulo"
-              className="panel-card modal-animate max-h-[92vh] w-full max-w-md space-y-3.5 overflow-y-auto !border-brand/50 p-5 shadow-2xl"
+              className="panel-card modal-animate max-h-[92vh] w-full max-w-md space-y-3.5 overflow-y-auto rounded-lg p-5 shadow-2xl"
             >
               <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
                 <div className="flex min-w-0 items-center gap-2">
@@ -662,7 +662,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                   }}
                   className="whitespace-nowrap text-xs font-medium text-brand underline underline-offset-4 hover:text-bone"
                 >
-                  {modoMixto ? 'Cobro en 1 método' : 'Dividir pago (Mixto)'}
+                  {modoMixto ? 'Cobrar con 1 método' : 'Dividir pago'}
                 </button>
               </div>
 
@@ -679,7 +679,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
                           if (m !== 'Efectivo') setPagaCon('');
                         }}
                         aria-pressed={activo}
-                        className={`rounded-xs py-2 text-xs font-semibold transition-all ${
+                        className={`rounded-md py-2 text-xs font-semibold transition-all ${
                           activo
                             ? 'bg-bone text-ink shadow-xs ring-1 ring-bone'
                             : 'bg-surface-2 text-muted hover:bg-surface-2/80 hover:text-bone'
@@ -748,7 +748,7 @@ export function PosPanel({ productos, onVentaCompletada }: Props) {
 
             {/* Calculadora rápida de vuelto para Efectivo */}
             {metodoRapido === 'Efectivo' && !modoMixto && (
-              <div className="space-y-2 rounded-xs border border-line/40 bg-surface-2/80 p-3 text-xs">
+              <div className="space-y-2 rounded-md border border-line/50 bg-surface-2/80 p-3 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-1 text-muted">
                     <Banknote size={14} className="shrink-0 text-ok" />

@@ -62,20 +62,20 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
   const asistioHoy = diasSemana.find((d) => d.esHoy)?.asistio ?? false;
 
   return (
-    <div className="flex h-full flex-col justify-between space-y-3 rounded-md border border-line/80 bg-ink/70 p-4">
+    <div className="flex h-full flex-col justify-between space-y-3 rounded-lg border border-line/80 bg-ink/50 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-medium text-bone">
           <CalendarDays size={15} strokeWidth={1.75} className="text-brand" />
-          <span>Constancia semanal (Lunes – Sábado)</span>
+          <span>Asistencia semanal · Lunes a Sábado</span>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
           {planNombre && (
-            <span className="rounded border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
-              {esInterdiario ? 'Modalidad Interdiario' : 'Modalidad Diario'}
+            <span className="rounded-md border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
+              {esInterdiario ? 'Plan Interdiario' : 'Plan Diario'}
             </span>
           )}
-          <span className="rounded bg-brand/15 px-2 py-0.5 font-mono text-xs font-bold text-brand tabular-nums">
+          <span className="rounded-md bg-brand/15 px-2 py-0.5 font-mono text-xs font-bold text-brand tabular-nums">
             {totalDiasSemana}/{metaSemana} días ({pctSemana}%)
           </span>
         </div>
@@ -108,7 +108,7 @@ export function WeeklyAttendanceCalendar({ asistencias, planNombre }: Props) {
               <span
                 aria-hidden="true"
                 className={`absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full ${
-                  d.asistio ? 'bg-ok' : 'bg-brand animate-pulse'
+                  d.asistio ? 'bg-ok' : 'bg-brand'
                 }`}
               />
             )}

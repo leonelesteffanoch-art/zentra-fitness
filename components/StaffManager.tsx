@@ -132,7 +132,7 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
         return;
       }
       onSuccess(
-        `Usuario "${nombre}" (${rol === 'recepcionista' ? 'Recepcionista' : 'Admin'}) creado y listo para ingresar.`
+        `Usuario "${nombre}" (${rol === 'recepcionista' ? 'Recepción' : 'Administrador'}) creado y listo para ingresar.`
       );
       setModalNuevo(false);
       setNombre('');
@@ -286,15 +286,15 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Bloque 1: Gestión de personal y roles */}
       <section aria-label="Personal y accesos" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="section-title text-lg">Personal y permisos de acceso</h2>
+            <h2 className="section-title text-lg">Equipo y accesos</h2>
             <p className="mt-0.5 text-xs text-muted">
-              El rol <strong className="font-medium text-bone">Recepcionista</strong> solo accede a
-              Recepción, Caja/POS y Socios (no puede ver ni editar Administración).
+              El rol <strong className="font-medium text-bone">Recepción</strong> accede únicamente a
+              Recepción, Caja y ventas, Socios y Prospectos.
             </p>
           </div>
 
@@ -304,11 +304,11 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
             className="btn btn-secondary !min-h-9 !px-3.5 text-xs"
           >
             <Plus size={14} strokeWidth={1.5} />
-            Nuevo personal
+            Nuevo usuario
           </button>
         </div>
 
-        <div className="overflow-x-auto border border-line bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
           <table className="w-full border-collapse text-left text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs font-medium text-muted">
               <tr>
@@ -340,7 +340,7 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                       <td className="px-4 py-3 font-medium text-bone">
                         {t.nombre}
                         {esYo && (
-                          <span className="ml-2 rounded-xs bg-surface-2 px-1.5 py-0.5 text-[11px] font-normal text-muted">
+                          <span className="ml-2 rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] font-normal text-muted">
                             Tú
                           </span>
                         )}
@@ -350,13 +350,13 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-bone">
                           <Shield size={13} strokeWidth={1.5} className="text-muted" />
                           {t.rol === 'admin'
-                            ? 'Administrador (Acceso total)'
-                            : 'Recepcionista (Recepción, Caja y Socios)'}
+                            ? 'Administrador (Acceso completo)'
+                            : 'Recepción (Recepción, Caja y Socios)'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-block rounded-xs px-2 py-0.5 text-xs font-semibold ${
+                          className={`inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${
                             t.activo ? 'bg-ok/15 text-ok' : 'bg-bad/15 text-bad'
                           }`}
                         >
@@ -396,7 +396,7 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
       </section>
 
       {/* Bloque 2: Limpieza de pruebas operativas */}
-      <section aria-label="Mantenimiento de datos" className="bg-surface p-5 sm:p-6">
+      <section aria-label="Mantenimiento de datos" className="panel-card p-5 sm:p-6">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="section-title text-base">Reiniciar datos de prueba</h2>
@@ -504,7 +504,7 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                   className="field !bg-surface-2"
                 >
                   <option value="recepcionista">
-                    Recepcionista (Solo Recepción, Caja/POS y Socios)
+                    Recepción (Recepción, Caja, Socios y Prospectos)
                   </option>
                   <option value="admin">
                     Administrador (Acceso completo a finanzas y catálogo)
@@ -580,9 +580,9 @@ export function StaffManager({ adminId, onSuccess, onError, onResetComplete }: P
                   className="field !bg-surface-2"
                 >
                   <option value="recepcionista">
-                    Recepcionista (Solo Recepción, Caja/POS y Socios)
+                    Recepción (Recepción, Caja, Socios y Prospectos)
                   </option>
-                  <option value="admin">Administrador (Acceso total)</option>
+                  <option value="admin">Administrador (Acceso completo)</option>
                 </select>
               </div>
 

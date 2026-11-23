@@ -38,7 +38,7 @@ const NAV: ItemNav[] = [
   },
   {
     href: '/caja',
-    etiqueta: 'Caja y POS',
+    etiqueta: 'Caja y ventas',
     etiquetaMovil: 'Caja',
     icono: <Wallet size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
@@ -65,6 +65,10 @@ const NAV: ItemNav[] = [
     roles: ['admin'],
   },
 ];
+
+function etiquetaRol(rol: Rol): string {
+  return rol === 'admin' ? 'Administrador' : 'Recepción';
+}
 
 function obtenerRelojLima(): { hora: string; fecha: string } {
   const ahora = new Date();
@@ -182,7 +186,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
               href="/"
               aria-label="Ir a la página principal"
               title="Zentra Fitness — Ir a inicio"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 font-display text-lg font-black italic tracking-tighter text-brand shadow-[inset_0_0_12px_rgba(250,204,21,0.12)] transition-transform hover:scale-105"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 font-display text-lg font-black italic tracking-tighter text-brand transition-colors hover:border-brand/60"
             >
               Z
             </Link>
@@ -202,14 +206,14 @@ export function PanelShell({ children }: { children: ReactNode }) {
                   colapsado ? 'mx-auto h-11 w-11 justify-center' : 'gap-3 px-3.5 py-2.5'
                 } ${
                   activo
-                    ? 'bg-brand/12 text-bone shadow-[inset_0_0_0_1px_rgba(250,204,21,0.25)]'
+                    ? 'bg-brand/10 text-bone shadow-[inset_0_0_0_1px_rgba(250,204,21,0.22)]'
                     : 'text-muted hover:bg-surface-2/70 hover:text-bone'
                 }`}
               >
                 {activo && (
                   <span
                     aria-hidden="true"
-                    className={`absolute top-2 bottom-2 w-[3px] rounded-r-full bg-brand shadow-[0_0_8px_#facc15] ${
+                    className={`absolute top-2 bottom-2 w-[3px] rounded-r-full bg-brand ${
                       colapsado ? '-left-3' : 'left-0'
                     }`}
                   />
@@ -255,7 +259,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
                     </p>
                     <p className="flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-muted">
                       {perfil.rol === 'admin' && <ShieldCheck size={10} className="shrink-0 text-brand" />}
-                      {perfil.rol}
+                      {etiquetaRol(perfil.rol)}
                     </p>
                   </div>
                 </div>
@@ -291,7 +295,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
               )}
 
               <div
-                title={`${perfil.nombre} (${perfil.rol})`}
+                title={`${perfil.nombre} (${etiquetaRol(perfil.rol)})`}
                 className="flex h-9 w-9 items-center justify-center rounded-md bg-brand/15 font-display text-xs font-bold tracking-wider text-brand ring-1 ring-brand/30"
               >
                 {iniciales || 'ZF'}
@@ -342,7 +346,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
             )}
 
             <div
-              title={`${perfil.nombre} (${perfil.rol})`}
+              title={`${perfil.nombre} (${etiquetaRol(perfil.rol)})`}
               className="flex items-center gap-2 rounded-md border border-line/70 bg-surface/60 px-2 py-1"
             >
               <div
@@ -368,7 +372,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-        <main className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-3.5 pt-4 pb-24 sm:px-6 sm:py-6 md:pb-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 pt-5 pb-24 sm:px-6 sm:py-7 md:pb-8 lg:px-8">
           {children}
         </main>
       </div>

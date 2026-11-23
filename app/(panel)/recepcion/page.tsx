@@ -6,9 +6,9 @@ import {
   Activity,
   AlertTriangle,
   BarChart2,
-  CheckCircle2,
+  Check,
   Clock,
-  ScanLine,
+  LogIn,
   UserPlus,
   Wallet,
 } from 'lucide-react';
@@ -85,6 +85,7 @@ export default function RecepcionPage() {
   const [ingresosHoy, setIngresosHoy] = useState<AsistenciaHoyDetalle[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
+  const [registrandoId, setRegistrandoId] = useState<string | null>(null);
   const [yaIngreso, setYaIngreso] = useState(false);
   const [turnoActual, setTurnoActual] = useState<TurnoCaja | null | undefined>(undefined);
   const [horaActualLima, setHoraActualLima] = useState<number | null>(null);
@@ -185,11 +186,24 @@ export default function RecepcionPage() {
       ]);
       setAsistenciasSocio(listaActualizada);
       setYaIngreso(true);
-      setAviso({ tipo: 'ok', texto: `Ingreso registrado: ${seleccionado.nombres}` });
+      setAviso({ tipo: 'ok', texto: `Ingreso registrado: ${formatearNombreSocio(seleccionado)}` });
     } catch (e) {
       setAviso({ tipo: 'error', texto: e instanceof Error ? e.message : 'No se pudo registrar' });
     } finally {
       setRegistrando(false);
+    }
+  }
+
+  async function checkInRapido(socio: SocioEstado) {
+    setRegistrandoId(socio.socio_id);
+    try {
+      await registrarAsistencia(socio.socio_id);
+      await cargarIngresosHoy();
+      setAviso({ tipo: 'ok', texto: `Ingreso registrado: ${formatearNombreSocio(socio)}` });
+    } catch (e) {
+      setAviso({ tipo: 'error', texto: e instanceof Error ? e.message : 'No se pudo registrar' });
+    } finally {
+      setRegistrandoId(null);
     }
   }
 
@@ -219,6 +233,11 @@ export default function RecepcionPage() {
     }
   }
 
+  const idsAsistieronHoy = useMemo(
+    () => new Set(ingresosHoy.map((i) => i.socio_id)),
+    [ingresosHoy]
+  );
+
   // Métricas gráficas de hoy
   const metricasHoy = useMemo(() => {
     const total = ingresosHoy.length;
@@ -242,25 +261,20 @@ export default function RecepcionPage() {
   const hayTurno = turnoActual !== null && turnoActual !== undefined;
 
   return (
-    <div className="panel-fade-in space-y-5 sm:space-y-6">
+    <div className="panel-fade-in space-y-6">
       {/* Encabezado y Acciones */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-surface-2 text-[#9CA3AF]">
-              <ScanLine size={14} strokeWidth={2} />
-            </span>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
-              Control de acceso y mostrador
-            </p>
-          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+            Control de acceso y atención
+          </p>
           <h1 className="mt-1 font-display text-4xl tracking-wide sm:text-5xl">RECEPCIÓN</h1>
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-2.5">
           <Link href="/caja" className="btn btn-ghost !min-h-10 text-xs">
             <Wallet size={15} strokeWidth={1.75} />
-            Ir a Caja
+            Ir a Caja y ventas
           </Link>
           <button
             type="button"
@@ -273,17 +287,17 @@ export default function RecepcionPage() {
         </div>
       </div>
 
-      {/* Buscador principal destacado */}
+      {/* Buscador principal */}
       <section
         aria-label="Buscador de socios"
-        className="rounded-lg border-2 border-brand/60 bg-surface p-4 shadow-[0_0_28px_-8px_rgba(250,204,21,0.3)] ring-1 ring-brand/15 transition-all focus-within:border-brand focus-within:shadow-[0_0_32px_-6px_rgba(250,204,21,0.45)]"
+        className="rounded-lg border border-brand/45 bg-surface p-5 transition-colors focus-within:border-brand"
       >
         <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-brand">
-            Buscar socio para registrar ingreso
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+            Buscar socio
           </p>
           <span className="text-xs text-muted">
-            Escribe el DNI, nombre o apellido del socio
+            DNI, nombre o apellido
           </span>
         </div>
         <SearchBar
@@ -293,23 +307,11 @@ export default function RecepcionPage() {
           size="lg"
           variant="hero"
           autoFocus
-          placeholder="Escribe aquí el DNI o nombre del socio..."
+          placeholder="Escribe el DNI, nombre o apellido..."
         />
       </section>
 
       <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
-
-      {aviso && (
-        <p
-          role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
-          }`}
-        >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
-          {aviso.texto}
-        </p>
-      )}
 
       {/* Ficha activa del socio seleccionado */}
       {seleccionado && gymId && (
@@ -342,57 +344,79 @@ export default function RecepcionPage() {
             <span className="text-xs font-semibold uppercase tracking-wider text-muted">
               Coincidencias encontradas ({resultados.length})
             </span>
-            <span className="text-[11px] text-muted">Haz clic en un socio para abrir su ficha</span>
+            <span className="text-[11px] text-muted">
+              Selecciona un socio para abrir su ficha o registra su ingreso directo
+            </span>
           </div>
           <ul className="divide-y divide-line" aria-label="Resultados">
             {resultados.map((s) => {
               const b = BADGE_ESTADO[s.semaforo];
               const ini = `${s.nombres?.[0] ?? ''}${s.apellidos?.[0] ?? ''}`.toUpperCase();
+              const asistioHoy = idsAsistieronHoy.has(s.socio_id);
               return (
-                <li key={s.socio_id}>
+                <li
+                  key={s.socio_id}
+                  className="flex flex-col justify-between gap-2.5 px-4 py-3 transition-colors hover:bg-surface-2/60 sm:flex-row sm:items-center sm:gap-4"
+                >
                   <button
+                    type="button"
                     onClick={() => void seleccionarSocioConAsistencias(s)}
-                    className="flex w-full flex-col items-start gap-2 px-4 py-3 text-left transition-colors hover:bg-surface-2/80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-surface-2 font-display text-sm font-bold text-bone ring-1 ring-line">
-                        {ini}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-bone">
-                          {formatearNombreSocio(s)}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted">
-                          <span className="font-mono text-bone">DNI {s.dni}</span>
-                          {estadoDatosSocio(s).dniProvisional && (
-                            <span className="ml-1.5 rounded bg-warn/15 px-1.5 py-0.2 text-[10px] font-semibold text-warn">
-                              Provisional
-                            </span>
-                          )}
-                          {s.plan && <span> · {s.plan}</span>}
-                          {s.dias_restantes !== null && (
-                            <span>
-                              {' '}
-                              ·{' '}
-                              {s.dias_restantes < 0
-                                ? `Venció hace ${Math.abs(s.dias_restantes)}d`
-                                : `${s.dias_restantes}d restantes`}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:shrink-0">
-                      {s.saldo_pendiente > 0 && (
-                        <span className="rounded bg-bad/20 px-2 py-0.5 font-mono text-[11px] font-bold text-bad">
-                          Debe {soles(s.saldo_pendiente)}
-                        </span>
-                      )}
-                      <span className={`rounded px-2.5 py-0.5 text-xs font-semibold ${b.cls}`}>
-                        {b.txt}
-                      </span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-2 font-display text-sm font-bold text-bone ring-1 ring-line">
+                      {ini}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-bone">
+                        {formatearNombreSocio(s)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        <span className="font-mono text-bone">DNI {s.dni}</span>
+                        {estadoDatosSocio(s).dniProvisional && (
+                          <span className="ml-1.5 rounded bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
+                            Provisional
+                          </span>
+                        )}
+                        {s.plan && <span> · {s.plan}</span>}
+                        {s.dias_restantes !== null && (
+                          <span>
+                            {' '}
+                            ·{' '}
+                            {s.dias_restantes < 0
+                              ? `Venció hace ${Math.abs(s.dias_restantes)}d`
+                              : `${s.dias_restantes}d restantes`}
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </button>
+                  <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
+                    {s.saldo_pendiente > 0 && (
+                      <span className="rounded bg-bad/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-bad">
+                        Saldo {soles(s.saldo_pendiente)}
+                      </span>
+                    )}
+                    <span className={`rounded px-2.5 py-0.5 text-xs font-semibold ${b.cls}`}>
+                      {b.txt}
+                    </span>
+                    {s.semaforo !== 'ROJO' &&
+                      (asistioHoy ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-ok/15 px-2.5 py-1 text-xs font-semibold text-ok ring-1 ring-ok/30">
+                          <Check size={12} strokeWidth={2.5} />
+                          Hoy
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={registrandoId === s.socio_id}
+                          onClick={() => void checkInRapido(s)}
+                          className="btn btn-primary !min-h-8 !px-3 text-xs"
+                        >
+                          <LogIn size={13} strokeWidth={1.75} />
+                          {registrandoId === s.socio_id ? 'Registrando...' : 'Ingresar'}
+                        </button>
+                      ))}
+                  </div>
                 </li>
               );
             })}
@@ -415,8 +439,8 @@ export default function RecepcionPage() {
       )}
 
       {/* Cinta de KPIs en vivo de Recepción */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="panel-card flex items-center justify-between gap-4 p-4">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="panel-card flex items-center justify-between gap-4 p-5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
               Asistencias de hoy
@@ -425,7 +449,7 @@ export default function RecepcionPage() {
               <p className="font-mono text-2xl font-bold text-bone tabular-nums sm:text-3xl">
                 {metricasHoy.total}
               </p>
-              <span className="text-xs text-muted">socios en sala hoy</span>
+              <span className="text-xs text-muted">socios registrados hoy</span>
             </div>
           </div>
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-ok/15 text-ok ring-1 ring-ok/30">
@@ -433,16 +457,16 @@ export default function RecepcionPage() {
           </div>
         </div>
 
-        <div className="panel-card flex flex-col justify-between p-4">
+        <div className="panel-card flex flex-col justify-between p-5">
           <div className="flex items-center justify-between text-xs">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Ingresos de hoy
+              Estado de asistencias
             </span>
             <span className="font-mono text-xs font-semibold text-bone tabular-nums">
-              {metricasHoy.verdes} al día · {metricasHoy.ambar} por vencer
+              {metricasHoy.verdes} al día · {metricasHoy.ambar} con aviso
             </span>
           </div>
-          <div className="mt-2.5 flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
+          <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
             <div
               className="bar-fill h-full bg-ok"
               style={{ width: `${metricasHoy.pctVerde}%` }}
@@ -452,17 +476,17 @@ export default function RecepcionPage() {
               style={{ width: `${100 - metricasHoy.pctVerde}%` }}
             />
           </div>
-          <div className="mt-1.5 flex justify-between text-[10px] text-muted">
-            <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-ok" /> Activos ({metricasHoy.pctVerde}%)
+          <div className="mt-2 flex justify-between text-[11px] text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-ok" /> Al día ({metricasHoy.pctVerde}%)
             </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Atención (Deuda o por vencer)
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Por vencer o con saldo
             </span>
           </div>
         </div>
 
-        <div className="panel-card flex items-center justify-between gap-3 p-4">
+        <div className="panel-card flex items-center justify-between gap-3 p-5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
               Estado de Caja
@@ -510,10 +534,10 @@ export default function RecepcionPage() {
             <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
               <div className="flex items-center gap-2">
                 <Clock size={15} className="text-brand" strokeWidth={1.75} />
-                <h2 className="text-sm font-semibold text-bone">Últimos ingresos de hoy</h2>
+                <h2 className="text-sm font-semibold text-bone">Accesos registrados hoy</h2>
               </div>
               <span className="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-[11px] text-muted">
-                {ingresosHoy.length} registros
+                {ingresosHoy.length} {ingresosHoy.length === 1 ? 'registro' : 'registros'}
               </span>
             </div>
 
@@ -525,7 +549,7 @@ export default function RecepcionPage() {
               </div>
             ) : (
               <ul className="mt-3 max-h-[290px] divide-y divide-line/60 overflow-y-auto pr-1">
-                {ingresosHoy.slice(0, 12).map((ing) => {
+                {ingresosHoy.slice(0, 30).map((ing) => {
                   const b = BADGE_ESTADO[ing.semaforo];
                   const nombreCompleto = ing.socios
                     ? formatearNombreSocio(ing.socios)
@@ -563,7 +587,7 @@ export default function RecepcionPage() {
             )}
           </div>
           <p className="mt-3 border-t border-line/50 pt-2.5 text-[11px] text-muted">
-            Haz clic en cualquier socio de la lista para volver a abrir su ficha.
+            Selecciona un socio para ver su ficha.
           </p>
         </section>
 
@@ -573,7 +597,7 @@ export default function RecepcionPage() {
             <div className="flex items-center justify-between gap-2 border-b border-line/70 pb-3">
               <div className="flex items-center gap-2">
                 <BarChart2 size={15} className="text-brand" strokeWidth={1.75} />
-                <h2 className="text-sm font-semibold text-bone">Flujo de clientes por hora</h2>
+                <h2 className="text-sm font-semibold text-bone">Afluencia por horario</h2>
               </div>
               <span className="text-[11px] text-muted">6:00 – 22:00</span>
             </div>
@@ -658,7 +682,7 @@ export default function RecepcionPage() {
           </div>
 
           <p className="mt-3 border-t border-line/50 pt-2.5 text-[11px] text-muted">
-            Visualiza las horas pico del gimnasio en tiempo real según los check-ins del día.
+            Distribución de asistencias registradas durante el día.
           </p>
         </section>
       </div>

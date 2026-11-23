@@ -12,7 +12,7 @@ import type {
   ResumenPeriodoFila,
 } from '@/types';
 
-const LIMITE_MOVIMIENTOS = 50;
+const LIMITE_MOVIMIENTOS = 300;
 
 // ---------- Turnos ----------
 

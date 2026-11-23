@@ -83,7 +83,7 @@ export function CashSummaryStrip({ turno, resumen }: SummaryProps) {
       {/* Barra gráfica de distribución de medios de cobro */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-[11px] text-muted">
-          <span className="font-semibold uppercase tracking-wider">Mix de medios de pago</span>
+          <span className="font-semibold uppercase tracking-wider">Medios de pago</span>
           <span className="font-mono text-bone">{soles(resumen.total_ingresos)} vendidos</span>
         </div>
 
@@ -156,7 +156,7 @@ export function CashSummaryStrip({ turno, resumen }: SummaryProps) {
           <dd className="font-mono font-semibold text-bad">− {soles(resumen.total_egresos)}</dd>
         </div>
         <div className="col-span-2 flex items-baseline justify-between rounded bg-ink/60 px-3 py-2 text-sm">
-          <dt className="font-medium text-muted">Total bruto vendido</dt>
+          <dt className="font-medium text-muted">Total vendido</dt>
           <dd className="font-mono text-base font-bold text-bone">{soles(resumen.total_ingresos)}</dd>
         </div>
       </dl>
@@ -192,8 +192,10 @@ export function CashClosureTable({ movimientos, onAnular }: TableProps) {
     });
   }, [movimientos, filtro, busqueda]);
 
+  const motivoValido = motivo.trim().length >= 4;
+
   async function confirmarAnulacion(id: string) {
-    if (!motivo.trim()) return;
+    if (motivo.trim().length < 4) return;
     setProcesando(true);
     try {
       await onAnular(id, motivo.trim());
@@ -270,7 +272,7 @@ export function CashClosureTable({ movimientos, onAnular }: TableProps) {
             : 'Ningún movimiento coincide con el filtro seleccionado.'}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-line bg-ink/40">
+        <div className="overflow-x-auto rounded-lg border border-line bg-ink/40">
           <table className="w-full border-collapse text-left text-sm">
             <thead className="border-b border-line bg-surface-2/80 text-xs font-semibold uppercase tracking-wider text-muted">
               <tr>
@@ -342,18 +344,27 @@ export function CashClosureTable({ movimientos, onAnular }: TableProps) {
                         <div className="flex items-center justify-end gap-1.5">
                           <input
                             type="text"
-                            placeholder="Motivo de anulación"
+                            placeholder="Motivo (mín. 4 caracteres)"
                             value={motivo}
                             onChange={(e) => setMotivo(e.target.value)}
-                            className="field !min-h-8 !w-44 !px-2 text-xs"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && motivoValido && !procesando) {
+                                e.preventDefault();
+                                void confirmarAnulacion(m.id);
+                              } else if (e.key === 'Escape') {
+                                setAnulandoId(null);
+                                setMotivo('');
+                              }
+                            }}
+                            className="field !min-h-8 !w-48 !px-2.5 text-xs"
                             autoFocus
                           />
                           <button
                             type="button"
-                            disabled={procesando || !motivo.trim()}
+                            disabled={procesando || !motivoValido}
                             onClick={() => confirmarAnulacion(m.id)}
                             className="btn btn-secondary !min-h-8 !px-2"
-                            title="Confirmar anulación"
+                            title={motivoValido ? 'Confirmar anulación' : 'Escribe al menos 4 caracteres'}
                           >
                             <Check size={14} strokeWidth={1.75} />
                           </button>

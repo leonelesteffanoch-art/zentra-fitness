@@ -107,9 +107,9 @@ export function SearchBar({
         placeholder={placeholder}
         className={`field transition-all ${
           esHero
-            ? '!min-h-14 !pl-12 !pr-28 !text-base sm:!text-lg font-semibold !bg-surface-2 !border-brand/70 placeholder:text-bone/60 shadow-[0_6px_24px_-8px_rgba(250,204,21,0.3)] focus:!border-brand focus:!ring-2 focus:!ring-brand/35'
+            ? '!min-h-13 !rounded-md !pl-12 !pr-28 !text-base sm:!text-lg font-medium !bg-surface-2 !border-brand/50 placeholder:text-muted/80 focus:!border-brand focus:!ring-1 focus:!ring-brand/30'
             : esGrande
-            ? '!min-h-12 !pl-10 !pr-16 !text-base font-medium shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)]'
+            ? '!min-h-12 !pl-10 !pr-16 !text-base font-medium'
             : '!min-h-10 !pl-10 !pr-16 !text-sm'
         }`}
       />

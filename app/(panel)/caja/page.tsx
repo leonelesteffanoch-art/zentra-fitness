@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   ArrowDownCircle,
-  CheckCircle2,
   Loader2,
   Lock,
   Unlock,
@@ -234,15 +233,15 @@ export default function CajaPage() {
       : null;
 
   return (
-    <div className="panel-fade-in space-y-8">
+    <div className="panel-fade-in space-y-6">
       {/* Cabecera */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-5">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
-            Punto de venta | Control de efectivo | Arqueo de turno
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+            Ventas en mostrador y control de caja
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-4xl tracking-wide sm:text-5xl">CAJA Y POS</h1>
+            <h1 className="font-display text-4xl tracking-wide sm:text-5xl">CAJA Y VENTAS</h1>
             {turno ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-ok/30 bg-ok/15 px-3 py-1 text-xs font-semibold text-ok">
                 <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
@@ -284,18 +283,6 @@ export default function CajaPage() {
       </div>
 
       <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
-
-      {aviso && (
-        <p
-          role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
-          }`}
-        >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
-          {aviso.texto}
-        </p>
-      )}
 
       {/* Resumen del último cierre recién ejecutado */}
       {ultimoCierre && !turno && (
@@ -470,14 +457,14 @@ export default function CajaPage() {
                         setMontoEgreso(resumen.efectivo_esperado.toFixed(2));
                       }
                     }}
-                    className="rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-bone hover:bg-line"
+                    className="rounded-md bg-surface-2 px-2.5 py-1 text-xs font-medium text-bone hover:bg-line"
                   >
                     Retiro por el dueño
                   </button>
                   <button
                     type="button"
                     onClick={() => setConceptoEgreso('Limpieza / insumos del gimnasio')}
-                    className="rounded-xs bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted hover:text-bone"
+                    className="rounded-md bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted hover:text-bone"
                   >
                     Limpieza / insumos
                   </button>

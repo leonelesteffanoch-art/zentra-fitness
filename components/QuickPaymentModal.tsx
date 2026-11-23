@@ -178,14 +178,14 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
           role="dialog"
           aria-modal="true"
           aria-labelledby="cobro-titulo"
-          className="modal-animate max-h-[92vh] w-full max-w-xl overflow-y-auto border border-line bg-surface"
+          className="modal-animate max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-lg border border-line bg-surface"
         >
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <div>
             <p className="text-xs text-muted">
               {formatearNombreSocio(socio)} ·{' '}
               <span className="text-bone">
-                {esSocioNuevo ? 'Inscripción de socio nuevo' : 'Socio antiguo'}
+                {esSocioNuevo ? 'Nuevo socio' : 'Socio registrado'}
               </span>
             </p>
             <h2 id="cobro-titulo" className="section-title mt-0.5 text-xl">
@@ -218,11 +218,12 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                           type="button"
                           onClick={() => {
                             setPlanId(p.id);
-                            setLineas([{ metodo: 'Efectivo', monto: p.precio.toFixed(2) }]);
+                            const metodoActual = lineas[0]?.metodo ?? 'Efectivo';
+                            setLineas([{ metodo: metodoActual, monto: p.precio.toFixed(2) }]);
                             setFechaFinCustom(sumarDias(fechaInicio, p.duracion_dias));
                           }}
                           aria-pressed={activo}
-                          className={`rounded-xs p-3.5 text-left transition-colors ${
+                          className={`rounded-md p-3.5 text-left transition-colors ${
                             activo
                               ? 'bg-surface-2 ring-1 ring-brand'
                               : 'bg-surface-2/60 hover:bg-surface-2'
@@ -308,7 +309,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
               </div>
 
               {/* Opción para migración de socios antiguos */}
-              <div className="rounded-xs border border-line bg-surface-2/60 p-3.5">
+              <div className="rounded-md border border-line bg-surface-2/60 p-3.5">
                 <label className="flex cursor-pointer items-start gap-2.5">
                   <input
                     type="checkbox"
@@ -350,7 +351,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                     />
                     <p className="mt-1 text-[11px] text-muted">
                       Deja <strong>0</strong> si ya canceló todo su plan. Si todavía debe algo,
-                      escribe el monto para que aparezca en Morosos.
+                      escribe el monto para registrarlo en saldos pendientes.
                     </p>
                   </div>
                 )}
@@ -370,25 +371,35 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
               <fieldset>
                 <legend className="label">Pago rápido completo</legend>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {METODOS.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      disabled={total <= 0}
-                      onClick={() => pagarTodoCon(m)}
-                      className="btn btn-secondary !min-h-9"
-                    >
-                      {m}
-                    </button>
-                  ))}
+                  {METODOS.map((m) => {
+                    const metodoActivo =
+                      total > 0 &&
+                      lineas.length === 1 &&
+                      lineas[0].metodo === m &&
+                      Math.round((Number(lineas[0].monto) || 0) * 100) === Math.round(total * 100);
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        disabled={total <= 0}
+                        aria-pressed={metodoActivo}
+                        onClick={() => pagarTodoCon(m)}
+                        className={`btn btn-secondary !min-h-9 ${
+                          metodoActivo ? '!border-brand !bg-brand/15 !text-brand' : ''
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
                 </div>
               </fieldset>
 
               <fieldset className="space-y-2">
                 <legend className="label">
                   {esSocioNuevo
-                    ? 'Detalle del pago (efectivo, digital o mixto — sin deuda para nuevos)'
-                    : 'Detalle del pago (mixto o pago a cuenta para socio antiguo)'}
+                    ? 'Detalle del cobro (pago completo en efectivo, digital o combinado)'
+                    : 'Detalle del cobro (puedes dividir el pago o dejar saldo pendiente)'}
                 </legend>
                 {lineas.map((l, i) => (
                   <div key={i} className="flex gap-2">
@@ -443,7 +454,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                 )}
               </fieldset>
 
-              <dl className="flex items-center justify-between bg-surface-2 px-4 py-3 text-sm">
+              <dl className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted">Recibido</dt>
                   <dd className="text-lg font-semibold text-bone tabular-nums">{soles(pagado)}</dd>
@@ -469,7 +480,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                 : (pagado > 0 && !hayTurno) || (esSocioNuevo && plan && pendiente > 0)))) && (
             <p
               role="alert"
-              className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad"
+              className="rounded-md border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad"
             >
               {error ?? motivoBloqueo}
             </p>

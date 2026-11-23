@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Calendar,
-  CheckCircle2,
   Clock,
   Download,
   Edit2,
@@ -17,7 +16,6 @@ import {
   UserCheck,
   UserPlus,
   X,
-  XCircle,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
@@ -98,7 +96,7 @@ const ORDEN_ACTIVOS: Record<EstadoLead, number> = {
 const BADGE_ESTADO: Record<EstadoLead, { cls: string; txt: string }> = {
   NUEVO: {
     cls: 'bg-warn/15 text-warn border-warn/30',
-    txt: 'Nuevo prospecto',
+    txt: 'Nuevo',
   },
   CONTACTADO: {
     cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
@@ -110,7 +108,7 @@ const BADGE_ESTADO: Record<EstadoLead, { cls: string; txt: string }> = {
   },
   INSCRITO: {
     cls: 'bg-ok/15 text-ok border-ok/30',
-    txt: 'Inscrito / Socio',
+    txt: 'Inscrito',
   },
   DESCARTADO: {
     cls: 'bg-surface-2 text-muted border-line/60',
@@ -258,7 +256,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
         setNTelefono('');
         setNNotas('');
         setNEstado('NUEVO');
-        setAviso({ tipo: 'ok', texto: `Prospecto "${nNombre.trim()}" registrado en el embudo` });
+        setAviso({ tipo: 'ok', texto: `Prospecto "${nNombre.trim()}" registrado` });
       }
     } catch {
       setErrorNuevo('Error de conexión al guardar prospecto');
@@ -374,10 +372,10 @@ export function LeadsPanel({ gymId, userId }: Props) {
   return (
     <div className="space-y-6">
       {/* Cabecera */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-5">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
-            CRM y Embudo comercial
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+            Seguimiento comercial
           </p>
           <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">PROSPECTOS</h1>
         </div>
@@ -418,7 +416,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
             }`}
           >
             <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Por atender (Nuevos)
+              Por contactar
               <Clock size={15} className={conteos.nuevos > 0 ? 'text-warn' : 'text-muted'} />
             </p>
             <p className="mt-1 font-mono text-3xl font-bold text-bone tabular-nums">
@@ -454,7 +452,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
             }`}
           >
             <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Inscritos (Cerrados)
+              Inscritos
               <Trophy size={15} className="text-ok" />
             </p>
             <p className="mt-1 font-mono text-3xl font-bold text-ok tabular-nums">
@@ -465,7 +463,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
 
           <div className="panel-card p-4">
             <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Tasa de Conversión
+              Conversión
               <UserCheck size={15} className="text-brand" />
             </p>
             <p className="mt-1 font-mono text-3xl font-bold text-brand tabular-nums">
@@ -485,7 +483,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
           <div className="panel-card flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 items-center gap-3">
               <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                Pipeline:
+                Resumen:
               </span>
               <div className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
                 {pctNuevos > 0 && (
@@ -536,18 +534,6 @@ export function LeadsPanel({ gymId, userId }: Props) {
 
       <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
-      {aviso && (
-        <p
-          role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`flex items-center gap-2 border-l-2 px-3 py-2 text-sm ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/10 text-ok' : 'border-bad bg-bad/10 text-bad'
-          }`}
-        >
-          {aviso.tipo === 'ok' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-          {aviso.texto}
-        </p>
-      )}
-
       {/* Buscador y filtros */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-sm">
@@ -582,7 +568,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
               type="button"
               onClick={() => setFiltro(id)}
               aria-pressed={filtro === id}
-              className={`rounded-xs px-3 py-1.5 font-medium transition-colors ${
+              className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                 filtro === id
                   ? 'bg-bone text-ink'
                   : 'bg-surface text-muted hover:text-bone'
@@ -643,8 +629,8 @@ export function LeadsPanel({ gymId, userId }: Props) {
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-bone text-base">{l.nombre}</span>
-                      <span className="font-mono text-xs text-muted">WA: {l.telefono}</span>
-                      <span className="rounded-xs bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                      <span className="font-mono text-xs text-muted">Tel. {l.telefono}</span>
+                      <span className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">
                         {l.origen ?? 'Web'}
                       </span>
 
@@ -655,13 +641,13 @@ export function LeadsPanel({ gymId, userId }: Props) {
                         onChange={(e) =>
                           void actualizarLead(l.id, { estado: e.target.value as EstadoLead })
                         }
-                        className={`cursor-pointer rounded-xs border bg-surface px-2 py-0.5 text-[11px] font-semibold ${badge.cls}`}
+                        className={`cursor-pointer rounded-md border bg-surface px-2 py-0.5 text-[11px] font-semibold ${badge.cls}`}
                       >
-                        <option value="NUEVO">🟡 Nuevo</option>
-                        <option value="CONTACTADO">🔵 Contactado</option>
-                        <option value="AGENDADO">🟣 Agendó visita</option>
-                        <option value="INSCRITO">🟢 Inscrito / Socio</option>
-                        <option value="DESCARTADO">⚪ Descartado</option>
+                        <option value="NUEVO">Nuevo</option>
+                        <option value="CONTACTADO">Contactado</option>
+                        <option value="AGENDADO">Agendó visita</option>
+                        <option value="INSCRITO">Inscrito</option>
+                        <option value="DESCARTADO">Descartado</option>
                       </select>
                     </div>
 
@@ -710,7 +696,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
                       ) : (
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           {l.notas ? (
-                            <span className="rounded-xs bg-surface-2 px-2 py-0.5 text-[11px] italic text-bone">
+                            <span className="rounded-md bg-surface-2 px-2 py-0.5 text-[11px] italic text-bone">
                               &ldquo;{l.notas}&rdquo;
                             </span>
                           ) : (
@@ -807,7 +793,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-nuevo-prospecto"
-              className="modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto border border-line bg-surface"
+              className="modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto rounded-lg border border-line bg-surface"
             >
             <header className="flex items-start justify-between border-b border-line/80 p-5">
               <div>
@@ -928,9 +914,9 @@ export function LeadsPanel({ gymId, userId }: Props) {
                   onChange={(e) => setNEstado(e.target.value as EstadoLead)}
                   className="field"
                 >
-                  <option value="NUEVO">🟡 Nuevo (pendiente)</option>
-                  <option value="CONTACTADO">🔵 Ya contactado / cotizado</option>
-                  <option value="AGENDADO">🟣 Agendó visita / prueba</option>
+                  <option value="NUEVO">Nuevo (pendiente)</option>
+                  <option value="CONTACTADO">Contactado / cotizado</option>
+                  <option value="AGENDADO">Agendó visita / prueba</option>
                 </select>
               </div>
 
@@ -949,7 +935,7 @@ export function LeadsPanel({ gymId, userId }: Props) {
               </div>
 
               {errorNuevo && (
-                <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
+                <p role="alert" className="rounded-md border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
                   {errorNuevo}
                 </p>
               )}

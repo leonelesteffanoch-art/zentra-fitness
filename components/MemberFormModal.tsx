@@ -102,11 +102,15 @@ export function MemberFormModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="socio-modal-titulo"
-          className="modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto border border-line bg-surface"
+          className="modal-animate max-h-[92vh] w-full max-w-md overflow-y-auto rounded-lg border border-line bg-surface"
         >
         <header className="flex items-start justify-between border-b border-line/80 p-5">
           <h2 id="socio-modal-titulo" className="section-title text-xl">
-            {socioEditar ? 'Editar socio' : 'Nuevo socio'}
+            {socioEditar
+              ? datos.incompleto
+                ? 'Completar datos del socio'
+                : 'Editar socio'
+              : 'Nuevo socio'}
           </h2>
           <button onClick={onClose} className="btn btn-ghost !min-h-9 !px-2" aria-label="Cerrar">
             <X size={18} strokeWidth={1.5} />
@@ -115,7 +119,7 @@ export function MemberFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
           {socioEditar && datos.incompleto && (
-            <div className="flex items-start gap-2 rounded-xs border-l-4 border-warn bg-warn/15 px-3 py-2.5 text-xs text-warn">
+            <div className="flex items-start gap-2 rounded-md border-l-4 border-warn bg-warn/10 px-3.5 py-2.5 text-xs text-warn">
               <AlertTriangle size={15} strokeWidth={1.75} className="mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold">Faltan datos por completar:</p>
@@ -233,7 +237,7 @@ export function MemberFormModal({
           </div>
 
           {error && (
-            <p role="alert" className="border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
+            <p role="alert" className="rounded-md border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad">
               {error}
             </p>
           )}

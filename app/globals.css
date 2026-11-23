@@ -32,8 +32,8 @@
   --font-sans: var(--font-inter);
   --font-display: var(--font-archivo);
   --font-mono: var(--font-geist-mono);
-  --radius-sm: 2px;
-  --radius-md: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
 }
 
 html {
@@ -114,7 +114,7 @@ body {
   }
   .btn-primary:hover:not(:disabled) {
     background: var(--bone);
-    box-shadow: 0 0 18px rgba(255, 194, 26, 0.22);
+    box-shadow: 0 4px 14px -4px rgba(255, 194, 26, 0.25);
   }
   .btn-secondary {
     background: var(--surface-2);
@@ -162,10 +162,10 @@ body {
     color: var(--muted);
   }
   .panel-card {
-    background: linear-gradient(180deg, rgba(28, 28, 33, 0.55) 0%, rgba(20, 20, 23, 0.98) 100%);
+    background: linear-gradient(180deg, rgba(28, 28, 33, 0.45) 0%, rgba(20, 20, 23, 0.98) 100%);
     border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 1px 0 rgba(242, 239, 233, 0.03) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.55);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 0 rgba(242, 239, 233, 0.03) inset, 0 8px 24px -14px rgba(0, 0, 0, 0.55);
     transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
   }
   .panel-card-interactive:hover {

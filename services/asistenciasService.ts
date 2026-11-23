@@ -50,7 +50,7 @@ export interface AsistenciaHoyDetalle {
   } | null;
 }
 
-/** Asistencias de hoy del gimnasio (máx. 50), para el panel de recepción. */
+/** Asistencias de hoy del gimnasio (máx. 500), para el panel de recepción. */
 export async function asistenciasDeHoy(gymId: string): Promise<Asistencia[]> {
   const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
   const { data, error } = await supabase
@@ -59,7 +59,7 @@ export async function asistenciasDeHoy(gymId: string): Promise<Asistencia[]> {
     .eq('gym_id', gymId)
     .eq('fecha', hoy)
     .order('hora', { ascending: false })
-    .limit(50);
+    .limit(500);
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as Asistencia[];
 }
@@ -73,7 +73,7 @@ export async function asistenciasDeHoyDetalladas(gymId: string): Promise<Asisten
     .eq('gym_id', gymId)
     .eq('fecha', hoy)
     .order('hora', { ascending: false })
-    .limit(40);
+    .limit(500);
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as AsistenciaHoyDetalle[];
 }

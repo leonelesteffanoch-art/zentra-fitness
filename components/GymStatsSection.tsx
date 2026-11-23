@@ -139,7 +139,7 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
   return (
     <section aria-label="Estadísticas operativas" className="space-y-3">
       <h2 className="section-title text-lg">
-        Estadísticas de socios, horas pico y productos más vendidos
+        Actividad y retención
       </h2>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -170,7 +170,7 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
                 </dd>
               </div>
               <div className="rounded-md border border-line/60 bg-ink/50 p-3">
-                <dt className="text-[11px] text-muted">Vencidos / Bajas</dt>
+                <dt className="text-[11px] text-muted">Vencidos</dt>
                 <dd className="mt-0.5 font-mono text-2xl font-bold text-bad">
                   {stats.sociosVencidos}
                 </dd>
@@ -209,7 +209,7 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
                       <span className="font-mono text-[11px] text-muted">({f.rango})</span>
                     </span>
                     <span className="font-mono font-bold text-bone tabular-nums">
-                      {f.cantidad} ing.
+                      {f.cantidad} asist.
                     </span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
@@ -224,11 +224,11 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
           </div>
         </article>
 
-        {/* 3. Productos más vendidos del POS */}
+        {/* 3. Productos más vendidos */}
         <article className="panel-card p-5">
           <div className="flex items-center gap-2 text-xs font-medium text-muted">
             <Package size={15} strokeWidth={1.75} className="text-brand" />
-            <span>Top 5 productos POS (30 días)</span>
+            <span>Productos más vendidos (30 días)</span>
           </div>
 
           {stats.topProductos.length === 0 ? (

@@ -28,7 +28,7 @@ export default function LoginPage() {
             Recepción y control en tiempo real
           </p>
           <p className="mt-1 text-sm text-muted">
-            Zentra Fitness · Villa Estela Km. 39 - Ancón
+            Zentra Fitness · Villa Estela, Ancón
           </p>
         </div>
       </section>
@@ -40,13 +40,13 @@ export default function LoginPage() {
             className="mb-8 inline-flex items-center gap-1.5 text-xs font-medium text-muted transition-colors hover:text-bone"
           >
             <ArrowLeft size={14} strokeWidth={1.5} />
-            Volver a la página principal
+            Volver al inicio
           </Link>
 
           <Logo className="mb-8 w-40 sm:w-44" />
           <h1 className="font-display mb-2 text-4xl">Panel de personal</h1>
           <p className="mb-7 text-sm text-muted">
-            Acceso exclusivo para recepción y administración.
+            Acceso para recepción y administración.
           </p>
           <LoginForm />
         </div>

@@ -6,7 +6,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
-  CheckCircle2,
   Download,
   Dumbbell,
   Layers,
@@ -262,12 +261,12 @@ export default function AdminPage() {
     kpis.ingresos > 0 ? Math.max(0, 100 - pctEfec - pctYape - pctPlin) : 0;
 
   return (
-    <div className="panel-fade-in space-y-8">
+    <div className="panel-fade-in space-y-6">
       {/* Cabecera y Filtro de rango + Atajos rápidos */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/80 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/70 pb-5">
         <div className="shrink-0">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9CA3AF]">
-            Dirección, Finanzas y Catálogo
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+            Resumen financiero, catálogo y equipo
           </p>
           <h1 className="mt-0.5 font-display text-4xl tracking-wide sm:text-5xl">
             ADMINISTRACIÓN
@@ -343,14 +342,14 @@ export default function AdminPage() {
             type="button"
             disabled={exportando}
             onClick={exportarExcel}
-            className="btn btn-secondary h-9 w-full !min-h-9 whitespace-nowrap !px-2.5 text-xs sm:w-auto"
+            className="btn btn-secondary h-9 w-full !min-h-9 whitespace-nowrap !px-3 text-xs sm:w-auto"
           >
             {exportando ? (
               <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
             ) : (
               <Download size={15} strokeWidth={1.75} />
             )}
-            Exportar .xlsx
+            Exportar Excel
           </button>
         </div>
       </div>
@@ -359,10 +358,10 @@ export default function AdminPage() {
       <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Secciones de administración">
         {(
           [
-            { id: 'todo', label: 'Vista general', icon: <Layers size={14} /> },
-            { id: 'finanzas', label: 'Finanzas y Flujo', icon: <Wallet size={14} /> },
-            { id: 'catalogo', label: 'Catálogo y Stock', icon: <Package size={14} /> },
-            { id: 'personal', label: 'Personal y Sistema', icon: <Shield size={14} /> },
+            { id: 'todo', label: 'Resumen', icon: <Layers size={14} /> },
+            { id: 'finanzas', label: 'Finanzas', icon: <Wallet size={14} /> },
+            { id: 'catalogo', label: 'Catálogo', icon: <Package size={14} /> },
+            { id: 'personal', label: 'Equipo', icon: <Shield size={14} /> },
           ] as const
         ).map((tab) => {
           const activo = pestana === tab.id;
@@ -388,25 +387,13 @@ export default function AdminPage() {
 
       <ToastBanner aviso={aviso} onClose={() => setAviso(null)} />
 
-      {aviso && (
-        <p
-          role={aviso.tipo === 'error' ? 'alert' : 'status'}
-          className={`panel-fade-in flex items-center gap-2 rounded-md border-l-4 px-4 py-3 text-sm font-medium ${
-            aviso.tipo === 'ok' ? 'border-ok bg-ok/15 text-ok' : 'border-bad bg-bad/15 text-bad'
-          }`}
-        >
-          {aviso.tipo === 'ok' && <CheckCircle2 size={16} strokeWidth={1.75} />}
-          {aviso.texto}
-        </p>
-      )}
-
       {(pestana === 'todo' || pestana === 'finanzas') && (
         <>
           {/* 1. Balance del período: Flujo neto + Barra gráfica de métodos */}
           <section aria-label="Balance del período" className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="section-title text-lg">
-                Balance financiero ({formatearFechaDMY(desde)} → {formatearFechaDMY(hasta)})
+                Balance del período ({formatearFechaDMY(desde)} → {formatearFechaDMY(hasta)})
               </h2>
               {cargando && <Loader2 size={15} strokeWidth={1.75} className="animate-spin text-brand" />}
             </div>
@@ -502,7 +489,7 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2">
                   <BarChart3 size={16} className="text-brand" strokeWidth={1.75} />
                   <h3 className="section-title text-base">
-                    Evolución diaria de caja (Últimos días con actividad)
+                    Evolución diaria
                   </h3>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted">
@@ -562,7 +549,7 @@ export default function AdminPage() {
                 <div>
                   <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
                     <TrendingUp size={15} className="text-brand" />
-                    Rendimiento Comercial Mensual
+                    Comparativa mensual
                   </span>
                   <div className="mt-2 flex flex-wrap items-baseline gap-3">
                     <div>
@@ -611,7 +598,7 @@ export default function AdminPage() {
               <div className="flex items-center justify-between">
                 <h3 className="section-title flex items-center gap-2 text-base">
                   <Dumbbell size={16} className="text-brand" />
-                  Ingresos por Plan de Entrenamiento
+                  Ingresos por plan
                 </h3>
                 <span className="text-xs text-muted">Período seleccionado</span>
               </div>
@@ -653,12 +640,12 @@ export default function AdminPage() {
               )}
             </section>
 
-            {/* Desglose por Producto POS */}
-            <section aria-label="Ingresos por Producto" className="panel-card space-y-3 p-5">
+            {/* Desglose por Producto de mostrador */}
+            <section aria-label="Ventas en mostrador" className="panel-card space-y-3 p-5">
               <div className="flex items-center justify-between">
                 <h3 className="section-title flex items-center gap-2 text-base">
                   <ShoppingBag size={16} className="text-brand" />
-                  Ingresos por Producto del POS
+                  Ventas en mostrador
                 </h3>
                 <span className="text-xs text-muted">Período seleccionado</span>
               </div>
@@ -710,8 +697,8 @@ export default function AdminPage() {
 
       {/* 2. Gestión de precios y catálogo */}
       {gymId && (pestana === 'todo' || pestana === 'catalogo') && (
-        <section aria-label="Gestión de precios y catálogo" className="space-y-3">
-          <h2 className="section-title text-lg">Gestión de precios y catálogo</h2>
+        <section aria-label="Planes y productos" className="space-y-3">
+          <h2 className="section-title text-lg">Planes y productos</h2>
           <CatalogManager
             gymId={gymId}
             planes={planes}

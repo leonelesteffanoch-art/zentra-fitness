@@ -284,15 +284,12 @@ export function MemberStatusCard({
               onClick={onEditarDatos}
               className={`btn flex-1 !min-h-10 text-xs sm:flex-initial ${
                 datosPendientes.incompleto
-                  ? '!border !border-warn !bg-warn/20 !text-warn font-bold ring-1 ring-warn/40 shadow-[0_0_18px_-4px_rgba(245,158,11,0.5)] hover:!bg-warn/30'
+                  ? '!border !border-warn/70 !bg-warn/15 !text-warn font-semibold hover:!bg-warn/25'
                   : datosPendientes.sinTelefono
-                  ? '!border !border-warn/60 !bg-warn/10 !text-warn font-semibold hover:!bg-warn/20'
+                  ? '!border !border-warn/50 !bg-warn/10 !text-warn font-medium hover:!bg-warn/20'
                   : 'btn-secondary'
               }`}
             >
-              {datosPendientes.incompleto && (
-                <span className="h-2 w-2 rounded-full bg-warn animate-pulse" aria-hidden="true" />
-              )}
               <Edit3 size={15} strokeWidth={1.75} />
               {datosPendientes.incompleto
                 ? 'Completar datos'
@@ -323,11 +320,11 @@ export function MemberStatusCard({
         (puedeEntrar && ingresoPrevioHoy)) && (
         <div className="space-y-2.5">
           {onEditarDatos && datosPendientes.incompleto && (
-            <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-warn bg-warn/15 px-3.5 py-2.5 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-start justify-between gap-2.5 rounded-md border-l-4 border-warn bg-warn/10 px-4 py-3 sm:flex-row sm:items-center">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warn sm:text-sm">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warn sm:text-sm">
                   <AlertTriangle size={15} strokeWidth={2} />
-                  DATOS PENDIENTES DE COMPLETAR
+                  Datos pendientes por completar
                 </span>
                 <p className="mt-0.5 text-xs leading-relaxed text-bone">
                   Falta:{' '}
@@ -338,7 +335,7 @@ export function MemberStatusCard({
                   ]
                     .filter(Boolean)
                     .join(', ')}
-                  . Pídelo ahora que ingresó y actualízalo aquí mismo.
+                  . Puedes solicitarlo ahora y actualizar la ficha.
                 </p>
               </div>
               <button
@@ -347,31 +344,36 @@ export function MemberStatusCard({
                 className="btn btn-primary shrink-0 !min-h-8 !px-3 text-xs"
               >
                 <Edit3 size={13} strokeWidth={1.75} />
-                Completar datos ahora
+                Completar datos
               </button>
             </div>
           )}
 
           {socio.saldo_pendiente > 0 && (
-            <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-bad bg-bad/15 px-3.5 py-2.5 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-start justify-between gap-2.5 rounded-md border-l-4 border-bad bg-bad/10 px-4 py-3 sm:flex-row sm:items-center">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-bad sm:text-sm">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-bad sm:text-sm">
                   <AlertTriangle size={15} strokeWidth={2} />
-                  SOCIO MOROSO · SALDO PENDIENTE
+                  Saldo pendiente
                 </span>
                 <p className="mt-0.5 text-xs leading-relaxed text-bone">
-                  Debe <strong className="font-bold text-bad tabular-nums">{soles(socio.saldo_pendiente)}</strong> del plan {socio.plan}.
-                  {diasAtraso > 0 && ` Atraso de ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} desde su inicio (${formatearFechaDMY(socio.fecha_inicio)}).`}
+                  Tiene un saldo pendiente de{' '}
+                  <strong className="font-semibold text-bad tabular-nums">
+                    {soles(socio.saldo_pendiente)}
+                  </strong>{' '}
+                  por su plan {socio.plan}.
+                  {diasAtraso > 0 &&
+                    ` Registrado hace ${diasAtraso} ${diasAtraso === 1 ? 'día' : 'días'} (${formatearFechaDMY(socio.fecha_inicio)}).`}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
                   onClick={onCobrarSaldo}
-                  className="btn btn-primary !min-h-8 !px-3 text-xs !bg-bad hover:!bg-bad/90"
+                  className="btn btn-primary !min-h-8 !px-3 text-xs !bg-bad !text-white hover:!bg-bad/90"
                 >
                   <CircleDollarSign size={14} />
-                  Cobrar deuda
+                  Cobrar saldo
                 </button>
                 {socio.telefono && (
                   <a
@@ -394,17 +396,16 @@ export function MemberStatusCard({
           )}
 
           {estaInactivo && (
-            <div className="flex flex-col items-start justify-between gap-2.5 rounded-xs border-l-4 border-warn bg-warn/15 px-3.5 py-2.5 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-start justify-between gap-2.5 rounded-md border-l-4 border-warn bg-warn/10 px-4 py-3 sm:flex-row sm:items-center">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-warn sm:text-sm">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warn sm:text-sm">
                   <Clock size={15} strokeWidth={2} />
-                  ALERTA DE ABANDONO · {diasSinVenir} DÍAS SIN ENTRENAR
+                  Sin asistencias recientes · {diasSinVenir} días
                 </span>
                 <p className="mt-0.5 text-xs leading-relaxed text-bone">
                   {ultimaAsistencia
                     ? `Su última visita registrada fue el ${formatearFechaDMY(ultimaAsistencia)}.`
-                    : `Inició su membresía el ${formatearFechaDMY(socio.fecha_inicio)} pero aún no registra check-in.`}
-                  {' '}Contáctalo para motivarlo antes de que pierda la constancia y no renueve.
+                    : `Inició su membresía el ${formatearFechaDMY(socio.fecha_inicio)} y aún no registra asistencia.`}
                 </p>
               </div>
               {socio.telefono && (
@@ -419,17 +420,17 @@ export function MemberStatusCard({
                   className="btn btn-secondary shrink-0 !min-h-8 !px-3 text-xs"
                 >
                   <MessageCircle size={14} className="text-ok" />
-                  Motivar por WhatsApp
+                  Escribir por WhatsApp
                 </a>
               )}
             </div>
           )}
 
           {puedeEntrar && ingresoPrevioHoy && (
-            <div className="flex items-start gap-2.5 border-l-2 border-warn bg-warn/10 px-3.5 py-2.5 text-xs text-warn">
+            <div className="flex items-start gap-2.5 rounded-md border-l-2 border-warn bg-warn/10 px-4 py-2.5 text-xs text-warn">
               <AlertTriangle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
               <p>
-                <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''} </strong>{' '}
+                <strong>Ya registró su ingreso de hoy{horaPrevioHoy ? ` a las ${horaPrevioHoy}` : ''}.</strong>{' '}
                 Ningún plan incluye doble ingreso en el mismo día. Para un segundo ingreso corresponde abonar un{' '}
                 <strong>Pase por día (S/ 10)</strong>.
               </p>
@@ -440,7 +441,7 @@ export function MemberStatusCard({
 
       {/* Fila 3: Grilla de 2 columnas -> Vigencia/Ciclo a la izquierda + Constancia semanal a la derecha */}
       <div className="grid items-stretch gap-4 lg:grid-cols-12">
-        <div className="flex h-full flex-col justify-between gap-4 rounded-md border border-line/80 bg-ink/60 p-4 lg:col-span-5">
+        <div className="flex h-full flex-col justify-between gap-4 rounded-lg border border-line/80 bg-ink/50 p-4 lg:col-span-5">
           <div className="flex items-center gap-4">
             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
               <svg className="h-16 w-16 -rotate-90" viewBox="0 0 72 72" aria-hidden="true">
