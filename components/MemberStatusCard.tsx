@@ -30,6 +30,7 @@ interface Props {
   onRenovar: () => void;
   onCobrarSaldo: () => void;
   onEditarDatos?: () => void;
+  onEditarMembresia?: () => void;
   onLimpiar?: () => void;
 }
 
@@ -104,6 +105,7 @@ export function MemberStatusCard({
   onRenovar,
   onCobrarSaldo,
   onEditarDatos,
+  onEditarMembresia,
   onLimpiar,
 }: Props) {
   const est = BADGE_SEMAFORO[socio.semaforo];
@@ -559,6 +561,19 @@ export function MemberStatusCard({
                   />
                 </div>
               </div>
+
+              {socio.membresia_id && onEditarMembresia && (
+                <div className="flex justify-end border-t border-line/60 pt-2">
+                  <button
+                    type="button"
+                    onClick={onEditarMembresia}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-muted hover:text-brand"
+                  >
+                    <Edit3 size={12} strokeWidth={1.75} />
+                    Corregir plan / fechas
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -16,6 +16,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { SearchBar } from '@/components/SearchBar';
 import { MemberStatusCard } from '@/components/MemberStatusCard';
 import { MemberFormModal } from '@/components/MemberFormModal';
+import { EditMembershipModal } from '@/components/EditMembershipModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
 import { ToastBanner } from '@/components/ToastBanner';
 import { buscarSocios, obtenerSocioEstadoPorId } from '@/services/sociosService';
@@ -90,6 +91,7 @@ export default function RecepcionPage() {
   const [turnoActual, setTurnoActual] = useState<TurnoCaja | null | undefined>(undefined);
   const [horaActualLima, setHoraActualLima] = useState<number | null>(null);
   const [cobro, setCobro] = useState<ModoCobro | null>(null);
+  const [editandoMembresiaId, setEditandoMembresiaId] = useState<string | null>(null);
   const [modalSocio, setModalSocio] = useState<'nuevo' | 'editar' | null>(null);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
@@ -343,6 +345,9 @@ export default function RecepcionPage() {
           onRenovar={() => setCobro('renovar')}
           onCobrarSaldo={() => setCobro('abonar')}
           onEditarDatos={() => setModalSocio('editar')}
+          onEditarMembresia={() => {
+            if (seleccionado.membresia_id) setEditandoMembresiaId(seleccionado.membresia_id);
+          }}
           onLimpiar={() => {
             setSeleccionado(null);
             setAsistenciasSocio([]);
@@ -784,6 +789,31 @@ export default function RecepcionPage() {
           hayTurno={hayTurno}
           onClose={() => setCobro(null)}
           onDone={cobroTerminado}
+        />
+      )}
+
+      {editandoMembresiaId && seleccionado && gymId && (
+        <EditMembershipModal
+          gymId={gymId}
+          socioNombre={formatearNombreSocio(seleccionado)}
+          membresiaId={editandoMembresiaId}
+          onClose={() => setEditandoMembresiaId(null)}
+          onSaved={async (msg) => {
+            const socioId = seleccionado.socio_id;
+            setEditandoMembresiaId(null);
+            setAviso({ tipo: 'ok', texto: msg });
+            try {
+              const actualizado = await obtenerSocioEstadoPorId(socioId);
+              if (actualizado) {
+                await seleccionarSocioConAsistencias(actualizado);
+                setResultados((rs) =>
+                  rs.map((r) => (r.socio_id === actualizado.socio_id ? actualizado : r))
+                );
+              }
+            } catch {
+              // silencioso
+            }
+          }}
         />
       )}
     </div>

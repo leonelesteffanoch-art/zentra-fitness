@@ -246,6 +246,43 @@ export async function membresiasDeSocio(socioId: string): Promise<MembresiaEstad
   return (data ?? []) as unknown as MembresiaEstado[];
 }
 
+/** Obtiene una membresía específica desde la vista de estado. */
+export async function obtenerMembresiaEstadoPorId(
+  membresiaId: string
+): Promise<MembresiaEstado | null> {
+  const { data, error } = await supabase
+    .from('v_membresias_estado')
+    .select('membresia_id, gym_id, socio_id, plan_id, plan, fecha_inicio, fecha_fin, dias_congelados, precio_total, estado, monto_pagado, saldo_pendiente, dias_restantes')
+    .eq('membresia_id', membresiaId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as unknown as MembresiaEstado) ?? null;
+}
+
+/** Corrige plan, fechas y/o saldo pendiente de una membresía sin alterar movimientos de caja. */
+export async function editarMembresia(payload: {
+  membresiaId: string;
+  planId: string;
+  fechaInicio: string;
+  fechaFin: string;
+  saldoPendiente: number;
+}): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+
+  const res = await fetch('/api/socios/membresia', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = (await res.json()) as { error?: string };
+  if (!res.ok) throw new Error(data.error ?? 'No se pudo actualizar la membresía');
+}
+
 /** Vende o renueva una membresía. Pagos parciales o mixtos; [] = todo a deuda. */
 export async function registrarMembresia(
   socioId: string,

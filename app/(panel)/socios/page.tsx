@@ -23,6 +23,7 @@ import {
 import { useAuth } from '@/components/AuthProvider';
 import { SearchBar } from '@/components/SearchBar';
 import { MemberFormModal } from '@/components/MemberFormModal';
+import { EditMembershipModal } from '@/components/EditMembershipModal';
 import { QuickPaymentModal, type ModoCobro } from '@/components/QuickPaymentModal';
 import { WeeklyAttendanceCalendar } from '@/components/WeeklyAttendanceCalendar';
 import { ToastBanner } from '@/components/ToastBanner';
@@ -90,6 +91,7 @@ export default function SociosPage() {
   // Modales
   const [modalSocio, setModalSocio] = useState<'nuevo' | 'editar' | null>(null);
   const [modoCobro, setModoCobro] = useState<ModoCobro | null>(null);
+  const [membresiaEditar, setMembresiaEditar] = useState<MembresiaEstado | null>(null);
   const [modalImportar, setModalImportar] = useState(false);
 
   // Acción sobre una membresía (anular — solo admin)
@@ -985,47 +987,59 @@ export default function SociosPage() {
                             )}
                           </div>
 
-                          {/* Acción de anulación exclusiva para el administrador */}
-                          {!anulada && esAdmin && (
+                          {/* Acciones: editar plan/fechas (todo staff) y anular (solo admin) */}
+                          {!anulada && (
                             <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-line/60 pt-2.5">
-                              {anulandoId === m.membresia_id ? (
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="text"
-                                    placeholder="Motivo (mín. 4 caracteres)"
-                                    value={motivoAnular}
-                                    onChange={(e) => setMotivoAnular(e.target.value)}
-                                    className="field !min-h-8 !w-44 !px-2.5 text-xs"
-                                  />
-                                  <button
-                                    type="button"
-                                    disabled={procesandoAccion || motivoAnular.trim().length < 4}
-                                    onClick={() => handleAnularMembresia(m.membresia_id)}
-                                    className="btn btn-secondary !min-h-8 !px-2.5"
-                                  >
-                                    <Check size={14} strokeWidth={1.5} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setAnulandoId(null)}
-                                    className="btn btn-ghost !min-h-8 !px-2"
-                                  >
-                                    <X size={14} strokeWidth={1.5} />
-                                  </button>
-                                </div>
-                              ) : (
+                              {anulandoId !== m.membresia_id && (
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setAnulandoId(m.membresia_id);
-                                    setMotivoAnular('');
-                                  }}
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-bad"
+                                  onClick={() => setMembresiaEditar(m)}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-brand"
                                 >
-                                  <Ban size={13} strokeWidth={1.5} />
-                                  Anular membresía
+                                  <Edit3 size={13} strokeWidth={1.5} />
+                                  Editar plan / fechas
                                 </button>
                               )}
+
+                              {esAdmin &&
+                                (anulandoId === m.membresia_id ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <input
+                                      type="text"
+                                      placeholder="Motivo (mín. 4 caracteres)"
+                                      value={motivoAnular}
+                                      onChange={(e) => setMotivoAnular(e.target.value)}
+                                      className="field !min-h-8 !w-44 !px-2.5 text-xs"
+                                    />
+                                    <button
+                                      type="button"
+                                      disabled={procesandoAccion || motivoAnular.trim().length < 4}
+                                      onClick={() => handleAnularMembresia(m.membresia_id)}
+                                      className="btn btn-secondary !min-h-8 !px-2.5"
+                                    >
+                                      <Check size={14} strokeWidth={1.5} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setAnulandoId(null)}
+                                      className="btn btn-ghost !min-h-8 !px-2"
+                                    >
+                                      <X size={14} strokeWidth={1.5} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAnulandoId(m.membresia_id);
+                                      setMotivoAnular('');
+                                    }}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-bad"
+                                  >
+                                    <Ban size={13} strokeWidth={1.5} />
+                                    Anular membresía
+                                  </button>
+                                ))}
                             </div>
                           )}
                         </li>
@@ -1087,6 +1101,22 @@ export default function SociosPage() {
           onClose={() => setModoCobro(null)}
           onDone={async (msg) => {
             setModoCobro(null);
+            setAviso({ tipo: 'ok', texto: msg });
+            await refrescarSeleccionado(seleccionado.dni);
+          }}
+        />
+      )}
+
+      {/* Modal Editar Membresía */}
+      {membresiaEditar && seleccionado && gymId && (
+        <EditMembershipModal
+          gymId={gymId}
+          socioNombre={formatearNombreSocio(seleccionado)}
+          membresiaId={membresiaEditar.membresia_id}
+          membresiaInicial={membresiaEditar}
+          onClose={() => setMembresiaEditar(null)}
+          onSaved={async (msg) => {
+            setMembresiaEditar(null);
             setAviso({ tipo: 'ok', texto: msg });
             await refrescarSeleccionado(seleccionado.dni);
           }}
