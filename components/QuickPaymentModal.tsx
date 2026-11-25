@@ -55,7 +55,6 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Regla de negocio: Pagos a cuenta permitidos para antiguos miembros, no para nuevos (salvo migración histórica)
   const esSocioNuevo = !socio.membresia_id;
 
   useEffect(() => {
@@ -97,9 +96,6 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
     }
 
     if (pagado > total) return 'El pago supera el total';
-    if (modo === 'renovar' && esSocioNuevo && pendiente > 0) {
-      return 'Socio nuevo: la primera inscripción debe cancelarse completa (si ya pagó antes de usar este sistema, marca la casilla de Migración)';
-    }
     if (modo === 'abonar' && pagado <= 0) return 'Ingresa el monto a abonar';
     if (pagado > 0 && !hayTurno) return 'Abre un turno de caja para cobrar';
     return null;
@@ -393,13 +389,27 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
                     );
                   })}
                 </div>
+                {modo === 'renovar' && (
+                  <button
+                    type="button"
+                    disabled={total <= 0}
+                    onClick={() =>
+                      setLineas([{ metodo: lineas[0]?.metodo ?? 'Efectivo', monto: '0' }])
+                    }
+                    className={`btn btn-secondary mt-2 w-full !min-h-9 text-xs ${
+                      total > 0 && pagado === 0
+                        ? '!border-warn !bg-warn/15 !text-warn'
+                        : 'text-muted hover:text-bone'
+                    }`}
+                  >
+                    Dejar todo a cuenta (S/ 0 hoy)
+                  </button>
+                )}
               </fieldset>
 
               <fieldset className="space-y-2">
                 <legend className="label">
-                  {esSocioNuevo
-                    ? 'Detalle del cobro (pago completo en efectivo, digital o combinado)'
-                    : 'Detalle del cobro (puedes dividir el pago o dejar saldo pendiente)'}
+                  Detalle del cobro (pago completo, adelanto con saldo pendiente o pago dividido)
                 </legend>
                 {lineas.map((l, i) => (
                   <div key={i} className="flex gap-2">
@@ -477,7 +487,7 @@ export function QuickPaymentModal({ modo, socio, gymId, hayTurno, onClose, onDon
             (motivoBloqueo &&
               (esMigracion
                 ? Boolean(plan)
-                : (pagado > 0 && !hayTurno) || (esSocioNuevo && plan && pendiente > 0)))) && (
+                : (pagado > 0 && !hayTurno) || pagado > total))) && (
             <p
               role="alert"
               className="rounded-md border-l-2 border-bad bg-bad/10 px-3 py-2 text-xs text-bad"

@@ -265,8 +265,21 @@ export function MemberStatusCard({
             }`}
           >
             <RefreshCw size={15} strokeWidth={1.75} />
-            Renovar membresía
+            {socio.membresia_id ? 'Renovar membresía' : 'Asignar membresía'}
           </button>
+
+          {!puedeEntrar && (
+            <button
+              type="button"
+              onClick={onCheckIn}
+              disabled={registrando || yaAsistioHoy}
+              title="Permitir ingreso excepcional aunque la membresía esté vencida o sin plan"
+              className="btn btn-secondary flex-1 !min-h-10 !border-warn/40 !text-warn hover:!bg-warn/10 text-xs sm:flex-initial"
+            >
+              <LogIn size={15} strokeWidth={1.75} />
+              {yaAsistioHoy ? 'Ingreso ya registrado' : 'Ingreso con tolerancia'}
+            </button>
+          )}
 
           {socio.saldo_pendiente > 0 && (
             <button
@@ -317,7 +330,7 @@ export function MemberStatusCard({
       {(datosPendientes.incompleto ||
         socio.saldo_pendiente > 0 ||
         estaInactivo ||
-        (puedeEntrar && ingresoPrevioHoy)) && (
+        Boolean(ingresoPrevioHoy)) && (
         <div className="space-y-2.5">
           {onEditarDatos && datosPendientes.incompleto && (
             <div className="flex flex-col items-start justify-between gap-2.5 rounded-md border-l-4 border-warn bg-warn/10 px-4 py-3 sm:flex-row sm:items-center">
@@ -426,7 +439,7 @@ export function MemberStatusCard({
             </div>
           )}
 
-          {puedeEntrar && ingresoPrevioHoy && (
+          {Boolean(ingresoPrevioHoy) && (
             <div className="flex items-start gap-2.5 rounded-md border-l-2 border-warn bg-warn/10 px-4 py-2.5 text-xs text-warn">
               <AlertTriangle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
               <p>

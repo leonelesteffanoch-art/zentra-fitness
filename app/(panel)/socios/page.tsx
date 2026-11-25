@@ -1044,16 +1044,17 @@ export default function SociosPage() {
         <MemberFormModal
           gymId={gymId}
           userId={perfil.id}
+          hayTurno={hayTurno}
           socioEditar={modalSocio === 'editar' ? seleccionado : null}
           onClose={() => setModalSocio(null)}
-          onSaved={async (dniGuardado, esNuevo) => {
+          onSaved={async (dniGuardado, esNuevo, resultado) => {
             const socioEditado = seleccionado;
             setModalSocio(null);
             setAviso({
               tipo: 'ok',
-              texto: esNuevo
-                ? 'Socio registrado. Ahora puedes asignarle su plan.'
-                : 'Datos del socio actualizados.',
+              texto:
+                resultado?.mensaje ??
+                (esNuevo ? 'Socio registrado correctamente.' : 'Datos del socio actualizados.'),
             });
             if (!esNuevo && socioEditado) {
               // Editar datos personales no cambia membresías, pagos ni asistencias:
@@ -1072,7 +1073,6 @@ export default function SociosPage() {
               return;
             }
             await refrescarSeleccionado(dniGuardado);
-            if (esNuevo) setModoCobro('renovar');
           }}
         />
       )}

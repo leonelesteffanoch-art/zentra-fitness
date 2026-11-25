@@ -20,14 +20,13 @@ import {
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { hoyLima } from '@/lib/formato';
-import { buscarSocios, listarPlanes } from '@/services/sociosService';
+import { listarPlanes } from '@/services/sociosService';
 import { turnoAbierto } from '@/services/cajaService';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { Portal } from '@/components/Portal';
-import { QuickPaymentModal } from '@/components/QuickPaymentModal';
 import { ToastBanner } from '@/components/ToastBanner';
 import type { EstadoLead, LeadInteresado } from '@/app/api/leads/route';
-import type { Plan, SocioEstado } from '@/types';
+import type { Plan } from '@/types';
 
 type FiltroProspectos =
   | 'activos'
@@ -152,7 +151,6 @@ export function LeadsPanel({ gymId, userId }: Props) {
 
   // Conversión directa a Socio + Membresía
   const [leadAConvertir, setLeadAConvertir] = useState<LeadInteresado | null>(null);
-  const [socioRecienCreado, setSocioRecienCreado] = useState<SocioEstado | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -960,55 +958,23 @@ export function LeadsPanel({ gymId, userId }: Props) {
         <MemberFormModal
           gymId={gymId}
           userId={userId}
+          hayTurno={hayTurno}
           valoresIniciales={{
             ...separarNombre(leadAConvertir.nombre),
             telefono: leadAConvertir.telefono,
           }}
           onClose={() => setLeadAConvertir(null)}
-          onSaved={async (dniCreado) => {
+          onSaved={async (_dniCreado, _esNuevo, resultado) => {
             const leadId = leadAConvertir.id;
             const nombreLead = leadAConvertir.nombre;
             setLeadAConvertir(null);
             await actualizarLead(leadId, { estado: 'INSCRITO' });
-            try {
-              const encontrados = await buscarSocios(gymId, dniCreado);
-              if (encontrados[0]) {
-                setSocioRecienCreado(encontrados[0]);
-              } else {
-                setAviso({
-                  tipo: 'ok',
-                  texto: `¡${nombreLead} inscrito como socio (DNI ${dniCreado})!`,
-                });
-              }
-            } catch {
-              setAviso({
-                tipo: 'ok',
-                texto: `¡${nombreLead} inscrito como socio (DNI ${dniCreado})!`,
-              });
-            }
-          }}
-        />
-      )}
-
-      {/* Modal: Asignar y cobrar su primer plan tras inscribirlo */}
-      {socioRecienCreado && gymId && (
-        <QuickPaymentModal
-          modo="renovar"
-          socio={socioRecienCreado}
-          gymId={gymId}
-          hayTurno={hayTurno}
-          onClose={() => {
-            const nom = socioRecienCreado.nombres;
-            setSocioRecienCreado(null);
             setAviso({
               tipo: 'ok',
-              texto: `${nom} quedó registrado como socio. Puedes asignarle su plan luego desde Recepción o Socios.`,
+              texto: resultado?.conMembresia
+                ? `¡${nombreLead} convertido a socio! ${resultado.mensaje ?? ''}`.trim()
+                : `${nombreLead} quedó registrado como socio (sin plan asignado aún).`,
             });
-          }}
-          onDone={(msg) => {
-            const nom = socioRecienCreado.nombres;
-            setSocioRecienCreado(null);
-            setAviso({ tipo: 'ok', texto: `¡${nom} convertido a socio! ${msg}` });
           }}
         />
       )}

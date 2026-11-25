@@ -186,7 +186,13 @@ export default function RecepcionPage() {
       ]);
       setAsistenciasSocio(listaActualizada);
       setYaIngreso(true);
-      setAviso({ tipo: 'ok', texto: `Ingreso registrado: ${formatearNombreSocio(seleccionado)}` });
+      setAviso({
+        tipo: 'ok',
+        texto:
+          seleccionado.semaforo === 'ROJO'
+            ? `Ingreso con tolerancia registrado: ${formatearNombreSocio(seleccionado)}`
+            : `Ingreso registrado: ${formatearNombreSocio(seleccionado)}`,
+      });
     } catch (e) {
       setAviso({ tipo: 'error', texto: e instanceof Error ? e.message : 'No se pudo registrar' });
     } finally {
@@ -243,7 +249,10 @@ export default function RecepcionPage() {
     const total = ingresosHoy.length;
     const verdes = ingresosHoy.filter((i) => i.semaforo === 'VERDE').length;
     const ambar = ingresosHoy.filter((i) => i.semaforo === 'AMBAR').length;
+    const rojos = ingresosHoy.filter((i) => i.semaforo === 'ROJO').length;
     const pctVerde = total > 0 ? Math.round((verdes / total) * 100) : 100;
+    const pctAmbar = total > 0 ? Math.round((ambar / total) * 100) : 0;
+    const pctRojo = total > 0 ? Math.max(0, 100 - pctVerde - pctAmbar) : 0;
 
     const conteoPorFranja = FRANJAS_HORARIAS.map((f) => {
       const cant = ingresosHoy.filter((i) => {
@@ -255,7 +264,17 @@ export default function RecepcionPage() {
     const maxReal = Math.max(0, ...conteoPorFranja.map((c) => c.cant));
     const escalaMax = maxReal <= 4 ? 4 : Math.ceil(maxReal / 4) * 4;
 
-    return { total, verdes, ambar, pctVerde, conteoPorFranja, escalaMax };
+    return {
+      total,
+      verdes,
+      ambar,
+      rojos,
+      pctVerde,
+      pctAmbar,
+      pctRojo,
+      conteoPorFranja,
+      escalaMax,
+    };
   }, [ingresosHoy]);
 
   const hayTurno = turnoActual !== null && turnoActual !== undefined;
@@ -458,12 +477,13 @@ export default function RecepcionPage() {
         </div>
 
         <div className="panel-card flex flex-col justify-between p-5">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between gap-2 text-xs">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
               Estado de asistencias
             </span>
             <span className="font-mono text-xs font-semibold text-bone tabular-nums">
               {metricasHoy.verdes} al día · {metricasHoy.ambar} con aviso
+              {metricasHoy.rojos > 0 ? ` · ${metricasHoy.rojos} tolerancia` : ''}
             </span>
           </div>
           <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
@@ -473,16 +493,27 @@ export default function RecepcionPage() {
             />
             <div
               className="bar-fill h-full bg-warn"
-              style={{ width: `${100 - metricasHoy.pctVerde}%` }}
+              style={{ width: `${metricasHoy.pctAmbar}%` }}
             />
+            {metricasHoy.rojos > 0 && (
+              <div
+                className="bar-fill h-full bg-bad"
+                style={{ width: `${metricasHoy.pctRojo}%` }}
+              />
+            )}
           </div>
-          <div className="mt-2 flex justify-between text-[11px] text-muted">
+          <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-muted">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-ok" /> Al día ({metricasHoy.pctVerde}%)
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-warn" /> Por vencer o con saldo
             </span>
+            {metricasHoy.rojos > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-bad" /> Tolerancia
+              </span>
+            )}
           </div>
         </div>
 
@@ -691,9 +722,11 @@ export default function RecepcionPage() {
         <MemberFormModal
           gymId={gymId}
           userId={perfil.id}
+          hayTurno={hayTurno}
+          permitirIngresoHoy
           socioEditar={modalSocio === 'editar' ? seleccionado : null}
           onClose={() => setModalSocio(null)}
-          onSaved={async (dniGuardado, esNuevo) => {
+          onSaved={async (dniGuardado, esNuevo, resultado) => {
             const editado = seleccionado;
             setModalSocio(null);
             if (!esNuevo && editado) {
@@ -730,8 +763,15 @@ export default function RecepcionPage() {
             setResultados(r);
             if (r[0]) {
               await seleccionarSocioConAsistencias(r[0]);
-              setCobro('renovar');
             }
+            if (resultado?.ingresoRegistrado) {
+              await cargarIngresosHoy();
+              setYaIngreso(true);
+            }
+            setAviso({
+              tipo: 'ok',
+              texto: resultado?.mensaje ?? 'Socio registrado correctamente.',
+            });
           }}
         />
       )}
