@@ -283,6 +283,20 @@ export interface DesgloseProducto {
   unidades: number;
 }
 
+export interface DesgloseCategoria {
+  categoria: 'MEMBRESIA' | 'VENTA_PRODUCTO' | 'OTRO';
+  etiqueta: string;
+  total: number;
+  cantidad: number;
+}
+
+export interface IngresoDiaSemana {
+  diaIndex: number; // 0=Lun .. 6=Dom
+  etiqueta: string;
+  total: number;
+  operaciones: number;
+}
+
 export interface ComparativaMeses {
   mesActualTotal: number;
   mesAnteriorTotal: number;
@@ -315,6 +329,18 @@ export interface DetalleDiaAdmin {
   movimientos: MovimientoExport[];
 }
 
+const DIAS_SEMANA_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
+
+function diaSemanaLima(isoFechaHora: string): number {
+  const fechaLima = new Date(isoFechaHora).toLocaleDateString('en-CA', {
+    timeZone: 'America/Lima',
+  });
+  const [y, m, d] = fechaLima.split('-').map(Number);
+  if (!y || !m || !d) return 0;
+  const utcDay = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return utcDay === 0 ? 6 : utcDay - 1;
+}
+
 /** Obtiene métricas gerenciales para el dashboard de administración. */
 export async function obtenerEstadisticasAdmin(
   gymId: string,
@@ -324,6 +350,8 @@ export async function obtenerEstadisticasAdmin(
   comparativa: ComparativaMeses;
   planes: DesglosePlan[];
   productos: DesgloseProducto[];
+  categorias: DesgloseCategoria[];
+  porDiaSemana: IngresoDiaSemana[];
 }> {
   const [anioStr, mesStr, diaStr] = hoyLima().split('-');
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -340,18 +368,18 @@ export async function obtenerEstadisticasAdmin(
   const ultimoDiaAnt = new Date(Date.UTC(yAnt, mAnt + 1, 0)).getUTCDate();
   const finMesAnt = `${yAnt}-${pad(mAnt + 1)}-${pad(ultimoDiaAnt)}`;
 
-  const [resAct, resAnt, { data: movsPlanes }, { data: ventasProd }] = await Promise.all([
+  const [resAct, resAnt, { data: movsIngresos }, { data: ventasProd }] = await Promise.all([
     resumenPeriodo(inicioMesAct, finMesAct).catch(() => []),
     resumenPeriodo(inicioMesAnt, finMesAnt).catch(() => []),
     supabase
       .from('movimientos_caja')
-      .select('concepto, monto')
+      .select('categoria, concepto, monto, fecha_hora')
       .eq('gym_id', gymId)
       .eq('tipo', 'INGRESO')
-      .eq('categoria', 'MEMBRESIA')
       .eq('estado', 'ACTIVO')
       .gte('fecha_hora', `${desde}T00:00:00-05:00`)
-      .lte('fecha_hora', `${hasta}T23:59:59.999-05:00`),
+      .lte('fecha_hora', `${hasta}T23:59:59.999-05:00`)
+      .limit(5000),
     supabase
       .from('ventas_productos')
       .select('descripcion, cantidad, total')
@@ -397,17 +425,54 @@ export async function obtenerEstadisticasAdmin(
   };
 
   const mapaPlanes = new Map<string, { total: number; cantidad: number }>();
-  for (const item of movsPlanes ?? []) {
-    const nombreLimpio = item.concepto.replace(/^Membresía\s+/i, '').trim();
-    const actual = mapaPlanes.get(nombreLimpio) ?? { total: 0, cantidad: 0 };
-    mapaPlanes.set(nombreLimpio, {
-      total: actual.total + (Number(item.monto) || 0),
-      cantidad: actual.cantidad + 1,
-    });
+  const categoriasMap: Record<'MEMBRESIA' | 'VENTA_PRODUCTO' | 'OTRO', { total: number; cantidad: number }> = {
+    MEMBRESIA: { total: 0, cantidad: 0 },
+    VENTA_PRODUCTO: { total: 0, cantidad: 0 },
+    OTRO: { total: 0, cantidad: 0 },
+  };
+  const semanaMap: IngresoDiaSemana[] = DIAS_SEMANA_CORTOS.map((etiqueta, diaIndex) => ({
+    diaIndex,
+    etiqueta,
+    total: 0,
+    operaciones: 0,
+  }));
+
+  for (const item of movsIngresos ?? []) {
+    const monto = Number(item.monto) || 0;
+    const cat: 'MEMBRESIA' | 'VENTA_PRODUCTO' | 'OTRO' =
+      item.categoria === 'MEMBRESIA'
+        ? 'MEMBRESIA'
+        : item.categoria === 'VENTA_PRODUCTO'
+        ? 'VENTA_PRODUCTO'
+        : 'OTRO';
+    categoriasMap[cat].total += monto;
+    categoriasMap[cat].cantidad += 1;
+
+    if (cat === 'MEMBRESIA') {
+      const nombreLimpio = String(item.concepto ?? '').replace(/^Membresía\s+/i, '').trim() || 'Membresía';
+      const actual = mapaPlanes.get(nombreLimpio) ?? { total: 0, cantidad: 0 };
+      mapaPlanes.set(nombreLimpio, {
+        total: actual.total + monto,
+        cantidad: actual.cantidad + 1,
+      });
+    }
+
+    if (item.fecha_hora) {
+      const idxDia = diaSemanaLima(String(item.fecha_hora));
+      semanaMap[idxDia].total += monto;
+      semanaMap[idxDia].operaciones += 1;
+    }
   }
+
   const planesDesglose: DesglosePlan[] = Array.from(mapaPlanes.entries())
     .map(([nombre, d]) => ({ nombre, total: d.total, cantidad: d.cantidad }))
     .sort((a, b) => b.total - a.total);
+
+  const categoriasDesglose: DesgloseCategoria[] = [
+    { categoria: 'MEMBRESIA', etiqueta: 'Membresías', ...categoriasMap.MEMBRESIA },
+    { categoria: 'VENTA_PRODUCTO', etiqueta: 'Tienda / Mostrador', ...categoriasMap.VENTA_PRODUCTO },
+    { categoria: 'OTRO', etiqueta: 'Otros ingresos', ...categoriasMap.OTRO },
+  ];
 
   const mapaProds = new Map<string, { total: number; unidades: number }>();
   for (const v of ventasProd ?? []) {
@@ -425,6 +490,8 @@ export async function obtenerEstadisticasAdmin(
     comparativa,
     planes: planesDesglose,
     productos: prodsDesglose,
+    categorias: categoriasDesglose,
+    porDiaSemana: semanaMap,
   };
 }
 export async function resumenPeriodo(desde: string, hasta: string): Promise<ResumenPeriodoFila[]> {

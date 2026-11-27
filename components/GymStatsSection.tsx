@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Clock, Package, Users } from 'lucide-react';
+import { CalendarDays, Clock, Dumbbell, Package, Users } from 'lucide-react';
+import { DonutChart, PALETA_GRAFICOS, VerticalBarChart } from '@/components/AdminCharts';
 import { supabase } from '@/lib/supabase';
 import { hoyLima, soles, sumarDias } from '@/lib/formato';
 
@@ -17,13 +18,37 @@ interface FranjaPico {
   cantidad: number;
 }
 
+interface PlanDistribucion {
+  nombre: string;
+  cantidad: number;
+}
+
+interface AsistenciaDia {
+  dia: string;
+  cantidad: number;
+}
+
 interface StatsData {
   totalSocios: number;
-  sociosActivos: number;
-  sociosVencidos: number;
+  verdes: number;
+  ambar: number;
+  rojos: number;
   nuevosMes: number;
+  conDeuda: number;
+  deudaTotal: number;
+  distribucionPlanes: PlanDistribucion[];
+  asistenciasSemana: AsistenciaDia[];
   topProductos: ProductoRanking[];
   franjasPico: FranjaPico[];
+}
+
+const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
+
+function diaSemanaFecha(fechaISO: string): number {
+  const [y, m, d] = fechaISO.split('-').map(Number);
+  if (!y || !m || !d) return 0;
+  const utcDay = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return utcDay === 0 ? 6 : utcDay - 1;
 }
 
 export function GymStatsSection({ gymId }: { gymId: string }) {
@@ -38,7 +63,7 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
     Promise.all([
       supabase
         .from('v_socio_estado')
-        .select('semaforo')
+        .select('semaforo, plan, saldo_pendiente')
         .eq('gym_id', gymId),
       supabase
         .from('socios')
@@ -55,23 +80,44 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
         .limit(500),
       supabase
         .from('asistencias')
-        .select('hora')
+        .select('fecha, hora')
         .eq('gym_id', gymId)
         .gte('fecha', hace30)
-        .limit(1000),
+        .limit(1500),
     ])
       .then(([estRes, nuevosRes, ventasRes, asisRes]) => {
         if (cancelado) return;
 
-        const estados = estRes.data ?? [];
+        const estados = (estRes.data ?? []) as Array<{
+          semaforo: 'VERDE' | 'AMBAR' | 'ROJO';
+          plan: string | null;
+          saldo_pendiente: number;
+        }>;
         const totalSocios = estados.length;
-        const sociosActivos = estados.filter(
-          (e) => e.semaforo === 'VERDE' || e.semaforo === 'AMBAR'
-        ).length;
-        const sociosVencidos = estados.filter((e) => e.semaforo === 'ROJO').length;
+        const verdes = estados.filter((e) => e.semaforo === 'VERDE').length;
+        const ambar = estados.filter((e) => e.semaforo === 'AMBAR').length;
+        const rojos = estados.filter((e) => e.semaforo === 'ROJO').length;
         const nuevosMes = nuevosRes.count ?? 0;
 
-        // Agregar productos más vendidos
+        let conDeuda = 0;
+        let deudaTotal = 0;
+        const mapaPlanes = new Map<string, number>();
+
+        for (const e of estados) {
+          const saldo = Number(e.saldo_pendiente ?? 0);
+          if (saldo > 0) {
+            conDeuda += 1;
+            deudaTotal += saldo;
+          }
+          if (e.semaforo !== 'ROJO' && e.plan) {
+            mapaPlanes.set(e.plan, (mapaPlanes.get(e.plan) ?? 0) + 1);
+          }
+        }
+
+        const distribucionPlanes: PlanDistribucion[] = Array.from(mapaPlanes.entries())
+          .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+          .sort((a, b) => b.cantidad - a.cantidad);
+
         const mapaProd = new Map<string, { unidades: number; ingresos: number }>();
         for (const v of ventasRes.data ?? []) {
           const nombre = String(v.descripcion);
@@ -85,9 +131,13 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
           .sort((a, b) => b.unidades - a.unidades)
           .slice(0, 5);
 
-        // Agrupar asistencias por bloque horario en hora Lima
         const conteoFranjas = [0, 0, 0, 0];
+        const conteoDias = [0, 0, 0, 0, 0, 0, 0];
         for (const a of asisRes.data ?? []) {
+          if (a.fecha) {
+            const idx = diaSemanaFecha(String(a.fecha));
+            conteoDias[idx] += 1;
+          }
           try {
             const hStr = new Date(String(a.hora)).toLocaleTimeString('es-PE', {
               timeZone: 'America/Lima',
@@ -111,11 +161,21 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
           { etiqueta: 'Noche (entrenador)', rango: '19:00 – 22:30', cantidad: conteoFranjas[3] },
         ];
 
+        const asistenciasSemana: AsistenciaDia[] = DIAS_SEMANA.map((dia, i) => ({
+          dia,
+          cantidad: conteoDias[i],
+        }));
+
         setStats({
           totalSocios,
-          sociosActivos,
-          sociosVencidos,
+          verdes,
+          ambar,
+          rojos,
           nuevosMes,
+          conDeuda,
+          deudaTotal: Math.round(deudaTotal * 100) / 100,
+          distribucionPlanes,
+          asistenciasSemana,
           topProductos,
           franjasPico,
         });
@@ -129,73 +189,128 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
 
   if (!stats) return null;
 
-  const maxAsistenciasFranja = Math.max(
-    1,
-    ...stats.franjasPico.map((f) => f.cantidad)
-  );
-  const pctRetencion =
-    stats.totalSocios > 0 ? Math.round((stats.sociosActivos / stats.totalSocios) * 100) : 0;
+  const maxAsistenciasFranja = Math.max(1, ...stats.franjasPico.map((f) => f.cantidad));
+  const maxDiaAsis = Math.max(0, ...stats.asistenciasSemana.map((d) => d.cantidad));
+  const totalAsistencias30 = stats.asistenciasSemana.reduce((s, d) => s + d.cantidad, 0);
+
+  const saludDonut = [
+    { label: 'Al día (Verde)', value: stats.verdes, color: '#22c55e' },
+    { label: 'Atención / Saldo (Ámbar)', value: stats.ambar, color: '#ff8a1f' },
+    { label: 'Vencidos / Sin plan (Rojo)', value: stats.rojos, color: '#ef4444' },
+  ];
+
+  const planesVigentesDonut = stats.distribucionPlanes.slice(0, 6).map((p, idx) => ({
+    label: p.nombre,
+    value: p.cantidad,
+    color: PALETA_GRAFICOS[idx % PALETA_GRAFICOS.length],
+  }));
+  if (stats.distribucionPlanes.length > 6) {
+    const otros = stats.distribucionPlanes.slice(6).reduce((s, p) => s + p.cantidad, 0);
+    planesVigentesDonut.push({ label: 'Otros planes', value: otros, color: '#71717a' });
+  }
 
   return (
-    <section aria-label="Estadísticas operativas" className="space-y-3">
-      <h2 className="section-title text-lg">
-        Actividad y retención
-      </h2>
+    <section aria-label="Estadísticas operativas" className="space-y-4">
+      <h2 className="section-title text-lg">Actividad, socios y retención</h2>
 
+      {/* Fila 1: 2 gráficos de pastel del padrón */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* 1. Salud del padrón en dona + mini KPIs */}
+        <article className="panel-card flex flex-col justify-between space-y-4 p-5">
+          <div className="flex items-center justify-between border-b border-line/70 pb-3">
+            <h3 className="section-title flex items-center gap-2 text-base">
+              <Users size={16} strokeWidth={1.75} className="text-brand" />
+              Salud del padrón de socios
+            </h3>
+            <span className="font-mono text-xs font-semibold text-ok">
+              {stats.totalSocios > 0
+                ? `${Math.round(((stats.verdes + stats.ambar) / stats.totalSocios) * 100)}% vigentes`
+                : '0%'}
+            </span>
+          </div>
+
+          <DonutChart
+            items={saludDonut}
+            centerLabel="Total socios"
+            centerValue={String(stats.totalSocios)}
+            formatValue={(v) => `${v} socios`}
+            emptyText="Aún no hay socios registrados."
+          />
+
+          <dl className="grid grid-cols-3 gap-2.5 border-t border-line/70 pt-3 text-center tabular-nums">
+            <div className="rounded-md border border-line/60 bg-ink/50 px-2.5 py-2">
+              <dt className="text-[10px] uppercase tracking-wider text-muted">Nuevos (mes)</dt>
+              <dd className="mt-0.5 font-mono text-base font-bold text-brand">
+                +{stats.nuevosMes}
+              </dd>
+            </div>
+            <div className="rounded-md border border-line/60 bg-ink/50 px-2.5 py-2">
+              <dt className="text-[10px] uppercase tracking-wider text-muted">Con saldo</dt>
+              <dd className="mt-0.5 font-mono text-base font-bold text-warn">{stats.conDeuda}</dd>
+            </div>
+            <div className="rounded-md border border-line/60 bg-ink/50 px-2.5 py-2">
+              <dt className="text-[10px] uppercase tracking-wider text-muted">Por cobrar</dt>
+              <dd className="mt-0.5 font-mono text-sm font-bold text-bone sm:text-base">
+                {soles(stats.deudaTotal)}
+              </dd>
+            </div>
+          </dl>
+        </article>
+
+        {/* 2. Distribución de socios vigentes por plan */}
+        <article className="panel-card space-y-4 p-5">
+          <div className="flex items-center justify-between border-b border-line/70 pb-3">
+            <h3 className="section-title flex items-center gap-2 text-base">
+              <Dumbbell size={16} strokeWidth={1.75} className="text-brand" />
+              Socios vigentes por plan
+            </h3>
+            <span className="text-xs text-muted">Al día y con aviso</span>
+          </div>
+
+          <DonutChart
+            items={planesVigentesDonut}
+            centerLabel="Vigentes"
+            centerValue={String(stats.verdes + stats.ambar)}
+            formatValue={(v) => `${v} socios`}
+            emptyText="No hay socios vigentes con plan asignado."
+          />
+        </article>
+      </div>
+
+      {/* Fila 2: Asistencias por día, horas pico y productos */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* 1. Socios nuevos, activos y bajas */}
-        <article className="panel-card flex flex-col justify-between p-5">
-          <div>
-            <div className="flex items-center justify-between text-xs font-medium text-muted">
-              <span className="flex items-center gap-2">
-                <Users size={15} strokeWidth={1.75} className="text-brand" />
-                Padrón de socios y retención
-              </span>
-              <span className="font-mono font-bold text-ok">{pctRetencion}% activos</span>
-            </div>
+        {/* 1. Asistencias por día de la semana */}
+        <article className="panel-card p-5">
+          <div className="flex items-center justify-between border-b border-line/70 pb-3">
+            <span className="flex items-center gap-2 text-xs font-semibold text-bone">
+              <CalendarDays size={15} strokeWidth={1.75} className="text-brand" />
+              Asistencias por día (30d)
+            </span>
+            <span className="font-mono text-xs text-muted">{totalAsistencias30} ing.</span>
+          </div>
 
-            <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
-              <div className="bar-fill h-full bg-ok" style={{ width: `${pctRetencion}%` }} />
-              <div
-                className="bar-fill h-full bg-bad"
-                style={{ width: `${Math.max(0, 100 - pctRetencion)}%` }}
-              />
-            </div>
-
-            <dl className="mt-4 grid grid-cols-2 gap-3 tabular-nums">
-              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
-                <dt className="text-[11px] text-muted">Socios activos</dt>
-                <dd className="mt-0.5 font-mono text-2xl font-bold text-ok">
-                  {stats.sociosActivos}
-                </dd>
-              </div>
-              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
-                <dt className="text-[11px] text-muted">Vencidos</dt>
-                <dd className="mt-0.5 font-mono text-2xl font-bold text-bad">
-                  {stats.sociosVencidos}
-                </dd>
-              </div>
-              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
-                <dt className="text-[11px] text-muted">Nuevos este mes</dt>
-                <dd className="mt-0.5 font-mono text-2xl font-bold text-brand">
-                  +{stats.nuevosMes}
-                </dd>
-              </div>
-              <div className="rounded-md border border-line/60 bg-ink/50 p-3">
-                <dt className="text-[11px] text-muted">Total inscritos</dt>
-                <dd className="mt-0.5 font-mono text-2xl font-bold text-bone">
-                  {stats.totalSocios}
-                </dd>
-              </div>
-            </dl>
+          <div className="mt-3">
+            <VerticalBarChart
+              items={stats.asistenciasSemana.map((d) => ({
+                key: d.dia,
+                label: d.dia,
+                value: d.cantidad,
+                highlight: d.cantidad > 0 && d.cantidad === maxDiaAsis,
+                tooltip: `${d.dia}: ${d.cantidad} asistencias`,
+              }))}
+              primaryColorClass="bg-gradient-to-t from-sky-500/60 to-sky-400"
+              heightClass="h-28"
+            />
           </div>
         </article>
 
         {/* 2. Horas pico de asistencia */}
         <article className="panel-card p-5">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted">
-            <Clock size={15} strokeWidth={1.75} className="text-brand" />
-            <span>Horas pico (últimos 30 días)</span>
+          <div className="flex items-center justify-between border-b border-line/70 pb-3">
+            <span className="flex items-center gap-2 text-xs font-semibold text-bone">
+              <Clock size={15} strokeWidth={1.75} className="text-brand" />
+              Horas pico (30d)
+            </span>
           </div>
 
           <div className="mt-4 space-y-3.5">
@@ -209,7 +324,7 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
                       <span className="font-mono text-[11px] text-muted">({f.rango})</span>
                     </span>
                     <span className="font-mono font-bold text-bone tabular-nums">
-                      {f.cantidad} asist.
+                      {f.cantidad}
                     </span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
@@ -226,9 +341,11 @@ export function GymStatsSection({ gymId }: { gymId: string }) {
 
         {/* 3. Productos más vendidos */}
         <article className="panel-card p-5">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted">
-            <Package size={15} strokeWidth={1.75} className="text-brand" />
-            <span>Productos más vendidos (30 días)</span>
+          <div className="flex items-center justify-between border-b border-line/70 pb-3">
+            <span className="flex items-center gap-2 text-xs font-semibold text-bone">
+              <Package size={15} strokeWidth={1.75} className="text-brand" />
+              Top productos (30d)
+            </span>
           </div>
 
           {stats.topProductos.length === 0 ? (

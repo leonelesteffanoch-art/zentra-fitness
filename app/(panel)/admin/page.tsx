@@ -6,11 +6,13 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
+  CalendarDays,
   Download,
   Dumbbell,
   Layers,
   Loader2,
   Package,
+  PieChart,
   Shield,
   ShoppingBag,
   TrendingUp,
@@ -18,6 +20,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/components/AuthProvider';
+import { DonutChart, PALETA_GRAFICOS, VerticalBarChart } from '@/components/AdminCharts';
 import { AdminDailyCalendar } from '@/components/AdminDailyCalendar';
 import { CatalogManager } from '@/components/CatalogManager';
 import { GymStatsSection } from '@/components/GymStatsSection';
@@ -29,8 +32,10 @@ import {
   obtenerEstadisticasAdmin,
   resumenPeriodo,
   type ComparativaMeses,
+  type DesgloseCategoria,
   type DesglosePlan,
   type DesgloseProducto,
+  type IngresoDiaSemana,
 } from '@/services/cajaService';
 import { listarPlanes } from '@/services/sociosService';
 import { formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
@@ -58,6 +63,8 @@ export default function AdminPage() {
   const [comparativa, setComparativa] = useState<ComparativaMeses | null>(null);
   const [desglosePlanes, setDesglosePlanes] = useState<DesglosePlan[]>([]);
   const [desgloseProds, setDesgloseProds] = useState<DesgloseProducto[]>([]);
+  const [desgloseCategorias, setDesgloseCategorias] = useState<DesgloseCategoria[]>([]);
+  const [ingresosSemana, setIngresosSemana] = useState<IngresoDiaSemana[]>([]);
   const [pestana, setPestana] = useState<'todo' | 'finanzas' | 'catalogo' | 'personal'>('todo');
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
   const [recargaCalendario, setRecargaCalendario] = useState(0);
@@ -92,6 +99,8 @@ export default function AdminPage() {
         setComparativa(stats.comparativa);
         setDesglosePlanes(stats.planes);
         setDesgloseProds(stats.productos);
+        setDesgloseCategorias(stats.categorias);
+        setIngresosSemana(stats.porDiaSemana);
       } catch (e) {
         setAviso({
           tipo: 'error',
@@ -121,6 +130,8 @@ export default function AdminPage() {
         setComparativa(stats.comparativa);
         setDesglosePlanes(stats.planes);
         setDesgloseProds(stats.productos);
+        setDesgloseCategorias(stats.categorias);
+        setIngresosSemana(stats.porDiaSemana);
       })
       .catch((e: unknown) => {
         if (!cancelado) {
@@ -256,12 +267,46 @@ export default function AdminPage() {
 
   if (perfil && perfil.rol !== 'admin') return null;
 
-  const totalIng = Math.max(1, kpis.ingresos);
-  const pctEfec = kpis.ingresos > 0 ? Math.round((kpis.porMetodo.Efectivo / totalIng) * 100) : 0;
-  const pctYape = kpis.ingresos > 0 ? Math.round((kpis.porMetodo.Yape / totalIng) * 100) : 0;
-  const pctPlin = kpis.ingresos > 0 ? Math.round((kpis.porMetodo.Plin / totalIng) * 100) : 0;
-  const pctTarj =
-    kpis.ingresos > 0 ? Math.max(0, 100 - pctEfec - pctYape - pctPlin) : 0;
+  const metodosDonut = [
+    { label: 'Efectivo', value: kpis.porMetodo.Efectivo, color: '#22c55e' },
+    { label: 'Yape', value: kpis.porMetodo.Yape, color: '#a855f7' },
+    { label: 'Plin', value: kpis.porMetodo.Plin, color: '#38bdf8' },
+    { label: 'Tarjeta', value: kpis.porMetodo.Tarjeta, color: '#ffc21a' },
+  ];
+
+  const coloresCategoria: Record<string, string> = {
+    MEMBRESIA: '#ffc21a',
+    VENTA_PRODUCTO: '#22c55e',
+    OTRO: '#38bdf8',
+  };
+  const categoriasDonut = desgloseCategorias.map((c) => ({
+    label: c.etiqueta,
+    value: c.total,
+    color: coloresCategoria[c.categoria] ?? '#a855f7',
+    sublabel: `${c.cantidad} ${c.cantidad === 1 ? 'cobro' : 'cobros'}`,
+  }));
+
+  const planesDonut = desglosePlanes.slice(0, 7).map((p, idx) => ({
+    label: p.nombre,
+    value: p.total,
+    color: PALETA_GRAFICOS[idx % PALETA_GRAFICOS.length],
+    sublabel: `${p.cantidad} ${p.cantidad === 1 ? 'cobro' : 'cobros'}`,
+  }));
+  if (desglosePlanes.length > 7) {
+    const resto = desglosePlanes.slice(7);
+    planesDonut.push({
+      label: 'Otros planes',
+      value: resto.reduce((s, p) => s + p.total, 0),
+      color: '#71717a',
+      sublabel: `${resto.reduce((s, p) => s + p.cantidad, 0)} cobros`,
+    });
+  }
+
+  const maxSemanaTotal = Math.max(0, ...ingresosSemana.map((d) => d.total));
+  const mejorDiaSemana =
+    maxSemanaTotal > 0 ? ingresosSemana.find((d) => d.total === maxSemanaTotal) ?? null : null;
+  const totalMostrador = desgloseProds.reduce((s, p) => s + p.total, 0);
+  const unidadesMostrador = desgloseProds.reduce((s, p) => s + p.unidades, 0);
 
   return (
     <div className="panel-fade-in space-y-6">
@@ -431,67 +476,45 @@ export default function AdminPage() {
                   </p>
                 </div>
               </div>
-
-              {/* Barra apilada de métodos de pago */}
-              <div className="mt-6 space-y-2 border-t border-line/70 pt-4">
-                <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
-                  {kpis.ingresos === 0 ? (
-                    <div className="h-full w-full bg-line/40" />
-                  ) : (
-                    <>
-                      {pctEfec > 0 && (
-                        <div className="bar-fill h-full bg-ok" style={{ width: `${pctEfec}%` }} />
-                      )}
-                      {pctYape > 0 && (
-                        <div className="bar-fill h-full bg-purple-500" style={{ width: `${pctYape}%` }} />
-                      )}
-                      {pctPlin > 0 && (
-                        <div className="bar-fill h-full bg-cyan-400" style={{ width: `${pctPlin}%` }} />
-                      )}
-                      {pctTarj > 0 && (
-                        <div className="bar-fill h-full bg-amber-400" style={{ width: `${pctTarj}%` }} />
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <dl className="grid grid-cols-2 gap-3 pt-1 text-xs tabular-nums sm:grid-cols-4">
-                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
-                    <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-ok" /> Efectivo ({pctEfec}%)
-                    </dt>
-                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
-                      {soles(kpis.porMetodo.Efectivo)}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
-                    <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-purple-500" /> Yape ({pctYape}%)
-                    </dt>
-                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
-                      {soles(kpis.porMetodo.Yape)}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
-                    <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-cyan-400" /> Plin ({pctPlin}%)
-                    </dt>
-                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
-                      {soles(kpis.porMetodo.Plin)}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 rounded bg-surface-2/50 px-3 py-2">
-                    <dt className="flex items-center gap-1.5 text-muted">
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" /> Tarjeta ({pctTarj}%)
-                    </dt>
-                    <dd className="whitespace-nowrap font-mono font-bold text-bone">
-                      {soles(kpis.porMetodo.Tarjeta)}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
             </div>
           </section>
+
+          {/* 1.05 Gráficos de pastel: Métodos de pago + Origen de ingresos */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section aria-label="Métodos de pago" className="panel-card space-y-4 p-5">
+              <div className="flex items-center justify-between border-b border-line/70 pb-3">
+                <h3 className="section-title flex items-center gap-2 text-base">
+                  <PieChart size={16} className="text-brand" />
+                  Distribución por método de pago
+                </h3>
+                <span className="text-xs text-muted">Período</span>
+              </div>
+              <DonutChart
+                items={metodosDonut}
+                centerLabel="Ingresos"
+                centerValue={soles(kpis.ingresos)}
+                formatValue={soles}
+                emptyText="No hay cobros registrados en este rango."
+              />
+            </section>
+
+            <section aria-label="Origen de ingresos" className="panel-card space-y-4 p-5">
+              <div className="flex items-center justify-between border-b border-line/70 pb-3">
+                <h3 className="section-title flex items-center gap-2 text-base">
+                  <Wallet size={16} className="text-brand" />
+                  Origen de ingresos
+                </h3>
+                <span className="text-xs text-muted">Membresías vs Tienda</span>
+              </div>
+              <DonutChart
+                items={categoriasDonut}
+                centerLabel="Total caja"
+                centerValue={soles(desgloseCategorias.reduce((s, c) => s + c.total, 0))}
+                formatValue={soles}
+                emptyText="No hay ingresos clasificados en este rango."
+              />
+            </section>
+          </div>
 
           {/* 1.1 Calendario mensual interactivo con resumen por día */}
           {gymId && (
@@ -510,7 +533,7 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2">
                   <BarChart3 size={16} className="text-brand" strokeWidth={1.75} />
                   <h3 className="section-title text-base">
-                    Evolución diaria
+                    Evolución diaria (últimos 14 días con movimiento)
                   </h3>
                   <span className="hidden text-[11px] text-muted sm:inline">
                     · Presiona una barra para ver el detalle
@@ -526,160 +549,168 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="mt-5 flex h-44 items-end gap-2 overflow-x-auto pb-1 pt-4">
-                {kpis.serieDiaria.map((d) => {
-                  const pctIng =
-                    d.ingresos === 0
-                      ? 4
-                      : Math.max(10, Math.round((d.ingresos / kpis.maxDiario) * 100));
-                  const pctEgr =
-                    d.egresos === 0
-                      ? 0
-                      : Math.max(8, Math.round((d.egresos / kpis.maxDiario) * 100));
-                  const etiquetaDia = `${d.fecha.slice(8, 10)}/${d.fecha.slice(5, 7)}`; // DD/MM
-                  return (
-                    <button
-                      key={d.fecha}
-                      type="button"
-                      onClick={() => setDiaSeleccionado(d.fecha)}
-                      className="group flex min-w-[44px] flex-1 cursor-pointer flex-col items-center gap-1.5 rounded-md p-0.5 transition-colors hover:bg-surface-2/40"
-                      title={`${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)} (Ver detalle)`}
-                    >
-                      <span className="font-mono text-[10px] font-semibold text-bone opacity-85 tabular-nums">
-                        {d.ingresos > 0 ? Math.round(d.ingresos) : ''}
-                      </span>
-                      <div className="flex h-32 w-full items-end justify-center gap-1 rounded-t bg-surface-2/50 px-1 pt-1">
-                        <div
-                          className="w-full rounded-t bg-gradient-to-t from-brand/60 to-brand transition-all duration-500 group-hover:brightness-110"
-                          style={{ height: `${pctIng}%` }}
-                        />
-                        {pctEgr > 0 && (
-                          <div
-                            className="w-2/3 rounded-t bg-bad/80 transition-all duration-500"
-                            style={{ height: `${pctEgr}%` }}
-                          />
-                        )}
-                      </div>
-                      <span className="font-mono text-[10px] text-muted group-hover:text-bone">
-                        {etiquetaDia}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="mt-3">
+                <VerticalBarChart
+                  items={kpis.serieDiaria.map((d) => ({
+                    key: d.fecha,
+                    label: `${d.fecha.slice(8, 10)}/${d.fecha.slice(5, 7)}`,
+                    value: d.ingresos,
+                    secondaryValue: d.egresos,
+                    tooltip: `${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)}`,
+                    highlight: d.fecha === diaSeleccionado,
+                  }))}
+                  formatShort={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`)}
+                  onBarClick={(fecha) => setDiaSeleccionado(fecha)}
+                />
               </div>
             </section>
           )}
 
-          {/* 1.2 Comparativa Mensual: Mes actual vs Mes anterior */}
-          {comparativa && (
-            <section aria-label="Comparativa mensual" className="panel-card p-5">
-              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                <div>
-                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
-                    <TrendingUp size={15} className="text-brand" />
-                    Comparativa mensual
+          {/* 1.3 Ingresos por día de la semana + Comparativa mensual */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section aria-label="Ingresos por día de la semana" className="panel-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/70 pb-3">
+                <h3 className="section-title flex items-center gap-2 text-base">
+                  <CalendarDays size={16} className="text-brand" />
+                  Recaudación por día de la semana
+                </h3>
+                {mejorDiaSemana && (
+                  <span className="rounded bg-brand/15 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                    Mejor día: {mejorDiaSemana.etiqueta} ({soles(mejorDiaSemana.total)})
                   </span>
-                  <div className="mt-2 flex flex-wrap items-baseline gap-3">
-                    <div>
-                      <span className="block text-xs text-muted">
-                        {comparativa.nombreMesActual} (al día de hoy):
-                      </span>
-                      <span className="font-mono text-2xl font-bold text-bone tabular-nums">
-                        {soles(comparativa.mesActualTotal)}
-                      </span>
-                    </div>
-                    <span className="self-center text-sm text-muted">vs.</span>
-                    <div>
-                      <span className="block text-xs text-muted">
-                        {comparativa.nombreMesAnterior} (mes cerrado):
-                      </span>
-                      <span className="font-mono text-lg font-semibold text-muted tabular-nums">
-                        {soles(comparativa.mesAnteriorTotal)}
-                      </span>
+                )}
+              </div>
+
+              <div className="mt-3">
+                <VerticalBarChart
+                  items={ingresosSemana.map((d) => ({
+                    key: String(d.diaIndex),
+                    label: d.etiqueta,
+                    value: d.total,
+                    highlight: d.total > 0 && d.total === maxSemanaTotal,
+                    tooltip: `${d.etiqueta}: ${soles(d.total)} (${d.operaciones} cobros)`,
+                  }))}
+                  primaryColorClass="bg-gradient-to-t from-ok/60 to-ok"
+                  formatShort={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`)}
+                />
+              </div>
+            </section>
+
+            {comparativa && (
+              <section aria-label="Comparativa mensual" className="panel-card flex flex-col justify-between p-5">
+                <div>
+                  <div className="flex items-center justify-between border-b border-line/70 pb-3">
+                    <h3 className="section-title flex items-center gap-2 text-base">
+                      <TrendingUp size={16} className="text-brand" />
+                      Comparativa mensual
+                    </h3>
+                    <div className="flex items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1">
+                      {comparativa.porcentajeVariacion >= 0 ? (
+                        <span className="flex items-center gap-1 font-mono text-xs font-bold text-ok">
+                          <ArrowUpRight size={15} strokeWidth={2.5} />+{comparativa.porcentajeVariacion}%
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 font-mono text-xs font-bold text-bad">
+                          <ArrowDownRight size={15} strokeWidth={2.5} />
+                          {comparativa.porcentajeVariacion}%
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {(() => {
+                    const maxComp = Math.max(
+                      1,
+                      comparativa.mesActualTotal,
+                      comparativa.mesAnteriorTotal
+                    );
+                    const pctAct = Math.round((comparativa.mesActualTotal / maxComp) * 100);
+                    const pctAnt = Math.round((comparativa.mesAnteriorTotal / maxComp) * 100);
+                    return (
+                      <div className="mt-4 space-y-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-baseline justify-between text-xs">
+                            <span className="font-semibold text-bone">
+                              {comparativa.nombreMesActual}{' '}
+                              <span className="font-normal text-muted">(en curso)</span>
+                            </span>
+                            <span className="font-mono text-lg font-bold text-brand tabular-nums">
+                              {soles(comparativa.mesActualTotal)}
+                            </span>
+                          </div>
+                          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2">
+                            <div
+                              className="bar-fill h-full rounded-full bg-gradient-to-r from-brand/70 to-brand"
+                              style={{ width: `${comparativa.mesActualTotal > 0 ? Math.max(4, pctAct) : 0}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-baseline justify-between text-xs">
+                            <span className="font-medium text-muted">
+                              {comparativa.nombreMesAnterior} (mes completo)
+                            </span>
+                            <span className="font-mono text-base font-semibold text-muted tabular-nums">
+                              {soles(comparativa.mesAnteriorTotal)}
+                            </span>
+                          </div>
+                          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2">
+                            <div
+                              className="bar-fill h-full rounded-full bg-muted/50"
+                              style={{ width: `${comparativa.mesAnteriorTotal > 0 ? Math.max(4, pctAnt) : 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                <div className="flex items-center gap-2 rounded-md border border-line bg-surface-2 px-3.5 py-2">
-                  {comparativa.porcentajeVariacion >= 0 ? (
-                    <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-ok">
-                      <ArrowUpRight size={18} strokeWidth={2.5} />
-                      <span>+{comparativa.porcentajeVariacion}%</span>
-                      <span className="font-sans text-xs font-normal text-muted">crecimiento</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-bad">
-                      <ArrowDownRight size={18} strokeWidth={2.5} />
-                      <span>{comparativa.porcentajeVariacion}%</span>
-                      <span className="font-sans text-xs font-normal text-muted">vs mes anterior</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-          )}
+                <p className="mt-4 border-t border-line/50 pt-2.5 text-[11px] text-muted">
+                  {comparativa.diferencia >= 0
+                    ? `Llevas ${soles(comparativa.diferencia)} más respecto al mes anterior.`
+                    : `Faltan ${soles(Math.abs(comparativa.diferencia))} para igualar el mes pasado.`}
+                </p>
+              </section>
+            )}
+          </div>
 
-          {/* 1.4 Desglose de ingresos por Plan y por Producto */}
+          {/* 1.4 Desglose de ingresos por Plan (pastel) y por Producto de mostrador */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Desglose por Plan */}
-            <section aria-label="Ingresos por Plan" className="panel-card space-y-3 p-5">
-              <div className="flex items-center justify-between">
+            {/* Desglose por Plan en gráfico de pastel */}
+            <section aria-label="Ingresos por Plan" className="panel-card space-y-4 p-5">
+              <div className="flex items-center justify-between border-b border-line/70 pb-3">
                 <h3 className="section-title flex items-center gap-2 text-base">
                   <Dumbbell size={16} className="text-brand" />
                   Ingresos por plan
                 </h3>
-                <span className="text-xs text-muted">Período seleccionado</span>
+                <span className="text-xs text-muted">Participación en período</span>
               </div>
 
-              {desglosePlanes.length === 0 ? (
-                <p className="py-4 text-xs text-muted">
-                  No hay cobros de membresías en este rango de fechas.
-                </p>
-              ) : (
-                (() => {
-                  const maxTotal = Math.max(...desglosePlanes.map((p) => p.total), 1);
-                  return (
-                    <ul className="space-y-3 text-xs">
-                      {desglosePlanes.map((plan) => {
-                        const pct = Math.round((plan.total / maxTotal) * 100);
-                        return (
-                          <li key={plan.nombre} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-bone">{plan.nombre}</span>
-                              <span className="font-mono font-bold tabular-nums text-bone">
-                                {soles(plan.total)}{' '}
-                                <span className="font-sans text-[11px] font-normal text-muted">
-                                  ({plan.cantidad} cobros)
-                                </span>
-                              </span>
-                            </div>
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
-                              <div
-                                className="bar-fill h-full rounded-full bg-brand"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  );
-                })()
-              )}
+              <DonutChart
+                items={planesDonut}
+                centerLabel="Membresías"
+                centerValue={soles(desglosePlanes.reduce((s, p) => s + p.total, 0))}
+                formatValue={soles}
+                emptyText="No hay cobros de membresías en este rango de fechas."
+              />
             </section>
 
             {/* Desglose por Producto de mostrador */}
-            <section aria-label="Ventas en mostrador" className="panel-card space-y-3 p-5">
-              <div className="flex items-center justify-between">
+            <section aria-label="Ventas en mostrador" className="panel-card space-y-4 p-5">
+              <div className="flex items-center justify-between border-b border-line/70 pb-3">
                 <h3 className="section-title flex items-center gap-2 text-base">
                   <ShoppingBag size={16} className="text-brand" />
                   Ventas en mostrador
                 </h3>
-                <span className="text-xs text-muted">Período seleccionado</span>
+                <span className="font-mono text-xs font-semibold text-ok tabular-nums">
+                  {soles(totalMostrador)} · {unidadesMostrador} un.
+                </span>
               </div>
 
               {desgloseProds.length === 0 ? (
-                <p className="py-4 text-xs text-muted">
+                <p className="py-6 text-center text-xs text-muted">
                   No hay ventas registradas en mostrador en este rango.
                 </p>
               ) : (
@@ -687,12 +718,17 @@ export default function AdminPage() {
                   const maxTotal = Math.max(...desgloseProds.map((p) => p.total), 1);
                   return (
                     <ul className="space-y-3 text-xs">
-                      {desgloseProds.map((prod) => {
+                      {desgloseProds.map((prod, idx) => {
                         const pct = Math.round((prod.total / maxTotal) * 100);
                         return (
                           <li key={prod.nombre} className="space-y-1">
                             <div className="flex items-center justify-between">
-                              <span className="font-semibold text-bone">{prod.nombre}</span>
+                              <span className="font-semibold text-bone">
+                                <span className="mr-1.5 font-mono text-[10px] text-brand">
+                                  #{idx + 1}
+                                </span>
+                                {prod.nombre}
+                              </span>
                               <span className="font-mono font-bold tabular-nums text-bone">
                                 {soles(prod.total)}{' '}
                                 <span className="font-sans text-[11px] font-normal text-muted">
