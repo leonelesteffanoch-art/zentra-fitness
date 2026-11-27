@@ -60,12 +60,12 @@ const BADGE_SEMAFORO: Record<Semaforo, { cls: string; txt: string }> = {
   ROJO: { cls: 'bg-bad/15 text-bad ring-1 ring-bad/30', txt: 'Vencido' },
 };
 
-const FILTROS: { id: FiltroEstadoSocio; label: string }[] = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'activos', label: 'Activos' },
-  { id: 'por_vencer', label: 'Por vencer' },
-  { id: 'vencidos', label: 'Vencidos' },
-  { id: 'morosos', label: 'Con saldo' },
+const FILTROS: { id: FiltroEstadoSocio; label: string; activeCls: string }[] = [
+  { id: 'todos', label: 'Todos', activeCls: 'bg-brand text-ink shadow-xs' },
+  { id: 'activos', label: 'Activos', activeCls: 'bg-ok text-[#052e16] shadow-xs' },
+  { id: 'por_vencer', label: 'Por vencer', activeCls: 'bg-warn text-ink shadow-xs' },
+  { id: 'vencidos', label: 'Vencidos', activeCls: 'bg-bad text-white shadow-xs' },
+  { id: 'morosos', label: 'Con saldo', activeCls: 'bg-warn text-ink shadow-xs' },
 ];
 
 export default function SociosPage() {
@@ -507,7 +507,7 @@ export default function SociosPage() {
                 aria-pressed={activo}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
                   activo
-                    ? 'bg-brand text-ink shadow-xs'
+                    ? f.activeCls
                     : 'border border-line bg-surface text-muted hover:bg-surface-2 hover:text-bone'
                 }`}
               >
@@ -700,9 +700,9 @@ export default function SociosPage() {
                     <button
                       type="button"
                       onClick={() => setModoCobro('abonar')}
-                      className="btn btn-secondary tabular-nums"
+                      className="btn btn-secondary !border-warn/55 !bg-warn/15 !text-warn hover:!bg-warn/25 font-semibold tabular-nums"
                     >
-                      <CircleDollarSign size={16} strokeWidth={1.5} />
+                      <CircleDollarSign size={16} strokeWidth={1.75} />
                       Cobrar deuda ({soles(seleccionado.saldo_pendiente)})
                     </button>
                   )}
@@ -716,7 +716,7 @@ export default function SociosPage() {
                       ? '!border !border-warn/70 !bg-warn/15 !text-warn font-semibold hover:!bg-warn/25'
                       : datosPendientes?.sinTelefono
                       ? '!border !border-warn/50 !bg-warn/10 !text-warn font-medium hover:!bg-warn/20'
-                      : 'btn-secondary'
+                      : 'btn-secondary !border-sky-400/40 !bg-sky-500/12 !text-sky-300 hover:!bg-sky-500/20'
                   }`}
                   title="Editar datos del socio"
                 >
@@ -953,15 +953,43 @@ export default function SociosPage() {
                   <ul className="space-y-3">
                     {historial.map((m) => {
                       const anulada = m.estado === 'ANULADO';
+                      const esVigenteActual =
+                        !anulada && m.membresia_id === seleccionado.membresia_id;
+                      const esVencidaActual = esVigenteActual && m.dias_restantes < 0;
                       return (
                         <li
                           key={m.membresia_id}
                           className={`rounded-md bg-surface-2 p-4 text-sm ${
-                            anulada ? 'opacity-50 line-through' : ''
+                            anulada
+                              ? 'opacity-50 line-through'
+                              : esVigenteActual
+                              ? 'ring-1 ring-line'
+                              : 'opacity-75'
                           }`}
                         >
-                          <div className="flex flex-wrap items-baseline justify-between gap-1">
-                            <span className="font-semibold text-bone">{m.plan}</span>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-bone">{m.plan}</span>
+                              {anulada ? (
+                                <span className="rounded bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted ring-1 ring-line">
+                                  Anulada
+                                </span>
+                              ) : esVigenteActual ? (
+                                <span
+                                  className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${
+                                    esVencidaActual
+                                      ? 'bg-bad/15 text-bad ring-bad/30'
+                                      : 'bg-ok/15 text-ok ring-ok/30'
+                                  }`}
+                                >
+                                  {esVencidaActual ? 'Vencida' : 'Vigente'}
+                                </span>
+                              ) : (
+                                <span className="rounded bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted ring-1 ring-line">
+                                  Anterior
+                                </span>
+                              )}
+                            </div>
                             <span className="font-mono text-xs font-semibold text-bone tabular-nums">
                               {formatearFechaDMY(m.fecha_inicio)} → {formatearFechaDMY(m.fecha_fin)}
                             </span>

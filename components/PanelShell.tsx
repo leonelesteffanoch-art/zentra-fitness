@@ -23,6 +23,7 @@ import type { Rol } from '@/types';
 interface ItemNav {
   href: string;
   etiqueta: string;
+  descripcion: string;
   etiquetaMovil: string;
   icono: ReactNode;
   roles: Rol[];
@@ -32,6 +33,7 @@ const NAV: ItemNav[] = [
   {
     href: '/recepcion',
     etiqueta: 'Recepción',
+    descripcion: 'Ingresos y buscar socio',
     etiquetaMovil: 'Recepción',
     icono: <ScanLine size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
@@ -39,6 +41,7 @@ const NAV: ItemNav[] = [
   {
     href: '/caja',
     etiqueta: 'Caja y ventas',
+    descripcion: 'Cobros y productos',
     etiquetaMovil: 'Caja',
     icono: <Wallet size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
@@ -46,6 +49,7 @@ const NAV: ItemNav[] = [
   {
     href: '/socios',
     etiqueta: 'Socios',
+    descripcion: 'Lista y membresías',
     etiquetaMovil: 'Socios',
     icono: <Users size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
@@ -53,6 +57,7 @@ const NAV: ItemNav[] = [
   {
     href: '/prospectos',
     etiqueta: 'Prospectos',
+    descripcion: 'Personas interesadas',
     etiquetaMovil: 'Prospectos',
     icono: <Target size={18} strokeWidth={1.75} />,
     roles: ['admin', 'recepcionista'],
@@ -60,6 +65,7 @@ const NAV: ItemNav[] = [
   {
     href: '/admin',
     etiqueta: 'Administración',
+    descripcion: 'Reportes y ajustes',
     etiquetaMovil: 'Admin',
     icono: <BarChart3 size={18} strokeWidth={1.75} />,
     roles: ['admin'],
@@ -206,14 +212,14 @@ export function PanelShell({ children }: { children: ReactNode }) {
                   colapsado ? 'mx-auto h-11 w-11 justify-center' : 'gap-3 px-3.5 py-2.5'
                 } ${
                   activo
-                    ? 'bg-brand/10 text-bone shadow-[inset_0_0_0_1px_rgba(250,204,21,0.22)]'
-                    : 'text-muted hover:bg-surface-2/70 hover:text-bone'
+                    ? 'bg-brand/15 text-bone ring-1 ring-brand/40'
+                    : 'text-muted hover:bg-surface-2/80 hover:text-bone'
                 }`}
               >
                 {activo && (
                   <span
                     aria-hidden="true"
-                    className={`absolute top-2 bottom-2 w-[3px] rounded-r-full bg-brand ${
+                    className={`absolute top-2 bottom-2 w-1 rounded-r-full bg-brand ${
                       colapsado ? '-left-3' : 'left-0'
                     }`}
                   />
@@ -221,7 +227,20 @@ export function PanelShell({ children }: { children: ReactNode }) {
                 <span className={`shrink-0 ${activo ? 'text-brand' : 'text-muted transition-colors'}`}>
                   {i.icono}
                 </span>
-                {!colapsado && <span className="truncate">{i.etiqueta}</span>}
+                {!colapsado && (
+                  <div className="min-w-0 flex-1">
+                    <span className={`block truncate leading-tight ${activo ? 'font-semibold text-bone' : ''}`}>
+                      {i.etiqueta}
+                    </span>
+                    <span
+                      className={`mt-0.5 block truncate text-[11px] leading-tight ${
+                        activo ? 'text-brand/90' : 'text-muted/80'
+                      }`}
+                    >
+                      {i.descripcion}
+                    </span>
+                  </div>
+                )}
               </Link>
             );
           })}

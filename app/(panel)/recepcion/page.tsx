@@ -311,14 +311,14 @@ export default function RecepcionPage() {
       {/* Buscador principal */}
       <section
         aria-label="Buscador de socios"
-        className="rounded-lg border border-brand/45 bg-surface p-5 transition-colors focus-within:border-brand"
+        className="rounded-lg border-2 border-brand/55 bg-surface-2/40 p-5 transition-colors focus-within:border-brand"
       >
         <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-brand">
             Buscar socio
           </p>
           <span className="text-xs text-muted">
-            DNI, nombre o apellido
+            Paso 1: Busca por DNI, primer nombre o apellido antes de crear uno nuevo
           </span>
         </div>
         <SearchBar
@@ -434,9 +434,9 @@ export default function RecepcionPage() {
                           type="button"
                           disabled={registrandoId === s.socio_id}
                           onClick={() => void checkInRapido(s)}
-                          className="btn btn-primary !min-h-8 !px-3 text-xs"
+                          className="btn btn-enter !min-h-8 !px-3 text-xs"
                         >
-                          <LogIn size={13} strokeWidth={1.75} />
+                          <LogIn size={13} strokeWidth={2} />
                           {registrandoId === s.socio_id ? 'Registrando...' : 'Ingresar'}
                         </button>
                       ))}
@@ -449,8 +449,11 @@ export default function RecepcionPage() {
       )}
 
       {!buscando && termino.length >= 2 && resultados.length === 0 && (
-        <div className="panel-card panel-fade-in px-6 py-10 text-center">
-          <p className="text-sm text-muted">No se encontró ningún socio con “{termino}”.</p>
+        <div className="panel-card panel-fade-in px-6 py-8 text-center">
+          <p className="text-sm font-medium text-bone">No se encontró ningún socio con “{termino}”.</p>
+          <p className="mt-1 text-xs text-muted">
+            Si el socio ya entrenaba antes, intenta buscando solo su primer nombre o un solo apellido para evitar duplicados.
+          </p>
           <button
             type="button"
             onClick={() => setModalSocio('nuevo')}

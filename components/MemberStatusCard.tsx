@@ -36,26 +36,36 @@ interface Props {
 
 const BADGE_SEMAFORO: Record<
   Semaforo,
-  { badge: string; acento: string; etiqueta: string; strokeColor: string; barColor: string }
+  {
+    badge: string;
+    acento: string;
+    headerTint: string;
+    etiqueta: string;
+    strokeColor: string;
+    barColor: string;
+  }
 > = {
   VERDE: {
-    badge: 'bg-ok/15 text-ok ring-1 ring-ok/30',
+    badge: 'bg-ok/15 text-ok ring-1 ring-ok/35',
     acento: 'border-l-4 border-l-ok',
-    etiqueta: 'Membresía activa',
+    headerTint: 'bg-ok/[0.07] border-ok/20',
+    etiqueta: 'Al día · Puede ingresar',
     strokeColor: '#22c55e',
     barColor: 'bg-ok',
   },
   AMBAR: {
-    badge: 'bg-warn/15 text-warn ring-1 ring-warn/30',
+    badge: 'bg-warn/15 text-warn ring-1 ring-warn/35',
     acento: 'border-l-4 border-l-warn',
-    etiqueta: 'Por vencer / Atención',
+    headerTint: 'bg-warn/[0.08] border-warn/25',
+    etiqueta: 'Atención · Por vencer o con saldo',
     strokeColor: '#f59e0b',
     barColor: 'bg-warn',
   },
   ROJO: {
-    badge: 'bg-bad/15 text-bad ring-1 ring-bad/30',
+    badge: 'bg-bad/15 text-bad ring-1 ring-bad/35',
     acento: 'border-l-4 border-l-bad',
-    etiqueta: 'Membresía vencida',
+    headerTint: 'bg-bad/[0.08] border-bad/25',
+    etiqueta: 'Vencido · Renovar plan',
     strokeColor: '#ef4444',
     barColor: 'bg-bad',
   },
@@ -174,7 +184,9 @@ export function MemberStatusCard({
       className={`panel-card panel-fade-in space-y-4 p-4 sm:p-6 ${est.acento}`}
     >
       {/* Fila 1: Identidad del socio + acciones inmediatas para recepción */}
-      <div className="flex flex-col justify-between gap-4 border-b border-line/70 pb-4 lg:flex-row lg:items-center">
+      <div
+        className={`flex flex-col justify-between gap-4 rounded-md border px-4 py-3.5 lg:flex-row lg:items-center ${est.headerTint}`}
+      >
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
             <div
@@ -196,7 +208,9 @@ export function MemberStatusCard({
                     className="h-1.5 w-1.5 rounded-full"
                     style={{ backgroundColor: est.strokeColor }}
                   />
-                  {est.etiqueta}
+                  {socio.semaforo === 'ROJO' && !socio.membresia_id
+                    ? 'Sin plan asignado'
+                    : est.etiqueta}
                 </span>
                 {yaAsistioHoy && (
                   <span className="inline-flex items-center gap-1 rounded bg-ok/15 px-2 py-0.5 text-[11px] font-semibold text-ok ring-1 ring-ok/30">
@@ -251,9 +265,9 @@ export function MemberStatusCard({
             <button
               onClick={onCheckIn}
               disabled={registrando || yaAsistioHoy}
-              className="btn btn-primary w-full !min-h-11 !px-5 text-sm sm:w-auto sm:!min-h-10"
+              className="btn btn-enter w-full !min-h-11 !px-5 text-sm sm:w-auto sm:!min-h-10"
             >
-              <LogIn size={16} strokeWidth={1.75} />
+              <LogIn size={16} strokeWidth={2} />
               {yaAsistioHoy ? 'Ingreso ya registrado' : 'Registrar ingreso'}
             </button>
           )}
@@ -263,7 +277,9 @@ export function MemberStatusCard({
             className={`btn !min-h-10 text-xs sm:text-sm ${
               socio.semaforo === 'ROJO'
                 ? 'btn-primary w-full !min-h-11 !px-5 sm:w-auto sm:!min-h-10'
-                : 'btn-secondary flex-1 sm:flex-initial'
+                : socio.dias_restantes !== null && socio.dias_restantes <= 3
+                ? 'btn-primary flex-1 sm:flex-initial'
+                : 'btn-secondary !border-brand/45 !bg-brand/12 !text-brand hover:!bg-brand/20 flex-1 sm:flex-initial'
             }`}
           >
             <RefreshCw size={15} strokeWidth={1.75} />
@@ -276,7 +292,7 @@ export function MemberStatusCard({
               onClick={onCheckIn}
               disabled={registrando || yaAsistioHoy}
               title="Permitir ingreso excepcional aunque la membresía esté vencida o sin plan"
-              className="btn btn-secondary flex-1 !min-h-10 !border-warn/40 !text-warn hover:!bg-warn/10 text-xs sm:flex-initial"
+              className="btn btn-secondary flex-1 !min-h-10 !border-warn/50 !bg-warn/10 !text-warn hover:!bg-warn/20 text-xs sm:flex-initial"
             >
               <LogIn size={15} strokeWidth={1.75} />
               {yaAsistioHoy ? 'Ingreso ya registrado' : 'Ingreso con tolerancia'}
@@ -286,7 +302,7 @@ export function MemberStatusCard({
           {socio.saldo_pendiente > 0 && (
             <button
               onClick={onCobrarSaldo}
-              className="btn btn-ghost flex-1 !min-h-10 text-xs tabular-nums sm:flex-initial"
+              className="btn btn-secondary flex-1 !min-h-10 !border-warn/55 !bg-warn/15 !text-warn hover:!bg-warn/25 text-xs font-semibold tabular-nums sm:flex-initial"
             >
               <CircleDollarSign size={15} strokeWidth={1.75} />
               Cobrar ({soles(socio.saldo_pendiente)})
@@ -302,7 +318,7 @@ export function MemberStatusCard({
                   ? '!border !border-warn/70 !bg-warn/15 !text-warn font-semibold hover:!bg-warn/25'
                   : datosPendientes.sinTelefono
                   ? '!border !border-warn/50 !bg-warn/10 !text-warn font-medium hover:!bg-warn/20'
-                  : 'btn-secondary'
+                  : 'btn-secondary !border-sky-400/40 !bg-sky-500/12 !text-sky-300 hover:!bg-sky-500/20'
               }`}
             >
               <Edit3 size={15} strokeWidth={1.75} />
