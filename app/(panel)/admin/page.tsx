@@ -6,7 +6,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
-  CalendarDays,
   Download,
   Dumbbell,
   Layers,
@@ -15,7 +14,6 @@ import {
   PieChart,
   Shield,
   ShoppingBag,
-  TrendingUp,
   Wallet,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -32,10 +30,8 @@ import {
   obtenerEstadisticasAdmin,
   resumenPeriodo,
   type ComparativaMeses,
-  type DesgloseCategoria,
   type DesglosePlan,
   type DesgloseProducto,
-  type IngresoDiaSemana,
 } from '@/services/cajaService';
 import { listarPlanes } from '@/services/sociosService';
 import { formatearFechaDMY, hoyLima, soles, sumarDias } from '@/lib/formato';
@@ -63,8 +59,6 @@ export default function AdminPage() {
   const [comparativa, setComparativa] = useState<ComparativaMeses | null>(null);
   const [desglosePlanes, setDesglosePlanes] = useState<DesglosePlan[]>([]);
   const [desgloseProds, setDesgloseProds] = useState<DesgloseProducto[]>([]);
-  const [desgloseCategorias, setDesgloseCategorias] = useState<DesgloseCategoria[]>([]);
-  const [ingresosSemana, setIngresosSemana] = useState<IngresoDiaSemana[]>([]);
   const [pestana, setPestana] = useState<'todo' | 'finanzas' | 'catalogo' | 'personal'>('todo');
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
   const [recargaCalendario, setRecargaCalendario] = useState(0);
@@ -99,8 +93,6 @@ export default function AdminPage() {
         setComparativa(stats.comparativa);
         setDesglosePlanes(stats.planes);
         setDesgloseProds(stats.productos);
-        setDesgloseCategorias(stats.categorias);
-        setIngresosSemana(stats.porDiaSemana);
       } catch (e) {
         setAviso({
           tipo: 'error',
@@ -130,8 +122,6 @@ export default function AdminPage() {
         setComparativa(stats.comparativa);
         setDesglosePlanes(stats.planes);
         setDesgloseProds(stats.productos);
-        setDesgloseCategorias(stats.categorias);
-        setIngresosSemana(stats.porDiaSemana);
       })
       .catch((e: unknown) => {
         if (!cancelado) {
@@ -274,18 +264,6 @@ export default function AdminPage() {
     { label: 'Tarjeta', value: kpis.porMetodo.Tarjeta, color: '#ffc21a' },
   ];
 
-  const coloresCategoria: Record<string, string> = {
-    MEMBRESIA: '#ffc21a',
-    VENTA_PRODUCTO: '#22c55e',
-    OTRO: '#38bdf8',
-  };
-  const categoriasDonut = desgloseCategorias.map((c) => ({
-    label: c.etiqueta,
-    value: c.total,
-    color: coloresCategoria[c.categoria] ?? '#a855f7',
-    sublabel: `${c.cantidad} ${c.cantidad === 1 ? 'cobro' : 'cobros'}`,
-  }));
-
   const planesDonut = desglosePlanes.slice(0, 7).map((p, idx) => ({
     label: p.nombre,
     value: p.total,
@@ -302,9 +280,6 @@ export default function AdminPage() {
     });
   }
 
-  const maxSemanaTotal = Math.max(0, ...ingresosSemana.map((d) => d.total));
-  const mejorDiaSemana =
-    maxSemanaTotal > 0 ? ingresosSemana.find((d) => d.total === maxSemanaTotal) ?? null : null;
   const totalMostrador = desgloseProds.reduce((s, p) => s + p.total, 0);
   const unidadesMostrador = desgloseProds.reduce((s, p) => s + p.unidades, 0);
 
@@ -437,13 +412,33 @@ export default function AdminPage() {
 
       {(pestana === 'todo' || pestana === 'finanzas') && (
         <>
-          {/* 1. Balance del período: Flujo neto + Barra gráfica de métodos */}
+          {/* 1. Balance del período: Flujo neto + comparativa mensual compacta */}
           <section aria-label="Balance del período" className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="section-title text-lg">
                 Balance del período ({formatearFechaDMY(desde)} → {formatearFechaDMY(hasta)})
               </h2>
-              {cargando && <Loader2 size={15} strokeWidth={1.75} className="animate-spin text-brand" />}
+              <div className="flex items-center gap-2.5">
+                {comparativa && (
+                  <div
+                    title={`${comparativa.nombreMesActual}: ${soles(comparativa.mesActualTotal)} vs ${comparativa.nombreMesAnterior}: ${soles(comparativa.mesAnteriorTotal)}`}
+                    className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1 text-xs"
+                  >
+                    <span className="text-muted">vs {comparativa.nombreMesAnterior}:</span>
+                    {comparativa.porcentajeVariacion >= 0 ? (
+                      <span className="inline-flex items-center gap-0.5 font-mono font-bold text-ok">
+                        <ArrowUpRight size={14} strokeWidth={2.5} />+{comparativa.porcentajeVariacion}%
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 font-mono font-bold text-bad">
+                        <ArrowDownRight size={14} strokeWidth={2.5} />
+                        {comparativa.porcentajeVariacion}%
+                      </span>
+                    )}
+                  </div>
+                )}
+                {cargando && <Loader2 size={15} strokeWidth={1.75} className="animate-spin text-brand" />}
+              </div>
             </div>
 
             <div className="panel-card p-6">
@@ -479,43 +474,6 @@ export default function AdminPage() {
             </div>
           </section>
 
-          {/* 1.05 Gráficos de pastel: Métodos de pago + Origen de ingresos */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section aria-label="Métodos de pago" className="panel-card space-y-4 p-5">
-              <div className="flex items-center justify-between border-b border-line/70 pb-3">
-                <h3 className="section-title flex items-center gap-2 text-base">
-                  <PieChart size={16} className="text-brand" />
-                  Distribución por método de pago
-                </h3>
-                <span className="text-xs text-muted">Período</span>
-              </div>
-              <DonutChart
-                items={metodosDonut}
-                centerLabel="Ingresos"
-                centerValue={soles(kpis.ingresos)}
-                formatValue={soles}
-                emptyText="No hay cobros registrados en este rango."
-              />
-            </section>
-
-            <section aria-label="Origen de ingresos" className="panel-card space-y-4 p-5">
-              <div className="flex items-center justify-between border-b border-line/70 pb-3">
-                <h3 className="section-title flex items-center gap-2 text-base">
-                  <Wallet size={16} className="text-brand" />
-                  Origen de ingresos
-                </h3>
-                <span className="text-xs text-muted">Membresías vs Tienda</span>
-              </div>
-              <DonutChart
-                items={categoriasDonut}
-                centerLabel="Total caja"
-                centerValue={soles(desgloseCategorias.reduce((s, c) => s + c.total, 0))}
-                formatValue={soles}
-                emptyText="No hay ingresos clasificados en este rango."
-              />
-            </section>
-          </div>
-
           {/* 1.1 Calendario mensual interactivo con resumen por día */}
           {gymId && (
             <AdminDailyCalendar
@@ -526,20 +484,15 @@ export default function AdminPage() {
             />
           )}
 
-          {/* 1.2 Gráfico de Evolución Diaria de Ingresos vs Egresos */}
-          {kpis.serieDiaria.length > 0 && (
-            <section className="panel-card p-5">
+          {/* 1.2 Evolución diaria (barras) + Métodos de pago (pastel) */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section aria-label="Evolución diaria" className="panel-card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/70 pb-3">
                 <div className="flex items-center gap-2">
                   <BarChart3 size={16} className="text-brand" strokeWidth={1.75} />
-                  <h3 className="section-title text-base">
-                    Evolución diaria (últimos 14 días con movimiento)
-                  </h3>
-                  <span className="hidden text-[11px] text-muted sm:inline">
-                    · Presiona una barra para ver el detalle
-                  </span>
+                  <h3 className="section-title text-base">Evolución diaria</h3>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-muted">
+                <div className="flex items-center gap-3 text-xs text-muted">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-xs bg-brand" /> Ingresos
                   </span>
@@ -549,131 +502,44 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="mt-3">
-                <VerticalBarChart
-                  items={kpis.serieDiaria.map((d) => ({
-                    key: d.fecha,
-                    label: `${d.fecha.slice(8, 10)}/${d.fecha.slice(5, 7)}`,
-                    value: d.ingresos,
-                    secondaryValue: d.egresos,
-                    tooltip: `${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)}`,
-                    highlight: d.fecha === diaSeleccionado,
-                  }))}
-                  formatShort={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`)}
-                  onBarClick={(fecha) => setDiaSeleccionado(fecha)}
-                />
-              </div>
-            </section>
-          )}
-
-          {/* 1.3 Ingresos por día de la semana + Comparativa mensual */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section aria-label="Ingresos por día de la semana" className="panel-card p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/70 pb-3">
-                <h3 className="section-title flex items-center gap-2 text-base">
-                  <CalendarDays size={16} className="text-brand" />
-                  Recaudación por día de la semana
-                </h3>
-                {mejorDiaSemana && (
-                  <span className="rounded bg-brand/15 px-2 py-0.5 text-[11px] font-semibold text-brand">
-                    Mejor día: {mejorDiaSemana.etiqueta} ({soles(mejorDiaSemana.total)})
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-3">
-                <VerticalBarChart
-                  items={ingresosSemana.map((d) => ({
-                    key: String(d.diaIndex),
-                    label: d.etiqueta,
-                    value: d.total,
-                    highlight: d.total > 0 && d.total === maxSemanaTotal,
-                    tooltip: `${d.etiqueta}: ${soles(d.total)} (${d.operaciones} cobros)`,
-                  }))}
-                  primaryColorClass="bg-gradient-to-t from-ok/60 to-ok"
-                  formatShort={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`)}
-                />
-              </div>
-            </section>
-
-            {comparativa && (
-              <section aria-label="Comparativa mensual" className="panel-card flex flex-col justify-between p-5">
-                <div>
-                  <div className="flex items-center justify-between border-b border-line/70 pb-3">
-                    <h3 className="section-title flex items-center gap-2 text-base">
-                      <TrendingUp size={16} className="text-brand" />
-                      Comparativa mensual
-                    </h3>
-                    <div className="flex items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1">
-                      {comparativa.porcentajeVariacion >= 0 ? (
-                        <span className="flex items-center gap-1 font-mono text-xs font-bold text-ok">
-                          <ArrowUpRight size={15} strokeWidth={2.5} />+{comparativa.porcentajeVariacion}%
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 font-mono text-xs font-bold text-bad">
-                          <ArrowDownRight size={15} strokeWidth={2.5} />
-                          {comparativa.porcentajeVariacion}%
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {(() => {
-                    const maxComp = Math.max(
-                      1,
-                      comparativa.mesActualTotal,
-                      comparativa.mesAnteriorTotal
-                    );
-                    const pctAct = Math.round((comparativa.mesActualTotal / maxComp) * 100);
-                    const pctAnt = Math.round((comparativa.mesAnteriorTotal / maxComp) * 100);
-                    return (
-                      <div className="mt-4 space-y-4">
-                        <div className="space-y-1.5">
-                          <div className="flex items-baseline justify-between text-xs">
-                            <span className="font-semibold text-bone">
-                              {comparativa.nombreMesActual}{' '}
-                              <span className="font-normal text-muted">(en curso)</span>
-                            </span>
-                            <span className="font-mono text-lg font-bold text-brand tabular-nums">
-                              {soles(comparativa.mesActualTotal)}
-                            </span>
-                          </div>
-                          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2">
-                            <div
-                              className="bar-fill h-full rounded-full bg-gradient-to-r from-brand/70 to-brand"
-                              style={{ width: `${comparativa.mesActualTotal > 0 ? Math.max(4, pctAct) : 0}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex items-baseline justify-between text-xs">
-                            <span className="font-medium text-muted">
-                              {comparativa.nombreMesAnterior} (mes completo)
-                            </span>
-                            <span className="font-mono text-base font-semibold text-muted tabular-nums">
-                              {soles(comparativa.mesAnteriorTotal)}
-                            </span>
-                          </div>
-                          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2">
-                            <div
-                              className="bar-fill h-full rounded-full bg-muted/50"
-                              style={{ width: `${comparativa.mesAnteriorTotal > 0 ? Math.max(4, pctAnt) : 0}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                <p className="mt-4 border-t border-line/50 pt-2.5 text-[11px] text-muted">
-                  {comparativa.diferencia >= 0
-                    ? `Llevas ${soles(comparativa.diferencia)} más respecto al mes anterior.`
-                    : `Faltan ${soles(Math.abs(comparativa.diferencia))} para igualar el mes pasado.`}
+              {kpis.serieDiaria.length === 0 ? (
+                <p className="py-10 text-center text-xs text-muted">
+                  No hay movimientos diarios en este rango.
                 </p>
-              </section>
-            )}
+              ) : (
+                <div className="mt-3">
+                  <VerticalBarChart
+                    items={kpis.serieDiaria.map((d) => ({
+                      key: d.fecha,
+                      label: `${d.fecha.slice(8, 10)}/${d.fecha.slice(5, 7)}`,
+                      value: d.ingresos,
+                      secondaryValue: d.egresos,
+                      tooltip: `${formatearFechaDMY(d.fecha)} · Ingresos: ${soles(d.ingresos)} · Egresos: ${soles(d.egresos)}`,
+                      highlight: d.fecha === diaSeleccionado,
+                    }))}
+                    formatShort={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`)}
+                    onBarClick={(fecha) => setDiaSeleccionado(fecha)}
+                  />
+                </div>
+              )}
+            </section>
+
+            <section aria-label="Métodos de pago" className="panel-card space-y-4 p-5">
+              <div className="flex items-center justify-between border-b border-line/70 pb-3">
+                <h3 className="section-title flex items-center gap-2 text-base">
+                  <PieChart size={16} className="text-brand" />
+                  Métodos de pago
+                </h3>
+                <span className="text-xs text-muted">Período seleccionado</span>
+              </div>
+              <DonutChart
+                items={metodosDonut}
+                centerLabel="Ingresos"
+                centerValue={soles(kpis.ingresos)}
+                formatValue={soles}
+                emptyText="No hay cobros registrados en este rango."
+              />
+            </section>
           </div>
 
           {/* 1.4 Desglose de ingresos por Plan (pastel) y por Producto de mostrador */}
